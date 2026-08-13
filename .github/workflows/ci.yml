@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main", "infra/postgresql" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  test-postgresql:
+    name: Test PostgreSQL Setup
+    runs-on: ubuntu-latest
+    container:
+      image: fedora:latest
+      options: -v /var/run/docker.sock:/var/run/docker.sock
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies in Fedora container
+        run: |
+          dnf install -y docker-cli docker-compose procps-ng findutils postgresql
+
+      - name: Create .env File
+        run: |
+          cat << 'EOF' > .env
+          POSTGRES_DB=transcendence
+          POSTGRES_USER=postgres
+          POSTGRES_PASSWORD=postgres
+          EOF
+
+      - name: Cleanup previous volumes & containers
+        run: docker compose down -v --remove-orphans || true
+
+      - name: Start PostgreSQL Container
+        run: docker compose up -d database
+
+      - name: Wait for PostgreSQL Service Readiness
+        run: |
+          echo "Waiting for PostgreSQL service to accept connections..."
+          for i in {1..30}; do
+            if docker compose exec -T database pg_isready -U postgres; then
+              echo "PostgreSQL service is ready!"
+              break
+            fi
+            echo "Waiting for PostgreSQL... ($i/30)"
+            sleep 2
+          done
+
+      - name: Apply Database Initialization Script
+        run: |
+          echo "Applying init.sql schema to database..."
+          cat ./infra/postgresql/init.sql | docker compose exec -T database psql -U postgres -d transcendence
+
+      - name: Verify Database Schema & Seed Data
+        run: |
+          echo "Checking table list..."
+          docker compose exec -T database psql -U postgres -d transcendence -c "\dt"
+
+          echo "Verifying seed data in users table..."
+          docker compose exec -T database psql -U postgres -d transcendence -c "SELECT * FROM users;" | grep "admin_test"
+
+      - name: Container Logs on Failure
+        if: failure()
+        run: docker compose logs database
+
+      - name: Stop Containers
+        if: always()
+        run: docker compose down -v
