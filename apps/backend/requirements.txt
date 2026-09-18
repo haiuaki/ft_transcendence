@@ -1,0 +1,12 @@
+# Web framework and ASGI server
+fastapi==0.141.0
+uvicorn==0.52.4
+
+# Environment variables management
+python-dotenv==1.2.2
+
+# Official Google GenAI SDK
+google-genai
+
+# Rate limiting
+slowapi==0.1.9
