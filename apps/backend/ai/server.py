@@ -1,18 +1,15 @@
-from dotenv import load_dotenv
 import os
-from google import genai
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
 from typing import AsyncGenerator
-from fastapi.responses import StreamingResponse
-import warnings
-from fastapi import Request
-from slowapi import Limiter, _rate_limit_exceeded_handler
+from dotenv import load_dotenv
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import JSONResponse, StreamingResponse
+from google import genai
+from pydantic import BaseModel
+from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
 load_dotenv()
-warnings.filterwarnings("ignore", message=".*Direct use of automatic function calling.*")
 
 api_key = os.getenv("GOOGLE_API_KEY")
 if not api_key:
@@ -23,7 +20,13 @@ app = FastAPI(title="LLM")
 
 limiter = Limiter(key_func=get_remote_address)
 app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+@app.exception_handler(RateLimitExceeded)
+async def rate_limit_handler(request: Request, exc: Exception) -> JSONResponse:
+    return JSONResponse(
+        status_code=429,
+        content={"error": f"Rate limit exceeded: {exc}"},
+    )
 
 class PromptRequest(BaseModel):
     prompt: str
