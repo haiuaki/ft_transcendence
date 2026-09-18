@@ -6,6 +6,10 @@ from pydantic import BaseModel
 from typing import AsyncGenerator
 from fastapi.responses import StreamingResponse
 import warnings
+from fastapi import Request
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
 
 load_dotenv()
 warnings.filterwarnings("ignore", message=".*Direct use of automatic function calling.*")
@@ -16,6 +20,10 @@ if not api_key:
 
 client = genai.Client(api_key=api_key)
 app = FastAPI(title="LLM")
+
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 class PromptRequest(BaseModel):
     prompt: str
@@ -39,10 +47,11 @@ async def health_check():
     return {"status": "ok"}
 
 @app.post("/stream")
-async def stream_ai(request: PromptRequest):
-    if not request.prompt.strip():
+@limiter.limit("3/minute")
+async def stream_ai(request: Request, body: PromptRequest):
+    if not body.prompt.strip():
         raise HTTPException(status_code=400, detail="Prompt cannot be empty")
     return StreamingResponse(
-            stream_generator(request.prompt),
+            stream_generator(body.prompt),
             media_type="text/event-stream",
             )
