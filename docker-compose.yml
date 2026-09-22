@@ -13,6 +13,21 @@ services:
       - db_data:/var/lib/postgresql
       - ./infra/postgresql/init.sql:/docker-entrypoint-initdb.d/init.sql
 
+  backend:
+    build: ./apps/backend
+    container_name: go_backend
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_HOST=database
+    ports:
+      - "8080:8080"
+    depends_on:
+      - database
+    networks:
+      - app_network
+
 volumes:
   db_data:
     name: transcendence_db_data

@@ -1,0 +1,40 @@
+name: Backend CI
+
+on:
+  push:
+    branches: [ "main", "feat/backend-auth" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    name: Build & Verify Go Code
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./apps/backend
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.27.1'
+
+    - name: Download Dependencies
+      run: go mod download
+
+    - name: Verify Code Compiles (fails on syntax errors)
+      run: go build -v ./...
+
+    - name: Run Go Formatting Check
+      run: |
+        if [ "$(gofmt -l .)" = "" ]; then
+          echo "Formatting check passed."
+        else
+          echo "Formatting check failed. Please run 'go fmt ./...' to format the code."
+          exit 1
+        fi
