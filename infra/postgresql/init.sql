@@ -1,5 +1,6 @@
 DROP TABLE IF EXISTS messages CASCADE;
 DROP TABLE IF EXISTS channels CASCADE;
+DROP TABLE IF EXISTS friendships CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
 
 CREATE TABLE users (
@@ -17,6 +18,20 @@ CREATE TABLE users (
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
 	updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
 	deleted_at TIMESTAMPTZ DEFAULT NULL
+);
+
+CREATE TABLE friendships (
+	id SERIAL PRIMARY KEY,
+	user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+	friend_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+	status VARCHAR(20) DEFAULT 'PENDING',
+	created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Forces the database to treat (A, B) and (B, A) as the same duplicate
+CREATE UNIQUE INDEX friendships_bidirectional_idx ON friendships (
+	LEAST(user_id, friend_id),
+	GREATEST(friend_id, user_id)
 );
 
 CREATE TABLE channels (

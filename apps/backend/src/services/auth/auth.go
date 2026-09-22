@@ -62,7 +62,7 @@ func Signup(dbPool *pgxpool.Pool) http.HandlerFunc {
 		if err != nil {
 			// If the UNIQUE constraint fails
 			if strings.Contains(err.Error(), "duplicate key value") {
-				http.Error(w, "Email already exists.", http.StatusConflict)
+				http.Error(w, "Username or Email already exists.", http.StatusConflict)
 				return
 			}
 
