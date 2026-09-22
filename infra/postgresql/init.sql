@@ -9,7 +9,7 @@ CREATE TABLE users (
 
     username VARCHAR(30) UNIQUE NOT NULL,
     oauth_42_id INTEGER UNIQUE,
-    user_url VARCHAR(255),
+    avatar_url VARCHAR(255),
     is_2fa_enabled BOOLEAN DEFAULT FALSE,
     two_factor_secret VARCHAR(255),
     status VARCHAR(20) DEFAULT 'OFFLINE',

@@ -53,7 +53,10 @@ func Signup(dbPool *pgxpool.Pool) http.HandlerFunc {
 
 		hashedPasswordString := string(hashedBytes)
 
-		insertSQL := `INSERT INTO users (username, email, password_hash) VALUES ($1, $2, $3)`
+		insertSQL := `
+			INSERT INTO users (username, email, password_hash)
+			VALUES ($1, $2, $3)
+		`
 
 		_, err = dbPool.Exec(context.Background(), insertSQL, creds.Username, creds.Email, hashedPasswordString)
 		if err != nil {
@@ -92,7 +95,11 @@ func Login(dbPool *pgxpool.Pool) http.HandlerFunc {
 		var savedHash string
 
 		// Use WHERE to select the exact user with the given email
-		searchUserSQL := `SELECT password_hash FROM users WHERE email = $1`
+		searchUserSQL := `
+			SELECT password_hash
+			FROM users
+			WHERE email = $1 AND deleted_at IS NULL
+		`
 
 		// QueryRow runs the SQL, .Scan() copies the result into `savedHash`
 		err = dbPool.QueryRow(context.Background(), searchUserSQL, creds.Email).Scan(&savedHash)
@@ -132,5 +139,92 @@ func Login(dbPool *pgxpool.Pool) http.HandlerFunc {
 		json.NewEncoder(w).Encode(map[string]string{
 			"token": tokenString,
 		})
+	}
+}
+
+func GetProfile(dbPool *pgxpool.Pool) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		email := r.Context().Value(UserEmailKey).(string)
+
+		var profile UserProfile
+		query := `
+			SELECT username, email, avatar_url, status, created_at
+			FROM users
+			WHERE email = $1
+		`
+
+		err := dbPool.QueryRow(context.Background(), query, email).Scan(
+			&profile.Username,
+			&profile.Email,
+			&profile.AvatarURL,
+			&profile.Status,
+			&profile.CreatedAt,
+		)
+
+		if err != nil {
+			http.Error(w, "User not found.", http.StatusNotFound)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(profile)
+	}
+}
+
+func UpdateProfile(dbPool *pgxpool.Pool) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		email := r.Context().Value(UserEmailKey).(string)
+
+		var req UpdateProfileRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, "Invalid JSON.", http.StatusBadRequest)
+			return
+		}
+
+		updateSQL := `
+			UPDATE users
+			SET
+				username = $1,
+				updated_at = CURRENT_TIMESTAMP
+			WHERE email = $2
+		`
+
+		_, err := dbPool.Exec(context.Background(), updateSQL, req.Username, email)
+		if err != nil {
+			// Taken username check
+			if strings.Contains(err.Error(), "duplicate key value") {
+				http.Error(w, "This username is already taken.", http.StatusConflict)
+				return
+			}
+			// Internal random error
+			log.Println("Database error during profile update:", err)
+			http.Error(w, "Failed to update profile.", http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("Profile updated successfully."))
+	}
+}
+
+func DeleteProfile(dbPool *pgxpool.Pool) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		email := r.Context().Value(UserEmailKey).(string)
+
+		softDeleteSQL := `
+			UPDATE users
+			SET deleted_at = CURRENT_TIMESTAMP
+			WHERE email = $1
+		`
+
+		_, err := dbPool.Exec(context.Background(), softDeleteSQL, email)
+		if err != nil {
+			log.Println("Database error during profile deletion:", err)
+			http.Error(w, "Failed to delete account.", http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("Account successfully deleted."))
 	}
 }

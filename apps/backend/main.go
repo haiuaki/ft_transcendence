@@ -27,12 +27,19 @@ func main() {
 	http.HandleFunc("/signup", auth.Signup(dbPool))
 	http.HandleFunc("/login", auth.Login(dbPool))
 
-	// Protected Route
+	// Protected Routes
 	http.HandleFunc("/dashboard", auth.RequireAuth(func(w http.ResponseWriter, r *http.Request) {
 		email := r.Context().Value(auth.UserEmailKey).(string)
 		welcomeMessage := fmt.Sprintf("Welcome to your dashboard, %s.", email)
 		w.Write([]byte(welcomeMessage))
 	}))
+
+	// Route to View Profile (GET)
+	http.HandleFunc("/profile", auth.RequireAuth(auth.GetProfile(dbPool)))
+	// Route to Edit Profile (PUT)
+	http.HandleFunc("/profile/edit", auth.RequireAuth(auth.UpdateProfile(dbPool)))
+	// Route to Delete Profile (DELETE)
+	http.HandleFunc("/profile/delete", auth.RequireAuth(auth.DeleteProfile(dbPool)))
 
 	fmt.Println("Server starting on http://localhost:8080..")
 	log.Fatal(http.ListenAndServe(":8080", nil))
