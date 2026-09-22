@@ -184,12 +184,13 @@ func UpdateProfile(dbPool *pgxpool.Pool) http.HandlerFunc {
 		updateSQL := `
 			UPDATE users
 			SET
-				username = $1,
+				username = COALESCE($1, username),
+				avatar_url = COALESCE($2, avatar_url),
 				updated_at = CURRENT_TIMESTAMP
-			WHERE email = $2
+			WHERE email = $3
 		`
 
-		_, err := dbPool.Exec(context.Background(), updateSQL, req.Username, email)
+		_, err := dbPool.Exec(context.Background(), updateSQL, req.Username, req.AvatarURL, email)
 		if err != nil {
 			// Taken username check
 			if strings.Contains(err.Error(), "duplicate key value") {
