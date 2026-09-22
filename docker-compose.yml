@@ -3,10 +3,22 @@ services:
     image: postgres:18-alpine
     container_name: postgresql
     restart: unless-stopped
-    env_file:
-      - .env
+  
     ports:
       - "5432:5432"
+    networks:
+      - app_network
+    volumes:
+      - db_data:/var/lib/postgresql
+      - ./infra/postgresql/init.sql:/docker-entrypoint-initdb.d/init.sql
+  frontend:
+    build:
+      context: ./apps/frontend
+      dockerfile: Dockerfile
+    container_name: nextjs
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
     networks:
       - app_network
     volumes:
