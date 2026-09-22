@@ -9,6 +9,7 @@ import (
 
 	"github.com/haiuaki/ft_transcendence/src/database"
 	"github.com/haiuaki/ft_transcendence/src/services/auth"
+	"github.com/haiuaki/ft_transcendence/src/services/users"
 )
 
 func main() {
@@ -35,11 +36,11 @@ func main() {
 	}))
 
 	// Route to View Profile (GET)
-	http.HandleFunc("/profile", auth.RequireAuth(auth.GetProfile(dbPool)))
+	http.HandleFunc("/profile", auth.RequireAuth(users.GetProfile(dbPool)))
 	// Route to Edit Profile (PUT)
-	http.HandleFunc("/profile/edit", auth.RequireAuth(auth.UpdateProfile(dbPool)))
+	http.HandleFunc("/profile/edit", auth.RequireAuth(users.UpdateProfile(dbPool)))
 	// Route to Delete Profile (DELETE)
-	http.HandleFunc("/profile/delete", auth.RequireAuth(auth.DeleteProfile(dbPool)))
+	http.HandleFunc("/profile/delete", auth.RequireAuth(users.DeleteProfile(dbPool)))
 
 	fmt.Println("Server starting on http://localhost:8080..")
 	log.Fatal(http.ListenAndServe(":8080", nil))
