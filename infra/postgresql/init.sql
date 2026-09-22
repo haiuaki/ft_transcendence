@@ -3,14 +3,20 @@ DROP TABLE IF EXISTS channels CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
 
 CREATE TABLE users (
-    id SERIAL PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+	email VARCHAR(255) UNIQUE,
+	password_hash VARCHAR(255),
+
     username VARCHAR(30) UNIQUE NOT NULL,
     oauth_42_id INTEGER UNIQUE,
     user_url VARCHAR(255),
     is_2fa_enabled BOOLEAN DEFAULT FALSE,
     two_factor_secret VARCHAR(255),
     status VARCHAR(20) DEFAULT 'OFFLINE',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+	updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+	deleted_at TIMESTAMPTZ DEFAULT NULL
 );
 
 CREATE TABLE channels (
@@ -18,16 +24,16 @@ CREATE TABLE channels (
     name VARCHAR(30) NOT NULL,
     type VARCHAR(20) NOT NULL DEFAULT 'PUBLIC',
     password_hash VARCHAR(255),
-    owner_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    owner_id UUID REFERENCES users(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE messages (
     id SERIAL PRIMARY KEY,
-    sender_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    sender_id UUID REFERENCES users(id) ON DELETE CASCADE,
     channel_id INTEGER REFERENCES channels(id) ON DELETE CASCADE,
     content TEXT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
 INSERT INTO users (username, status) VALUES ('admin_test', 'ONLINE');
