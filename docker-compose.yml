@@ -28,6 +28,19 @@ services:
     networks:
       - app_network
 
+  ai-service:
+    build:
+      context: .
+      dockerfile: apps/backend/ai/Dockerfile
+    container_name: ai_backend
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    restart: unless-stopped
+      networks:
+      - transcendence-network
+
 volumes:
   db_data:
     name: transcendence_db_data
