@@ -1,1 +1,5 @@
+# OS Generated files
+.DS_Store
+
+# Environment variables
 .env
