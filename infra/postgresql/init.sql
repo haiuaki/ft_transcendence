@@ -25,7 +25,8 @@ CREATE TABLE friendships (
 	user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
 	friend_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
 	status VARCHAR(20) DEFAULT 'PENDING',
-	created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+	created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+	CONSTRAINT no_self_friending CHECK (user_id != friend_id)
 );
 
 -- Forces the database to treat (A, B) and (B, A) as the same duplicate

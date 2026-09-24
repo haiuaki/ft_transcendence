@@ -33,6 +33,9 @@ func Signup(dbPool *pgxpool.Pool) http.HandlerFunc {
 			return
 		}
 
+		creds.Email = strings.TrimSpace(creds.Email)
+		creds.Username = strings.TrimSpace(creds.Username)
+
 		if !UsernameRegex.MatchString(creds.Username) {
 			http.Error(w, "Username must be 3-20 characters and contain only letters, numbers, and underscores.", http.StatusBadRequest)
 			return
@@ -100,6 +103,9 @@ func Login(dbPool *pgxpool.Pool) http.HandlerFunc {
 			http.Error(w, "Invalid JSON data.", http.StatusBadRequest)
 			return
 		}
+
+		creds.Email = strings.TrimSpace(creds.Email)
+		creds.Username = strings.TrimSpace(creds.Username)
 
 		// Allow the frontend to send the login string in either the "email" or "username" JSON field
 		identifier := creds.Email

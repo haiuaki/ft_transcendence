@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -54,6 +55,13 @@ func UpdateProfile(dbPool *pgxpool.Pool) http.HandlerFunc {
 		if req.Username != nil {
 			if !auth.UsernameRegex.MatchString(*req.Username) {
 				http.Error(w, "Username must be 3-20 characters and contain only letters, numbers, and underscores.", http.StatusBadRequest)
+				return
+			}
+		}
+
+		if req.AvatarURL != nil {
+			if _, err := url.ParseRequestURI(*req.AvatarURL); err != nil {
+				http.Error(w, "Invalid Avatar URL format.", http.StatusBadRequest)
 				return
 			}
 		}
