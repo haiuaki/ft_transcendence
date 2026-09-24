@@ -14,7 +14,7 @@ type RoomResponse struct {
 	ID        int       `json:"id"`
 	Name      string    `json:"name"`
 	Type      string    `json:"type"`
-	OwnerID   string    `json:"owner_id,omitempty"`
+	OwnerID   *string   `json:"owner_id,omitempty"`
 	CreatedAt time.Time `json:"created_at"`
 }
 
