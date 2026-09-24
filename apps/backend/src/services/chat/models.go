@@ -11,11 +11,12 @@ type CreateRoomRequest struct {
 
 // What we send back to the frontend
 type RoomResponse struct {
-	ID        int       `json:"id"`
-	Name      string    `json:"name"`
-	Type      string    `json:"type"`
-	OwnerID   *string   `json:"owner_id,omitempty"`
-	CreatedAt time.Time `json:"created_at"`
+	ID            int       `json:"id"`
+	Name          string    `json:"name"`
+	Type          string    `json:"type"`
+	OwnerID       *string   `json:"owner_id,omitempty"`
+	ActiveMembers int       `json:"active_members"`
+	CreatedAt     time.Time `json:"created_at"`
 }
 
 // What the frontend send when sitting down in a room

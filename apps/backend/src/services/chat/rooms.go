@@ -13,6 +13,46 @@ import (
 	"github.com/haiuaki/ft_transcendence/src/services/auth"
 )
 
+func GetRooms(dbPool *pgxpool.Pool) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		query := `
+			SELECT
+				c.id, c.name, c.type, c.owner_id, c.created_at,
+				COUNT(cm.user_id)::INTEGER as active_members
+			FROM channels c
+			LEFT JOIN channel_members cm ON c.id = cm.channel_id AND cm.status = 'ACTIVE'
+			GROUP BY c.id
+			ORDER BY c.created_at DESC
+		`
+
+		rows, err := dbPool.Query(context.Background(), query)
+		if err != nil {
+			log.Println("Database error fetching rooms.", err)
+			http.Error(w, "Failed to fetch rooms.", http.StatusInternalServerError)
+			return
+		}
+		defer rows.Close()
+
+		var rooms []RoomResponse
+
+		for rows.Next() {
+			var room RoomResponse
+			if err := rows.Scan(&room.ID, &room.Name, &room.Type, &room.OwnerID, &room.CreatedAt, &room.ActiveMembers); err != nil {
+				log.Println("Error scanning room row:", err)
+				continue
+			}
+			rooms = append(rooms, room)
+		}
+
+		if rooms == nil {
+			rooms = []RoomResponse{}
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(rooms)
+	}
+}
+
 func CreateRoom(dbPool *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		email := r.Context().Value(auth.UserEmailKey).(string)

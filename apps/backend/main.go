@@ -68,6 +68,9 @@ func main() {
 	http.HandleFunc("/friends/requests/deny", auth.RequireAuth(friends.DenyFriend(dbPool)))
 
 	// --- ROOMS ----------------------------------------------------------- //
+	// GET: List all available 3D rooms
+	http.HandleFunc("/rooms", auth.RequireAuth(chat.GetRooms(dbPool)))
+
 	// POST: Create a new 3D Room
 	http.HandleFunc("/rooms/create", auth.RequireAuth(chat.CreateRoom(dbPool)))
 
