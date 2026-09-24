@@ -33,7 +33,7 @@ func Signup(dbPool *pgxpool.Pool) http.HandlerFunc {
 			return
 		}
 
-		creds.Email = strings.TrimSpace(creds.Email)
+		creds.Email = strings.ToLower(strings.TrimSpace(creds.Email))
 		creds.Username = strings.TrimSpace(creds.Username)
 
 		if !UsernameRegex.MatchString(creds.Username) {
@@ -104,7 +104,7 @@ func Login(dbPool *pgxpool.Pool) http.HandlerFunc {
 			return
 		}
 
-		creds.Email = strings.TrimSpace(creds.Email)
+		creds.Email = strings.ToLower(strings.TrimSpace(creds.Email))
 		creds.Username = strings.TrimSpace(creds.Username)
 
 		// Allow the frontend to send the login string in either the "email" or "username" JSON field
