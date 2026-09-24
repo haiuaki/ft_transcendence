@@ -20,12 +20,16 @@ CREATE TABLE users (
 	deleted_at TIMESTAMPTZ DEFAULT NULL
 );
 
+-- Prevents "USER" and "user" from existing at the same time
+CREATE UNIQUE INDEX unique_username_lower_idx ON users (LOWER(username));
+
 CREATE TABLE friendships (
 	id SERIAL PRIMARY KEY,
 	user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
 	friend_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
 	status VARCHAR(20) DEFAULT 'PENDING',
-	created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+	created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+	CONSTRAINT no_self_friending CHECK (user_id != friend_id)
 );
 
 -- Forces the database to treat (A, B) and (B, A) as the same duplicate
