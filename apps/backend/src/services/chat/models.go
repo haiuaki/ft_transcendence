@@ -1,0 +1,19 @@
+package chat
+
+import "time"
+
+// What the frontend sends when creating a room
+type CreateRoomRequest struct {
+	Name     string `json:"name"`
+	Type     string `json:"type"` // "PUBLIC" or "PRIVATE"
+	Password string `json:"password,omitempty"`
+}
+
+// What we send back to the frontend
+type RoomResponse struct {
+	ID        int       `json:"id"`
+	Name      string    `json:"name"`
+	Type      string    `json:"type"`
+	OwnerID   string    `json:"owner_id,omitempty"`
+	CreatedAt time.Time `json:"created_at"`
+}

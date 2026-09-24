@@ -9,6 +9,7 @@ import (
 
 	"github.com/haiuaki/ft_transcendence/src/database"
 	"github.com/haiuaki/ft_transcendence/src/services/auth"
+	"github.com/haiuaki/ft_transcendence/src/services/chat"
 	"github.com/haiuaki/ft_transcendence/src/services/friends"
 	"github.com/haiuaki/ft_transcendence/src/services/users"
 )
@@ -65,6 +66,10 @@ func main() {
 
 	// DELETE: Reject a pending request
 	http.HandleFunc("/friends/requests/deny", auth.RequireAuth(friends.DenyFriend(dbPool)))
+
+	// --- ROOMS ----------------------------------------------------------- //
+	// POST: Create a new 3D Room
+	http.HandleFunc("/rooms/create", auth.RequireAuth(chat.CreateRoom(dbPool)))
 
 	fmt.Println("Server starting on http://localhost:8080..")
 	log.Fatal(http.ListenAndServe(":8080", nil))
