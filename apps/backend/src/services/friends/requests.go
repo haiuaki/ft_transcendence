@@ -57,6 +57,11 @@ func AcceptFriend(dbPool *pgxpool.Pool) http.HandlerFunc {
 			return
 		}
 
+		if req.FriendUsername == "" {
+			http.Error(w, "Friend username is required.", http.StatusBadRequest)
+			return
+		}
+
 		acceptSQL := `
 			UPDATE friendships
 			SET status = 'ACCEPTED'
@@ -88,6 +93,11 @@ func DenyFriend(dbPool *pgxpool.Pool) http.HandlerFunc {
 		var req FriendRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			http.Error(w, "Invalid JSON.", http.StatusBadRequest)
+			return
+		}
+
+		if req.FriendUsername == "" {
+			http.Error(w, "Friend username is required.", http.StatusBadRequest)
 			return
 		}
 
