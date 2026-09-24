@@ -132,7 +132,7 @@ func Login(dbPool *pgxpool.Pool) http.HandlerFunc {
 		searchUserSQL := `
 			SELECT email, password_hash
 			FROM users
-			WHERE (email = $1 OR username = $1) AND deleted_at IS NULL
+			WHERE (email = $1 OR LOWER(username) = LOWER($1)) AND deleted_at IS NULL
 		`
 
 		// QueryRow runs the SQL, .Scan() copies the result into `savedEmail` and `savedHash`

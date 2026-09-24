@@ -20,6 +20,9 @@ CREATE TABLE users (
 	deleted_at TIMESTAMPTZ DEFAULT NULL
 );
 
+-- Prevents "USER" and "user" from existing at the same time
+CREATE UNIQUE INDEX unique_username_lower_idx ON users (LOWER(username));
+
 CREATE TABLE friendships (
 	id SERIAL PRIMARY KEY,
 	user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
