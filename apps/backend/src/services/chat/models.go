@@ -17,3 +17,9 @@ type RoomResponse struct {
 	OwnerID   string    `json:"owner_id,omitempty"`
 	CreatedAt time.Time `json:"created_at"`
 }
+
+// What the frontend send when sitting down in a room
+type JoinRoomRequest struct {
+	ChannelID int    `json:"channel_id"`
+	Password  string `json:"password,omitempty"`
+}

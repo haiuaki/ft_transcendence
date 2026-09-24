@@ -71,6 +71,9 @@ func main() {
 	// POST: Create a new 3D Room
 	http.HandleFunc("/rooms/create", auth.RequireAuth(chat.CreateRoom(dbPool)))
 
+	// POST: Join a room
+	http.HandleFunc("/rooms/join", auth.RequireAuth(chat.JoinRoom(dbPool)))
+
 	fmt.Println("Server starting on http://localhost:8080..")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
