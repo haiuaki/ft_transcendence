@@ -23,3 +23,7 @@ type JoinRoomRequest struct {
 	ChannelID int    `json:"channel_id"`
 	Password  string `json:"password,omitempty"`
 }
+
+type LeaveRoomRequest struct {
+	ChannelID int `json:"channel_id"`
+}

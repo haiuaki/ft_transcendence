@@ -150,3 +150,38 @@ func JoinRoom(dbPool *pgxpool.Pool) http.HandlerFunc {
 		w.Write([]byte("Successfully joined the room."))
 	}
 }
+
+func LeaveRoom(dbPool *pgxpool.Pool) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		email := r.Context().Value(auth.UserEmailKey).(string)
+
+		var req LeaveRoomRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, "Invalid JSON.", http.StatusBadRequest)
+			return
+		}
+
+		updateSQL := `
+			UPDATE channel_members
+			SET status = 'LEFT'
+			WHERE channel_id = $1
+				AND user_id = (SELECT id FROM users WHERE email = $2)
+				AND status = 'ACTIVE'
+		`
+
+		result, err := dbPool.Exec(context.Background(), updateSQL, req.ChannelID, email)
+		if err != nil {
+			log.Println("Database error leaving room:", err)
+			http.Error(w, "Failed to leave room.", http.StatusInternalServerError)
+			return
+		}
+
+		if result.RowsAffected() == 0 {
+			http.Error(w, "You are not active in this room.", http.StatusNotFound)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("Successfully left the room."))
+	}
+}

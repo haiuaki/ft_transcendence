@@ -74,6 +74,9 @@ func main() {
 	// POST: Join a room
 	http.HandleFunc("/rooms/join", auth.RequireAuth(chat.JoinRoom(dbPool)))
 
+	// POST: Leave a room
+	http.HandleFunc("/rooms/leave", auth.RequireAuth(chat.LeaveRoom(dbPool)))
+
 	fmt.Println("Server starting on http://localhost:8080..")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
