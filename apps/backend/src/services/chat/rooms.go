@@ -57,6 +57,15 @@ func CreateRoom(dbPool *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		email := r.Context().Value(auth.UserEmailKey).(string)
 
+		// Enforce Physics: Stand the user up from any room they are currently sitting in
+		standUpSQL := `
+			UPDATE channel_members 
+			SET status = 'LEFT' 
+			WHERE user_id = (SELECT id FROM users WHERE email = $1) 
+			  AND status = 'ACTIVE'
+		`
+		dbPool.Exec(context.Background(), standUpSQL, email)
+
 		var req CreateRoomRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			http.Error(w, "Invalid JSON.", http.StatusBadRequest)
@@ -116,6 +125,15 @@ func CreateRoom(dbPool *pgxpool.Pool) http.HandlerFunc {
 func JoinRoom(dbPool *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		email := r.Context().Value(auth.UserEmailKey).(string)
+
+		// Enforce Physics: Stand the user up from any room they are currently sitting in
+		standUpSQL := `
+			UPDATE channel_members 
+			SET status = 'LEFT' 
+			WHERE user_id = (SELECT id FROM users WHERE email = $1) 
+			  AND status = 'ACTIVE'
+		`
+		dbPool.Exec(context.Background(), standUpSQL, email)
 
 		var req JoinRoomRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
