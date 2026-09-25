@@ -80,6 +80,9 @@ func main() {
 	// POST: Leave a room
 	http.HandleFunc("/rooms/leave", auth.RequireAuth(chat.LeaveRoom(dbPool)))
 
+	// DELETE: Delete a 3D room (Owner only)
+	http.HandleFunc("/rooms/delete", auth.RequireAuth(chat.DeleteRoom(dbPool)))
+
 	fmt.Println("Server starting on http://localhost:8080..")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }

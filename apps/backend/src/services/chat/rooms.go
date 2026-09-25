@@ -243,3 +243,43 @@ func LeaveRoom(dbPool *pgxpool.Pool) http.HandlerFunc {
 		w.Write([]byte("Successfully left the room."))
 	}
 }
+
+func DeleteRoom(dbPool *pgxpool.Pool) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		email := r.Context().Value(auth.UserEmailKey).(string)
+
+		var req DeleteRoomRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, "Invalid JSON.", http.StatusBadRequest)
+			return
+		}
+
+		var isOwner bool
+		ownerCheckSQL := `
+			SELECT (owner_id = (SELECT id FROM users WHERE email = $2))
+			FROM channels
+			WHERE id = $1
+		`
+		err := dbPool.QueryRow(context.Background(), ownerCheckSQL, req.ChannelID, email).Scan(&isOwner)
+		if err != nil {
+			http.Error(w, "Room not found.", http.StatusNotFound)
+			return
+		}
+
+		if !isOwner {
+			http.Error(w, "Only the owner can delete this room.", http.StatusForbidden)
+			return
+		}
+
+		deleteSQL := `DELETE FROM channels WHERE id = $1`
+		_, err = dbPool.Exec(context.Background(), deleteSQL, req.ChannelID)
+		if err != nil {
+			log.Println("Database error deleting room:", err)
+			http.Error(w, "Failed to delete room.", http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("Room successfully deleted."))
+	}
+}

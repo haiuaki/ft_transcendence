@@ -29,3 +29,8 @@ type JoinRoomRequest struct {
 type LeaveRoomRequest struct {
 	ChannelID int `json:"channel_id"`
 }
+
+// What the frontend sends when deleting a room manually
+type DeleteRoomRequest struct {
+	ChannelID int `json:"channel_id"`
+}
