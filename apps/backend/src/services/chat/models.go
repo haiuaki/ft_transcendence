@@ -25,7 +25,7 @@ type JoinRoomRequest struct {
 	Password  string `json:"password,omitempty"`
 }
 
-// What the frontend sends when stading up from a desk
+// What the frontend sends when standing up from a desk
 type LeaveRoomRequest struct {
 	ChannelID int `json:"channel_id"`
 }
