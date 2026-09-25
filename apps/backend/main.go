@@ -13,6 +13,7 @@ import (
 	"github.com/haiuaki/ft_transcendence/src/services/chat"
 	"github.com/haiuaki/ft_transcendence/src/services/friends"
 	"github.com/haiuaki/ft_transcendence/src/services/users"
+	"github.com/haiuaki/ft_transcendence/src/sockets"
 )
 
 func main() {
@@ -91,11 +92,15 @@ func main() {
 	// DELETE: Delete a 3D room (Owner only)
 	http.HandleFunc("/rooms/delete", auth.RequireAuth(chat.DeleteRoom(dbPool)))
 
+	// --- WEBSOCKET CENTRAL HUB -------------------------------------------- //
+	hub := sockets.NewHub()
+	go hub.Run() // Run the hub in a background Goroutine
+	http.HandleFunc("/ws", sockets.ServeWs(hub))
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
 	}
-
 	fmt.Printf("Server starting on http://localhost:%s..\n", port)
 	log.Fatal(http.ListenAndServe(":"+port, nil))
 }
