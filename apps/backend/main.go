@@ -9,6 +9,7 @@ import (
 
 	"github.com/haiuaki/ft_transcendence/src/database"
 	"github.com/haiuaki/ft_transcendence/src/services/auth"
+	"github.com/haiuaki/ft_transcendence/src/services/chat"
 	"github.com/haiuaki/ft_transcendence/src/services/friends"
 	"github.com/haiuaki/ft_transcendence/src/services/users"
 )
@@ -23,6 +24,10 @@ func main() {
 	// Connect to database
 	dbPool := database.Connect()
 	defer dbPool.Close()
+
+	// --- BACKGROUND WORKERS ---------------------------------------------- //
+	// Deletes empty rooms older than 24 hours with 0 Active Members
+	chat.StartRoomGarbageCollector(dbPool)
 
 	// --- HOME PAGE ------------------------------------------------------- //
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -65,6 +70,22 @@ func main() {
 
 	// DELETE: Reject a pending request
 	http.HandleFunc("/friends/requests/deny", auth.RequireAuth(friends.DenyFriend(dbPool)))
+
+	// --- ROOMS ----------------------------------------------------------- //
+	// GET: List all available 3D rooms
+	http.HandleFunc("/rooms", auth.RequireAuth(chat.GetRooms(dbPool)))
+
+	// POST: Create a new 3D Room
+	http.HandleFunc("/rooms/create", auth.RequireAuth(chat.CreateRoom(dbPool)))
+
+	// POST: Join a room
+	http.HandleFunc("/rooms/join", auth.RequireAuth(chat.JoinRoom(dbPool)))
+
+	// POST: Leave a room
+	http.HandleFunc("/rooms/leave", auth.RequireAuth(chat.LeaveRoom(dbPool)))
+
+	// DELETE: Delete a 3D room (Owner only)
+	http.HandleFunc("/rooms/delete", auth.RequireAuth(chat.DeleteRoom(dbPool)))
 
 	fmt.Println("Server starting on http://localhost:8080..")
 	log.Fatal(http.ListenAndServe(":8080", nil))
