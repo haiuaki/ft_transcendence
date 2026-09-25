@@ -25,6 +25,10 @@ func main() {
 	dbPool := database.Connect()
 	defer dbPool.Close()
 
+	// --- BACKGROUND WORKERS ---------------------------------------------- //
+	// Deletes empty rooms older than 24 hours with 0 Active Members
+	chat.StartRoomGarbageCollector(dbPool)
+
 	// --- HOME PAGE ------------------------------------------------------- //
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "Auth Sandbox is running.")
