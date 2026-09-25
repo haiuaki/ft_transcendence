@@ -93,7 +93,7 @@ const CHAT_EXAMPLE = [
     {
         id: 418726,
         image: "https://images.unsplash.com/photo-1517841905240-472988babdf9?q=80&w=1160&auto=format&fit=crop",
-        name: "Sarah",
+        name: "nhhyh",
         lastMessage: "On joue une partie ?",
         status: STATUS.ONLINE,
         messageState: "",
@@ -174,13 +174,13 @@ const Home = ({ setStateChatPanel, onClose, setId }: { setStateChatPanel: React.
             <div className="flex items-center gap-2">
                 <div className="flex items-center gap-2 flex-1 border border-white/20 rounded-md h-8 px-2" style={{ color: colors.textColorSecondary }}>
                     <CgSearch size={14} />
-                    <input placeholder="Rechercher" className="outline-none" />
+                    <input placeholder="Rechercher" className="outline-none w-full" />
                 </div>
                 <div className="cursor-pointer hover:bg-white/10 flex items-center justify-center rounded-md border-[1px] border-white/20 h-8 w-8">
                     <LuListFilter size={15} />
                 </div>
             </div>
-            <div className="flex flex-col items-start overflow-y-auto min-h-0 custom-scrollbar-none">
+            <div className="flex flex-col items-start overflow-y-auto min-h-0 custom-scrollbar-none select-none">
                 {CHAT_EXAMPLE.map((item) => (
                     <div key={item.id} className="truncate shrink-0 cursor-pointer w-full flex justify-between items-center hover:bg-white/10 p-3 rounded-lg active:scale-[0.99]" onClick={() => {
                         setStateChatPanel(StateChatPanel.PRIVATE_CHAT);
