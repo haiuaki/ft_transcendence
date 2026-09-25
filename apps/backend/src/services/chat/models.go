@@ -19,12 +19,13 @@ type RoomResponse struct {
 	CreatedAt     time.Time `json:"created_at"`
 }
 
-// What the frontend send when sitting down in a room
+// What the frontend sends when sitting down in a room
 type JoinRoomRequest struct {
 	ChannelID int    `json:"channel_id"`
 	Password  string `json:"password,omitempty"`
 }
 
+// What the frontend sends when stading up from a desk
 type LeaveRoomRequest struct {
 	ChannelID int `json:"channel_id"`
 }
