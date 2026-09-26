@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/websocket"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // upgrader transforms the standard HTTP connection into a WebSocket connection
@@ -19,7 +20,7 @@ var upgrader = websocket.Upgrader{
 }
 
 // ServeWs handles the incoming HTTP request and upgrades it to a WebSocket
-func ServeWs(hub *Hub) http.HandlerFunc {
+func ServeWs(hub *Hub, dbPool *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		conn, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
@@ -29,9 +30,10 @@ func ServeWs(hub *Hub) http.HandlerFunc {
 
 		// Create and initialize the client for this user
 		client := &Client{
-			hub:  hub,
-			conn: conn,
-			send: make(chan []byte, 256), // Created buffered channel for outbound messages
+			hub:    hub,
+			conn:   conn,
+			send:   make(chan []byte, 256), // Created buffered channel for outbound messages
+			dbPool: dbPool,
 		}
 
 		// Register the client with the central hub

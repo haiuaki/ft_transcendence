@@ -1,12 +1,14 @@
 package sockets
 
 import (
+	"context"
 	"encoding/json"
 	"log"
 	"os"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/gorilla/websocket"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // Client acts as an intermediary between the WebSocket connection and the Hub
@@ -17,7 +19,8 @@ type Client struct {
 	conn *websocket.Conn
 
 	// Buffered channel for outbound messages to this client
-	send chan []byte
+	send   chan []byte
+	dbPool *pgxpool.Pool
 
 	// Security tracking
 	Email           string
@@ -28,7 +31,27 @@ type Client struct {
 // It ensures that the connection is closed and the client is unregistered on exit
 func (c *Client) readPump() {
 	defer func() {
+		// Unregister the user from the WebSocket Hub
 		c.hub.unregister <- c
+
+		// If the user's WiFi droppped, stand them up
+		if c.IsAuthenticated && c.Email != "" {
+			standUpSQL := `
+				UPDATE channel_members
+				SET status = 'LEFT'
+				WHERE user_id = (SELECT id FROM users WHERE email = $1)
+				AND status = 'ACTIVE'
+			`
+			// Use `context.Background()` for a quick background execution
+			_, err := c.dbPool.Exec(context.Background(), standUpSQL, c.Email)
+			if err != nil {
+				log.Printf("Database error: Failed to remove ghost avatar for %s.", c.Email)
+			} else {
+				log.Printf("WebSocket closed. Avatar for %s automatically removed from room.", c.Email)
+			}
+		}
+
+		// Server the TCP connection
 		c.conn.Close()
 	}()
 
@@ -84,9 +107,51 @@ func (c *Client) readPump() {
 
 			// Parse the chat message and send to the Hub
 			var chatData ChatMessagePayload
-			if err := json.Unmarshal(wsMsg.Payload, &chatData); err == nil {
-				log.Printf("%s sent a message to Room %d\n", c.Email, chatData.RoomID)
-				c.hub.broadcast <- rawMessage
+			if err := json.Unmarshal(wsMsg.Payload, &chatData); err != nil {
+				continue
+			}
+
+			// Query the database to retrieve all active members in the specified room
+			roomQuery := `
+				SELECT u.email
+				FROM users u
+				JOIN channel_members cm ON u.id = cm.user_id
+				WHERE cm.channel_id = $1 AND cm.status = 'ACTIVE'
+			`
+
+			rows, err := c.dbPool.Query(context.Background(), roomQuery, chatData.RoomID)
+			if err != nil {
+				log.Println("Database error retrieving active room members:", err)
+				continue
+			}
+
+			var targetEmails []string
+			isSenderInRoom := false
+
+			// Build the roster list
+			for rows.Next() {
+				var email string
+				if err := rows.Scan(&email); err == nil {
+					targetEmails = append(targetEmails, email)
+
+					// If the sender's mail is in the DB results, they're in the room
+					if email == c.Email {
+						isSenderInRoom = true
+					}
+				}
+			}
+			rows.Close()
+
+			// Enforce spatial consistency: sender must be actively seating in the room
+			if !isSenderInRoom {
+				log.Printf("WebSocket security warning: Client %s attempted to broadcast to unjoined room %d.", c.Email, chatData.RoomID)
+				continue
+			}
+
+			// Forward the payload to the Hub with the target roster
+			c.hub.broadcast <- BroadcastMessage{
+				TargetEmails: targetEmails,
+				Payload:      rawMessage,
 			}
 		}
 	}

@@ -95,7 +95,7 @@ func main() {
 	// --- WEBSOCKET CENTRAL HUB -------------------------------------------- //
 	hub := sockets.NewHub()
 	go hub.Run() // Run the hub in a background Goroutine
-	http.HandleFunc("/ws", sockets.ServeWs(hub))
+	http.HandleFunc("/ws", sockets.ServeWs(hub, dbPool))
 
 	port := os.Getenv("PORT")
 	if port == "" {

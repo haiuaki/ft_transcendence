@@ -1,5 +1,7 @@
 package sockets
 
+import "slices"
+
 // Hub maintains the set of active clients and broadcasts messages to them
 type Hub struct {
 	// Registered clients
@@ -11,8 +13,8 @@ type Hub struct {
 	// Unregister requests from clients
 	unregister chan *Client
 
-	// Inbound messages from the clients
-	broadcast chan []byte
+	// Inbound messages from the clients mapped to specific target emails
+	broadcast chan BroadcastMessage
 }
 
 // NewHub initializes and returns a new Hub instance
@@ -21,7 +23,7 @@ func NewHub() *Hub {
 		clients:    make(map[*Client]bool),
 		register:   make(chan *Client),
 		unregister: make(chan *Client),
-		broadcast:  make(chan []byte),
+		broadcast:  make(chan BroadcastMessage),
 	}
 }
 
@@ -41,13 +43,13 @@ func (h *Hub) Run() {
 
 		case message := <-h.broadcast:
 			for client := range h.clients {
-				select {
-				case client.send <- message:
-					// Message successfully pushed to client's outbound queue
-				default:
-					// Outbound channel buffer is full or blocked; force disconnect
-					close(client.send)
-					delete(h.clients, client)
+				if slices.Contains(message.TargetEmails, client.Email) {
+					select {
+					case client.send <- message.Payload:
+					default:
+						close(client.send)
+						delete(h.clients, client)
+					}
 				}
 			}
 		}

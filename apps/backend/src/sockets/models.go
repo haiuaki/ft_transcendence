@@ -22,3 +22,9 @@ type ChatMessagePayload struct {
 	RoomID  int    `json:"room_id"`
 	Message string `json:"message"`
 }
+
+// BroadcastMessage is used internally to route payloads to specific target emails.
+type BroadcastMessage struct {
+	TargetEmails []string
+	Payload      []byte
+}
