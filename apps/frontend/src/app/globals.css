@@ -83,3 +83,11 @@ body {
 .three-scene canvas {
   display: block;
 }
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px #22222000 inset;
+  -webkit-text-fill-color: rgb(255, 255, 255);
+  transition: background-color 9999s ease-out 0s;
+}

@@ -34,7 +34,7 @@ export default function Home() {
           <ThreeScene />
         </div>
         <ChatPanel isOpen={openChatPanel} onClose={() => setOpenChatPanel(false)}/>
-        <AuthModal isOpen={openSignUpPanel} onClose={() => setOpenSignUpPanel(false)} type="signup"/>
+        <AuthModal isOpen={openSignUpPanel} onClose={() => setOpenSignUpPanel(false)}/>
     </main>
   );
 }
