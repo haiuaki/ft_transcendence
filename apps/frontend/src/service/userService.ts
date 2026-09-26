@@ -1,10 +1,11 @@
 const userService = {
     checkExistingUser: async (email:string, setLoading: any) => {
         setLoading(true);
-     await new Promise<void>((resolve) => {
-            setTimeout(resolve, 2000);
-        });
-setLoading(false)
+        setLoading(false)
+    },
+    createUser: async (email:string, password:string, username: string, setLoading: any) => {
+        setLoading(true);
+        setLoading(false)
     }
 }
 
