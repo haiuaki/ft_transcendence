@@ -7,10 +7,22 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/gorilla/websocket"
 	"github.com/jackc/pgx/v5/pgxpool"
+)
+
+const (
+	// Time allowed to write a message to the peer
+	writeWait = 10 * time.Second
+
+	// Time allowed to read the next pong message from the peer
+	pongWait = 60 * time.Second
+
+	// Send pings to peer with this period. Must be less than `pongWait`
+	pingPeriod = (pongWait * 9) / 10
 )
 
 // Client acts as an intermediary between the WebSocket connection and the Hub
@@ -56,6 +68,9 @@ func (c *Client) readPump() {
 		// Server the TCP connection
 		c.conn.Close()
 	}()
+
+	c.conn.SetReadDeadline(time.Now().Add(pongWait))
+	c.conn.SetPongHandler(func(string) error { c.conn.SetReadDeadline(time.Now().Add(pongWait)); return nil })
 
 	for {
 		_, rawMessage, err := c.conn.ReadMessage()
@@ -192,14 +207,29 @@ func (c *Client) readPump() {
 // writePump writes outgoing messages from the Hub to the WebSocket connection
 // It blocks until messages are available on the send channel
 func (c *Client) writePump() {
+	ticker := time.NewTicker(pingPeriod)
 	defer func() {
+		ticker.Stop()
 		c.conn.Close()
 	}()
 
-	for message := range c.send {
-		c.conn.WriteMessage(websocket.TextMessage, message)
-	}
+	for {
+		select {
+		case message, ok := <-c.send:
+			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
+			if !ok {
+				// Hub closed the channel
+				c.conn.WriteMessage(websocket.CloseMessage, []byte{})
+				return
+			}
+			c.conn.WriteMessage(websocket.TextMessage, message)
 
-	// If the range loop breaks, the send channel was closed by the Hub
-	c.conn.WriteMessage(websocket.CloseMessage, []byte{})
+		case <-ticker.C:
+			// 54-second timer went off, send a ping
+			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
+			if err := c.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
+				return // If we can't send a ping, their WiFi is dead. Break the loop
+			}
+		}
+	}
 }
