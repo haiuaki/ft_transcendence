@@ -287,7 +287,7 @@ func DeleteRoom(dbPool *pgxpool.Pool) http.HandlerFunc {
 
 func GetRoomMessages(dbPool *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// Get `room_id` from the URL (e.g., `?room_id=1`)
+		// Extract room_id from the query parameters
 		roomIDStr := r.URL.Query().Get("room_id")
 		roomID, err := strconv.Atoi(roomIDStr)
 		if err != nil {
@@ -295,7 +295,15 @@ func GetRoomMessages(dbPool *pgxpool.Pool) http.HandlerFunc {
 			return
 		}
 
-		// Make sure the user is sitting in the room
+		// Extract before_id for cursor-based pagination, if provided
+		var beforeID *int
+		if beforeIDStr := r.URL.Query().Get("before_id"); beforeIDStr != "" {
+			if id, err := strconv.Atoi(beforeIDStr); err == nil {
+				beforeID = &id
+			}
+		}
+
+		// Enforce spatial consistency: verify the user is an active member of the specified room
 		userEmail := r.Context().Value(auth.UserEmailKey).(string)
 		var isActive bool
 		checkSQL := `
@@ -305,25 +313,26 @@ func GetRoomMessages(dbPool *pgxpool.Pool) http.HandlerFunc {
 				WHERE cm.channel_id = $1 AND u.email = $2 AND cm.status = 'ACTIVE'
 			)
 		`
-		if err := dbPool.QueryRow(r.Context(), checkSQL, roomID, userEmail).Scan(&isActive); err != nil {
-			http.Error(w, "Forbidden: you must join the room to view history.", http.StatusForbidden)
+		if err := dbPool.QueryRow(r.Context(), checkSQL, roomID, userEmail).Scan(&isActive); err != nil || !isActive {
+			http.Error(w, "Forbidden: You must join the room to view history.", http.StatusForbidden)
 			return
 		}
 
-		// Fetch the 50 newest messages and order them older-to-newest for UI
+		// Retrieve up to 50 preceding messages, ordering oldest-to-newest for UI rendering
 		historySQL := `
 			SELECT * FROM (
 				SELECT m.id, u.username, m.content, m.created_at
 				FROM messages m
 				JOIN users u ON m.sender_id = u.id
-				WHERE m.channel_id = $1
-				ORDER BY m.created_at DESC
+				WHERE m.channel_id = $1 
+				AND ($2::INTEGER IS NULL OR m.id < $2::INTEGER)
+				ORDER BY m.id DESC
 				LIMIT 50
-			) AS recent_mssages
+			) AS recent_messages
 			ORDER BY created_at ASC;
 		`
 
-		rows, err := dbPool.Query(r.Context(), historySQL, roomID)
+		rows, err := dbPool.Query(r.Context(), historySQL, roomID, beforeID)
 		if err != nil {
 			http.Error(w, "Failed to retrieve messages.", http.StatusInternalServerError)
 			return
@@ -338,7 +347,7 @@ func GetRoomMessages(dbPool *pgxpool.Pool) http.HandlerFunc {
 			}
 		}
 
-		// Prevent returning 'null' in JSON if the room is empty
+		// Prevent returning 'null' in JSON if the room has no history
 		if messages == nil {
 			messages = []MessageResponse{}
 		}
