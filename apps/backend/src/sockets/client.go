@@ -3,8 +3,10 @@ package sockets
 import (
 	"context"
 	"encoding/json"
+	"html"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/gorilla/websocket"
@@ -111,6 +113,18 @@ func (c *Client) readPump() {
 				continue
 			}
 
+			// Strip invisible leading and trailing spaces
+			chatData.Message = strings.TrimSpace(chatData.Message)
+
+			// Prevent malicious scripts from filling up the database
+			if len(chatData.Message) == 0 || len(chatData.Message) > 500 {
+				log.Printf("Security: Message from %s too long or empty.", c.Email)
+				continue
+			}
+
+			// Sanitize the message, convert <script> into harmless text
+			chatData.Message = html.EscapeString(chatData.Message)
+
 			// Query the database to retrieve all active members in the specified room
 			roomQuery := `
 				SELECT u.email
@@ -148,10 +162,28 @@ func (c *Client) readPump() {
 				continue
 			}
 
+			// Save to `messages` table
+			insertSQL := `
+				INSERT INTO messages (channel_id, sender_id, content)
+				VALUES ($1, (SELECT id FROM users WHERE email = $2), $3)
+			`
+
+			_, err = c.dbPool.Exec(context.Background(), insertSQL, chatData.RoomID, c.Email, chatData.Message)
+			if err != nil {
+				log.Println("Database error: Failed to save chat history:", err)
+			}
+
+			safePayloadBytes, _ := json.Marshal(chatData)
+			safeEnvelope := WSMessage{
+				Type:    "chat",
+				Payload: safePayloadBytes,
+			}
+			safeRawMessage, _ := json.Marshal(safeEnvelope)
+
 			// Forward the payload to the Hub with the target roster
 			c.hub.broadcast <- BroadcastMessage{
 				TargetEmails: targetEmails,
-				Payload:      rawMessage,
+				Payload:      safeRawMessage,
 			}
 		}
 	}
