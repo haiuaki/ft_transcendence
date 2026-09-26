@@ -92,6 +92,9 @@ func main() {
 	// DELETE: Delete a 3D room (Owner only)
 	http.HandleFunc("/rooms/delete", auth.RequireAuth(chat.DeleteRoom(dbPool)))
 
+	// GET: Fetch chat history for a room
+	http.HandleFunc("/rooms/messages", auth.RequireAuth(chat.GetRoomMessages(dbPool)))
+
 	// --- WEBSOCKET CENTRAL HUB -------------------------------------------- //
 	hub := sockets.NewHub()
 	go hub.Run() // Run the hub in a background Goroutine

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -281,5 +282,68 @@ func DeleteRoom(dbPool *pgxpool.Pool) http.HandlerFunc {
 
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("Room successfully deleted."))
+	}
+}
+
+func GetRoomMessages(dbPool *pgxpool.Pool) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Get `room_id` from the URL (e.g., `?room_id=1`)
+		roomIDStr := r.URL.Query().Get("room_id")
+		roomID, err := strconv.Atoi(roomIDStr)
+		if err != nil {
+			http.Error(w, "Invalid Room ID.", http.StatusBadRequest)
+			return
+		}
+
+		// Make sure the user is sitting in the room
+		userEmail := r.Context().Value(auth.UserEmailKey).(string)
+		var isActive bool
+		checkSQL := `
+			SELECT EXISTS (
+				SELECT 1 FROM channel_members cm
+				JOIN users u ON cm.user_id = u.id
+				WHERE cm.channel_id = $1 AND u.email = $2 AND cm.status = 'ACTIVE'
+			)
+		`
+		if err := dbPool.QueryRow(r.Context(), checkSQL, roomID, userEmail).Scan(&isActive); err != nil {
+			http.Error(w, "Forbidden: you must join the room to view history.", http.StatusForbidden)
+			return
+		}
+
+		// Fetch the 50 newest messages and order them older-to-newest for UI
+		historySQL := `
+			SELECT * FROM (
+				SELECT m.id, u.username, m.content, m.created_at
+				FROM messages m
+				JOIN users u ON m.sender_id = u.id
+				WHERE m.channel_id = $1
+				ORDER BY m.created_at DESC
+				LIMIT 50
+			) AS recent_mssages
+			ORDER BY created_at ASC;
+		`
+
+		rows, err := dbPool.Query(r.Context(), historySQL, roomID)
+		if err != nil {
+			http.Error(w, "Failed to retrieve messages.", http.StatusInternalServerError)
+			return
+		}
+		defer rows.Close()
+
+		var messages []MessageResponse
+		for rows.Next() {
+			var msg MessageResponse
+			if err := rows.Scan(&msg.ID, &msg.Username, &msg.Content, &msg.CreatedAt); err == nil {
+				messages = append(messages, msg)
+			}
+		}
+
+		// Prevent returning 'null' in JSON if the room is empty
+		if messages == nil {
+			messages = []MessageResponse{}
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(messages)
 	}
 }
