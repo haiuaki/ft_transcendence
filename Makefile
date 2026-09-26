@@ -3,11 +3,7 @@ all: up
 
 # Build and start the containers in the background
 up:
-<<<<<<< HEAD
 	docker compose up --build -d
-=======
-	$(COMPOSE) up --build
->>>>>>> 79bd73c (chore(nextjs): update docker compose)
 
 # Stop the containers while keeping the data
 down:
