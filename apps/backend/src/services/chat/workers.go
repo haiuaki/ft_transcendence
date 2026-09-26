@@ -29,7 +29,7 @@ func StartRoomGarbageCollector(dbPool *pgxpool.Pool) {
 				log.Println("Garbage Collector Error:", err)
 				return
 			} else if result.RowsAffected() > 0 {
-				log.Printf("Garbage Collector cleared %d abandoned rooms.\n", result.RowsAffected())
+				log.Printf("Garbage Collector cleared %d abandoned rooms.", result.RowsAffected())
 			}
 		}
 	}()
