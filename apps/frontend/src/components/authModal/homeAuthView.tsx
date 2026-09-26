@@ -20,7 +20,10 @@ const HomeAuthView = ({ onNextStep, authFormData, setAuthFormData }: HomeAuthVie
     const [loading, setLoading] = useState<boolean>(false);
     return (
         <div className="flex flex-col gap-6">
+            <div className="flex flex-col gap-2">
             <p className="text-3xl font-medium text-center">Log in or sign up</p>
+            <p className="text-sm text-center">Sign in to continue, or create an account to get started.</p>
+            </div>
             <div className="flex flex-col gap-4">
                 <div className="cursor-pointer w-full flex items-center justify-center gap-2 border-[0.5px] border-[#565655] rounded-full p-3 hover:bg-white/5 active:bg-white/10">
                     <FcGoogle />
@@ -59,7 +62,7 @@ const HomeAuthView = ({ onNextStep, authFormData, setAuthFormData }: HomeAuthVie
                         }}
                         value={authFormData.password}
                     />
-                    <p className="cursor-pointer text-sm text-right underline text-white/50" onClick={() => onNextStep("forgot_password")}>Forgot password ?</p>
+                    <p className="cursor-pointer text-sm text-right underline text-white/50 select-none" onClick={() => onNextStep("forgot_password")}>Forgot password ?</p>
                 </>
                 }
                 {step == "code" && <InputField
@@ -79,7 +82,7 @@ const HomeAuthView = ({ onNextStep, authFormData, setAuthFormData }: HomeAuthVie
                 {error == "wrong_password" && <p className="text-xs text-red-400 pl-3">Wrong password.</p>}
                 {error == "length_code" && <p className="text-xs text-red-400 pl-3">The verification code should be exactly 6 characters long.</p>}
             </div>
-            <button disabled={loading} className={`cursor-pointer w-full flex items-center gap-2 justify-center p-3 rounded-full ${loading ? "bg-[#D0D0D0]" : "bg-[#ededed] hover:bg-[#D5D5D5] active:bg-[#D0D0D0]"} text-black font-medium`}
+            <button disabled={loading || authFormData.email.trim().length == 0} className={`cursor-pointer w-full flex items-center gap-2 justify-center p-3 rounded-full ${loading || authFormData.email.trim().length == 0 ? "bg-[#D0D0D0]" : "bg-[#ededed] hover:bg-[#D5D5D5] active:bg-[#D0D0D0]"} text-black font-medium`}
                 onClick={async () => {
                     if (step == "email") {
                         const emailResult = z.email("").safeParse(authFormData.email);
