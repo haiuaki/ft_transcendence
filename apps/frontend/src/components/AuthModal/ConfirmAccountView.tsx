@@ -1,4 +1,4 @@
-import { AuthFormData } from "./authModal";
+import { AuthFormData } from "./AuthModal";
 
 interface ConfirmAccountViewProps {
     onNextStep: any;

@@ -3,15 +3,19 @@
 
 # Environment variables
 .env
-<<<<<<< HEAD
-.venv
-pyrightconfig.json
-__pycache__/
-=======
-.DS_store
+.env.*
+!.env.example
+
+# IDEs and Editors
+.vscode/
 
 # Dependencies
 **/node_modules/
+
+# Python
+.venv
+__pycache__/
+pyrightconfig.json
 
 # Next.js
 **/.next/
@@ -24,18 +28,10 @@ __pycache__/
 # Tests
 **/coverage/
 
-# Environment
-.env
-.env.*
-!.env.example
-
 # Debug
 npm-debug.log*
 yarn-debug.log*
 pnpm-debug.log*
-
-# OS
-.DS_Store
 
 # TypeScript
 **/*.tsbuildinfo
@@ -43,4 +39,3 @@ pnpm-debug.log*
 
 # Vercel
 .vercel/
->>>>>>> 1031dbb (chore(nextjs): initialize nextjs project)

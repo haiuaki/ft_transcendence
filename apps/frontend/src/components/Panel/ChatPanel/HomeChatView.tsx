@@ -1,11 +1,12 @@
-import colorTheme from "@/src/lib/color";
+import { themeColors } from "@/src/lib/themeColors";
 import { CgSearch } from "react-icons/cg";
 import { IoCloseOutline } from "react-icons/io5";
 import { LuListFilter } from "react-icons/lu";
-import { CHAT_EXAMPLE, ChatPanelView, UserStatus } from "./chatPanel";
+import { ChatPanelView, UserStatus } from "./ChatPanel";
+import { CHAT_EXAMPLE } from "@/src/constants/mockData";
 
 export default function HomeChatView({ setChatPanelView, onClose, setSelectedUserId }: { setChatPanelView: React.Dispatch<React.SetStateAction<ChatPanelView>>, onClose: any, setSelectedUserId: React.Dispatch<React.SetStateAction<number | null>> }) {
-    const colors = colorTheme();
+    const colors = themeColors;
     return (
         <div className="flex flex-col gap-4 overflow-hidden">
             <div className="flex items-center justify-between gap-2">

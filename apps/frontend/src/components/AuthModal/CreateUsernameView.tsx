@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { AuthFormData, ButtonAuth, InputField } from "./authModal";
+import { AuthFormData, ButtonAuth, InputField } from "./AuthModal";
 import {
     uniqueNamesGenerator,
     adjectives,

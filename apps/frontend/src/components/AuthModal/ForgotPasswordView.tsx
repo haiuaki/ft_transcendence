@@ -1,4 +1,4 @@
-import { AuthFormData, InputField } from "./authModal";
+import { AuthFormData, InputField } from "./AuthModal";
 
 interface HomeAuthViewProps {
     onNextStep: any;
@@ -15,7 +15,6 @@ const ForgotPasswordView = ({ onNextStep, authFormData, setAuthFormData }: HomeA
             <p className="text-sm text-center">Enter your email and we’ll send you a link to reset your password.</p>
             </div>
                 <InputField
-                    title="Email"
                     placeholder="Enter an email"
                     type="email"
                     onChange={(e: any) => {

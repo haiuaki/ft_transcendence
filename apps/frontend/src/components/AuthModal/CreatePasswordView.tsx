@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { AuthFormData, ButtonAuth, InputField } from "./authModal";
+import { AuthFormData, ButtonAuth, InputField } from "./AuthModal";
 import { Loader2, CheckCircle, Check, Circle, Info } from "lucide-react";
-import userService from "@/src/service/userService";
+import userService from "@/src/services/userService";
 
 interface CreatePasswordViewProps {
     onNextStep: any;

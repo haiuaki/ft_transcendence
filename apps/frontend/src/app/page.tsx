@@ -2,14 +2,15 @@
 import { FaMessage } from "react-icons/fa6";
 import ThreeScene from "../components/3D/ThreeScene";
 import { FaUser } from "react-icons/fa";
-import { useEffect, useState } from "react";
-import { ChatPanel } from "../components/panel/chatPanel/chatPanel";
-import { AuthModal } from "../components/authModal/authModal";
+import { Suspense, useEffect, useState } from "react";
+import { ChatPanel } from "../components/Panel/ChatPanel/ChatPanel";
+import { AuthModal } from "../components/AuthModal/AuthModal";
 import { useSearchParams } from "next/navigation";
-import userService from "../service/userService";
+import userService from "../services/userService";
 import { toast, Toaster } from "sonner";
+import Link from "next/link";
 
-export default function Home() {
+function HomeContent() {
   const params = useSearchParams();
   const verifyToken = params.get("verifyToken");
   const [openSignUp, setOpenSignUp] = useState<boolean>(false);
@@ -45,5 +46,13 @@ export default function Home() {
         <AuthModal isOpen={openSignUp} onClose={() => setOpenSignUp(false)} view="sign_up"/>
         <AuthModal isOpen={openLogIn} onClose={() => setOpenLogIn(false)} view="log_in" />
     </main>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={<div className="w-full h-full bg-black"></div>}>
+      <HomeContent />
+    </Suspense>
   );
 }

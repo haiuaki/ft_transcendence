@@ -1,24 +1,4 @@
-import React, { useState } from "react";
-
-import { motion } from "motion/react"
-import colorTheme from "@/src/lib/color";
-import PrivateChatView from "./privateChatView";
-import HomeChatView from "./homeChatView";
-
-interface ChatPanelProps {
-    isOpen: boolean;
-    onClose: any;
-}
-
-export enum UserStatus {
-    ONLINE = 0,
-    OFFLINE = 1,
-}
-
-export enum ChatPanelView {
-    CHAT_HOME = 0,
-    PRIVATE_CHAT = 1,
-}
+import { UserStatus } from "../components/Panel/ChatPanel/ChatPanel";
 
 export const CHAT_EXAMPLE = [
     {
@@ -158,16 +138,3 @@ export const CHAT_EXAMPLE = [
         messageState: "",
     },
 ];
-
-export function ChatPanel({ isOpen, onClose }: ChatPanelProps) {
-    if (!isOpen) return null;
-    const [chatPanelView, setChatPanelView] = useState<ChatPanelView>(ChatPanelView.CHAT_HOME)
-    const [selectedUserId, setSelectedUserId] = useState<number | null>(null)
-    const colors = colorTheme();
-    return (
-        <motion.div initial={{ x: 200 }} animate={{ x: 0 }} transition={{ duration: 0.4 }} className="flex flex-col w-1/4 p-4 transition-colors h-screen" style={{ backgroundColor: colors.bakgroundPanel }}>
-            {chatPanelView == ChatPanelView.CHAT_HOME && <HomeChatView setChatPanelView={setChatPanelView} onClose={onClose} setSelectedUserId={setSelectedUserId} />}
-            {chatPanelView == ChatPanelView.PRIVATE_CHAT && selectedUserId && <PrivateChatView setChatPanelView={setChatPanelView} selectedUserId={selectedUserId} />}
-        </motion.div>
-    )
-}
