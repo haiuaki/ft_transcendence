@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { AuthFormData, InputField } from "./authModal";
+import { AuthFormData, ButtonAuth, InputField } from "./authModal";
 import { Loader2, CheckCircle, Check, Circle } from "lucide-react";
+import userService from "@/src/service/userService";
 
 interface CreatePasswordViewProps {
     onNextStep: any;
@@ -10,61 +11,64 @@ interface CreatePasswordViewProps {
 
 
 const CreatePasswordView = ({ onNextStep, authFormData, setAuthFormData }: CreatePasswordViewProps) => {
-    const [password, setPassword] = useState<string>("");
-    const [confirmedPassword, setConfirmedPassword] = useState<string>("");
 
     const passwordConditions = [
-        { isValid: password.length >= 10, text: "10 characters minimum" },
-        { isValid: /[^a-zA-Z0-9]/.test(password), text: "1 special character" },
-        { isValid: /[0-9]/.test(password), text: "1 number" },
-        { isValid: password == confirmedPassword && password.trim().length > 0, text: "Password match" },
+        { isValid: authFormData.password.length >= 10, text: "10 characters minimum" },
+        { isValid: /[^a-zA-Z0-9]/.test(authFormData.password), text: "1 special character" },
+        { isValid: /[0-9]/.test(authFormData.password), text: "1 number" },
+        { isValid: authFormData.password.trim().length > 0 && authFormData.password.length == authFormData.password.trim().length, text: "No leading or trailing whitespace" },
     ]
 
-    const [loading, setLoading] = useState<boolean>(false);
+    const [isLoading, setIsLoading] = useState<boolean>(false);
 
     return (
-        <div className="flex flex-col gap-6">
-            <div className="flex flex-col gap-2">
-                <p className="text-3xl font-medium text-center">Create your password</p>
-                <p className="text-sm text-center">Create a strong password to keep your account secure.</p>
+        <div className="flex flex-col h-full min-h-0 text-black">
+            <div className="flex-1 flex flex-col gap-6">
+                <div className="flex flex-col gap-2">
+                    <p className="text-3xl font-semibold text-center">Create your password</p>
+                </div>
+                <div className="flex flex-col gap-4">
+                    <InputField
+                        autoFocus
+                        placeholder="Enter a password"
+                        type="password"
+                        onChange={(e: any) => {
+                            setAuthFormData({...authFormData, password: e.target.value})
+                        }}
+                        value={authFormData.password}
+                    />
+                    <div className="flex flex-col gap-1">
+                        <p className="text-sm text-black mb-1">The password must contains : </p>
+                        {passwordConditions.map((condition, idx) => {
+                            return (
+                                <div key={idx} className={`flex items-center gap-2 text-sm py-1 px-2 rounded-sm ${condition.isValid ? "text-[#1b6636] bg-[#e4f7eb] font-bold" : "text-black/60 font-semibold"}`}>
+                                    {condition.isValid && <Check size={12} />}
+                                    {condition.text}
+                                </div>
+                            )
+                        })}
+                    </div>
+                </div>
             </div>
-            <div className="flex flex-col gap-4">
-                <InputField
-                    autoFocus
-                    title="Password"
-                    placeholder="Enter a password"
-                    type="password"
-                    onChange={(e: any) => {
-                        setPassword(e.target.value)
+            <div className="flex flex-col">
+                <ButtonAuth
+                isLoading={isLoading}
+                disabled={isLoading}
+                text="Create account"
+                textAction="Creating account..."
+                onPress={async () => {
+                        try {
+                            setIsLoading(true);
+                            await userService.signup(authFormData.email, authFormData.password, authFormData.username);
+                            console.log("ok")
+                        } catch (e) {
+                            console.log(e + "\n");
+                        } finally {
+                            setIsLoading(false)
+                        }
                     }}
-                    value={password}
-                />
-                <InputField
-                    title="Confirm password"
-                    placeholder="Confirm your password"
-                    type="password"
-                    onChange={(e: any) => setConfirmedPassword(e.target.value)}
-                    value={confirmedPassword}
-                />
+                /> 
             </div>
-            <div className="flex flex-col gap-1">
-                <p className="text-sm text-white/50 mb-1">The password must contains : </p>
-                {passwordConditions.map((condition, idx) => {
-                    return (
-                        <div key={idx} className={`flex items-center gap-2 text-sm py-1 px-2 rounded-sm ${condition.isValid ? "text-green-400" : ""}`}>
-                            {condition.isValid && <Check size={12} />}
-                            <p className="font-semibold">{condition.text}</p>
-                        </div>
-                    )
-                })}
-            </div>
-            <button disabled={loading || confirmedPassword === password} className={`cursor-pointer w-full flex items-center gap-2 justify-center p-3 rounded-full ${loading || authFormData.username.trim().length == 0 ? "bg-[#D0D0D0]" : "bg-[#ededed] hover:bg-[#D5D5D5] active:bg-[#D0D0D0]"} text-black font-medium`}
-                onClick={async () => {
-                }}>
-                {loading ? <Loader2 className="animate-spin" /> : null}
-                <p> {loading ? "Creating account..." : "Create account"}</p>
-            </button>
-
         </div>
     )
 }

@@ -165,7 +165,7 @@ export function ChatPanel({ isOpen, onClose }: ChatPanelProps) {
     const [selectedUserId, setSelectedUserId] = useState<number | null>(null)
     const colors = colorTheme();
     return (
-        <motion.div initial={{ x: 50, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.2 }} className="flex flex-col w-1/4 rounded-lg m-4 p-4 transition-colors " style={{ backgroundColor: colors.bakgroundPanel }}>
+        <motion.div initial={{ x: 200 }} animate={{ x: 0 }} transition={{ duration: 0.4 }} className="flex flex-col w-1/4 p-4 transition-colors h-screen" style={{ backgroundColor: colors.bakgroundPanel }}>
             {chatPanelView == ChatPanelView.CHAT_HOME && <HomeChatView setChatPanelView={setChatPanelView} onClose={onClose} setSelectedUserId={setSelectedUserId} />}
             {chatPanelView == ChatPanelView.PRIVATE_CHAT && selectedUserId && <PrivateChatView setChatPanelView={setChatPanelView} selectedUserId={selectedUserId} />}
         </motion.div>

@@ -1,11 +1,37 @@
+const URL = "/api"
+
 const userService = {
-    checkExistingUser: async (email:string, setLoading: any) => {
-        setLoading(true);
-        setLoading(false)
+    login: async (email: string, password: string) => {
+        const response = await fetch(URL + "/login", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            credentials: "include",
+            body: JSON.stringify({
+                email,
+                password,
+            })
+        })
+        if (!response.ok)
+            throw new Error("Failed to login user")
+        return response.json;
     },
-    createUser: async (email:string, password:string, username: string, setLoading: any) => {
-        setLoading(true);
-        setLoading(false)
+    signup: async (email: string, password: string, username: string) => {
+        const response = await fetch(URL + "/signup", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                email,
+                username,
+                password,
+            })
+        })
+        if (!response.ok)
+            throw new Error("Failed to create user")
+        return response.json;
     }
 }
 

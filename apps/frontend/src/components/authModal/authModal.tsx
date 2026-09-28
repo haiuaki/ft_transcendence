@@ -1,16 +1,19 @@
 import { AnimatePresence } from "motion/react";
 import CenterModalTemplate from "../templateModal/centerModalTemplate";
-import { useEffect, useState } from "react";
-import HomeAuthView from "./homeAuthView";
-import { Eye, EyeClosed, X } from "lucide-react"
+import { useEffect, useRef, useState } from "react";
+import SignUpView from "./signUpView";
+import { ArrowLeft, ArrowRight, Eye, EyeClosed, Loader2, LogIn, X } from "lucide-react"
 import ForgotPasswordView from "./forgotPasswordView";
-import CreateUsernameView from "./CreateUsernameView";
-import CreatePasswordView from "./CreatePasswordView";
+import CreateUsernameView from "./createUsernameView";
+import CreatePasswordView from "./createPasswordView";
+import { motion } from "motion/react"
+import VerifyCode from "./verifyCodeView";
+import LogInView from "./logInView";
 
 interface AuthModalProps {
     onClose: any;
     isOpen: any;
-    view?: "signup" | "login";
+    view: "sign_up" | "log_in";
 }
 
 export interface AuthFormData {
@@ -20,11 +23,10 @@ export interface AuthFormData {
     code: string,
 }
 
-type StepAuthView = "home_auth" | "forgot_password" | "create_password" | "create_username";
+type StepAuthView = "sign_up" | "log_in" | "forgot_password" | "create_password" | "create_username" | "verify_code";
 
 
 interface InputFieldProps {
-    title: string,
     placeholder: string,
     type?: string,
     onChange: any,
@@ -33,44 +35,97 @@ interface InputFieldProps {
     autoFocus?: boolean,
 }
 
+interface ButtonAuthProps {
+    disabled: boolean,
+    isLoading: boolean,
+    text: string,
+    textAction: string,
+    onPress: any,
+}
 
-export const InputField = ({ title, placeholder, type = "text", onChange, value, maxLength = undefined , autoFocus = false}: InputFieldProps) => {
+
+export const InputField = ({ placeholder, type = "text", onChange, value, maxLength = undefined, autoFocus = false }: InputFieldProps) => {
     const [showPassword, setShowPassword] = useState<boolean>(false);
+    const [isFocused, setIsFocused] = useState<boolean>(false);
+    const refInput = useRef<HTMLInputElement | null>(null);
     return (
-        <div className="w-full flex flex-col items-start gap-2">
-            <p className="text-sm font-semibold">{title}</p>
-            <div className="flex items-center justify-between w-full border rounded-full border-[0.5px] border-[#565655] focus-within:ring-[1px] transition-all duration-200">
-                <input autoFocus={autoFocus} value={value} placeholder={placeholder} type={type == "password" && showPassword ? "text" : type} maxLength={maxLength} className="w-full outline-none p-3 autofill:bg-transparent" onChange={onChange} />
-                {type == "password" && <div onClick={() => setShowPassword(!showPassword)} className="mr-3">
-                    {showPassword ? <Eye size={16} /> : <EyeClosed size={16} />}
-                </div>}
-            </div>
+        <div onClick={() => refInput.current?.focus()} className="relative flex items-center w-full rounded-xl ring-1 ring-black/30 focus-within:ring-black/70 transition-all duration-200 text-black">
+            <motion.p
+                initial={false}
+                animate={{ y: isFocused || value.length > 0 ? -12 : 0, scale: isFocused || value.length > 0 ? 0.80 : 1 }}
+                transition={{ duration: 0.15, bounce: 0 }}
+                className="pointer-events-none absolute left-0 origin-left ml-4 text-base font-medium text-black/60">
+                {placeholder}
+            </motion.p>
+            <input
+                ref={refInput}
+                onFocus={() => setIsFocused(true)}
+                onBlur={() => setIsFocused(false)}
+                autoFocus={autoFocus} value={value}
+                type={type == "password" && showPassword ? "text" : type}
+                maxLength={maxLength}
+                className="w-full outline-none px-4 pt-7 pb-2 autofill:bg-transparent"
+                onChange={onChange} />
+            {type == "password" && <div onClick={() => setShowPassword(!showPassword)} className="mr-4">
+                {showPassword ? <Eye className="cursor-pointer" size={16} /> : <EyeClosed className="cursor-pointer" size={16} />}
+            </div>}
         </div>
     )
 }
 
-export const AuthModal = ({ onClose, isOpen }: AuthModalProps) => {
-    const [currentAuthView, setCurrentAuthView] = useState<StepAuthView>("home_auth")
+export const ButtonAuth = ({ disabled, isLoading, onPress, text, textAction }: ButtonAuthProps) => {
+    return (
+        <button
+            disabled={disabled}
+            className={`select-none cursor-pointer w-full flex items-center gap-2 justify-center p-3 rounded-xl ${disabled ? "bg-black/90" : "bg-black hover:bg-black/85 active:bg-black/90 active:scale-99"} text-white font-medium`}
+            onClick={onPress}
+        >
+            {isLoading ? <Loader2 className="animate-spin" /> : null}
+            <p className="font-semibold"> {isLoading ? textAction : text}</p>
+        </button>
+    )
+}
+
+export const AuthModal = ({ onClose, isOpen, view }: AuthModalProps) => {
+    const [currentAuthView, setCurrentAuthView] = useState<StepAuthView>(view)
+    const [authViewHistory, setAuthViewHistory] = useState<StepAuthView[]>([])
     const [authFormData, setAuthFormData] = useState<AuthFormData>({ email: "", username: "", password: "", code: "", })
 
+    const goBack = () => {
+        const previousView = authViewHistory.at(-1);
+        if (!previousView) return;
+        setCurrentAuthView(previousView);
+        setAuthViewHistory((history) => history.slice(0, -1));
+    }
+
+    const goToView = (nextView: StepAuthView) => {
+        setAuthViewHistory((history) => [...history, currentAuthView])
+        setCurrentAuthView(nextView)
+    }
+
     useEffect(() => {
-        setCurrentAuthView("home_auth");
+        setCurrentAuthView(view);
+        setAuthViewHistory([]);
         setAuthFormData({ email: "", username: "", password: "", code: "", })
     }, [isOpen])
     return (
         <AnimatePresence>
-            {isOpen && <CenterModalTemplate onClose={onClose} className={"w-full max-w-[550px] pt-4 pb-7 rounded-xl"} style={{ backgroundColor: "#222220" }} overlay="bg-black/75 backdrop-blur-sm">
-                <div className="flex items-center justify-end px-4">
-                    <div className="cursor-pointer flex items-center justify-center p-1.5 hover:bg-white/10 transition-colors duration-200 rounded-full" onClick={onClose}>
+            {isOpen && <CenterModalTemplate onClose={onClose} className={"flex w-full h-full max-w-[550px] max-h-[480px] flex-col pt-4 rounded-4xl bg-white"} overlay="bg-black/75 backdrop-blur-sm">
+                <div className="flex items-center justify-between px-4">
+                    {authViewHistory.length > 0 ? <div className="cursor-pointer flex items-center justify-center p-1.5 hover:bg-black/5 active:bg-black/10 transition-colors duration-200 rounded-full text-black" onClick={goBack}>
+                        <ArrowLeft size={20} />
+                    </div> : <div />}
+                    <div className="cursor-pointer flex items-center justify-center p-1.5 hover:bg-black/5 active:bg-black/10 transition-colors duration-200 rounded-full text-black" onClick={onClose}>
                         <X size={20} />
                     </div>
                 </div>
-                <div className="flex flex-col items-center justify-center">
-                    <div className="w-full max-w-[450px]">
-                        {currentAuthView == "home_auth" && <HomeAuthView onNextStep={(step: StepAuthView) => setCurrentAuthView(step)} authFormData={authFormData} setAuthFormData={setAuthFormData} />}
-                        {currentAuthView == "create_password" && <CreatePasswordView onNextStep={(step: StepAuthView) => setCurrentAuthView(step)} authFormData={authFormData} setAuthFormData={setAuthFormData} />}
-                        {currentAuthView == "forgot_password" && <ForgotPasswordView onNextStep={(step: StepAuthView) => setCurrentAuthView(step)} authFormData={authFormData} setAuthFormData={setAuthFormData} />}
-                        {currentAuthView == "create_username" && <CreateUsernameView onNextStep={(step: StepAuthView) => setCurrentAuthView(step)} authFormData={authFormData} setAuthFormData={setAuthFormData} />}
+                <div className="flex min-h-0 flex-1 flex-col items-center justify-center pb-6">
+                    <div className="h-full w-full max-w-[450px]">
+                        {currentAuthView == "sign_up" && <SignUpView onNextStep={goToView} authFormData={authFormData} setAuthFormData={setAuthFormData} />}
+                        {currentAuthView == "log_in" && <LogInView onNextStep={goToView} authFormData={authFormData} setAuthFormData={setAuthFormData} />}
+                        {currentAuthView == "create_password" && <CreatePasswordView onNextStep={goToView} authFormData={authFormData} setAuthFormData={setAuthFormData} />}
+                        {currentAuthView == "forgot_password" && <ForgotPasswordView onNextStep={goToView} authFormData={authFormData} setAuthFormData={setAuthFormData} />}
+                        {currentAuthView == "create_username" && <CreateUsernameView onNextStep={goToView} authFormData={authFormData} setAuthFormData={setAuthFormData} />}
                     </div>
                 </div>
             </CenterModalTemplate>
