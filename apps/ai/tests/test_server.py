@@ -1,6 +1,6 @@
 import pytest
 from fastapi.testclient import TestClient
-from apps.backend.ai.server import app
+from apps.ai.server import app
 
 client = TestClient(app)
 
