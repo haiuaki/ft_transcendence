@@ -31,7 +31,18 @@ const userService = {
         })
         if (!response.ok)
             throw new Error("Failed to create user")
-        return response.json;
+        return response.text;
+    },
+    verify: async (token: string) => {
+        const response = await fetch(URL + "/verify?token=" + encodeURIComponent(token), {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+        })
+        if (!response.ok)
+            throw new Error("Failed to verify user")
+        return response.text;
     }
 }
 

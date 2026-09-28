@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { AuthFormData, ButtonAuth, InputField } from "./authModal";
-import { Loader2, CheckCircle, Check, Circle } from "lucide-react";
+import { Loader2, CheckCircle, Check, Circle, Info } from "lucide-react";
 import userService from "@/src/service/userService";
 
 interface CreatePasswordViewProps {
@@ -20,6 +20,7 @@ const CreatePasswordView = ({ onNextStep, authFormData, setAuthFormData }: Creat
     ]
 
     const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [error, setError] = useState<boolean>(false);
 
     return (
         <div className="flex flex-col h-full min-h-0 text-black">
@@ -50,6 +51,9 @@ const CreatePasswordView = ({ onNextStep, authFormData, setAuthFormData }: Creat
                     </div>
                 </div>
             </div>
+            {error && <div className="flex items-center gap-2 font-bold text-red-500 text-sm">
+                <Info size={14}/> 
+                <p>Impossible to create user</p></div>}
             <div className="flex flex-col">
                 <ButtonAuth
                 isLoading={isLoading}
@@ -60,8 +64,9 @@ const CreatePasswordView = ({ onNextStep, authFormData, setAuthFormData }: Creat
                         try {
                             setIsLoading(true);
                             await userService.signup(authFormData.email, authFormData.password, authFormData.username);
-                            console.log("ok")
+                            onNextStep("confirm_account");     
                         } catch (e) {
+                            setError(true)
                             console.log(e + "\n");
                         } finally {
                             setIsLoading(false)
