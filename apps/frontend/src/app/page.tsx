@@ -2,14 +2,32 @@
 import { FaMessage } from "react-icons/fa6";
 import ThreeScene from "../components/3D/ThreeScene";
 import { FaUser } from "react-icons/fa";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ChatPanel } from "../components/panel/chatPanel/chatPanel";
 import { AuthModal } from "../components/authModal/authModal";
+import { useSearchParams } from "next/navigation";
+import userService from "../service/userService";
+import { toast, Toaster } from "sonner";
 
 export default function Home() {
+  const params = useSearchParams();
+  const verifyToken = params.get("verifyToken");
   const [openSignUp, setOpenSignUp] = useState<boolean>(false);
   const [openLogIn, setOpenLogIn] = useState<boolean>(false);
 
+  useEffect(() => {
+    if (!verifyToken) return;
+    const verifyAccount = async () => {
+      try {
+        await userService.verify(verifyToken);
+        toast.success("Verified account")
+        setOpenLogIn(true);
+      } catch (e) {
+        console.log(e);
+      }
+    }
+    verifyAccount();
+  }, [verifyToken])
   return (
     <main className="flex w-full h-full overflow-hidden">
         <div className="flex items-center fixed top-0 right-0 p-5 z-50 gap-2">
@@ -23,6 +41,7 @@ export default function Home() {
           <div className={"scene-page bg-black"}>
             <ThreeScene />
           </div>
+          <Toaster position="bottom-right" richColors closeButton />
         <AuthModal isOpen={openSignUp} onClose={() => setOpenSignUp(false)} view="sign_up"/>
         <AuthModal isOpen={openLogIn} onClose={() => setOpenLogIn(false)} view="log_in" />
     </main>

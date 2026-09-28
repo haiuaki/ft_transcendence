@@ -6,6 +6,7 @@ import {
     animals,
 } from "unique-names-generator";
 import { Loader2 } from "lucide-react";
+import { error } from "console";
 
 interface CreateUsernameViewProps {
     onNextStep: any;
@@ -31,7 +32,7 @@ const CreateUsernameView = ({ onNextStep, authFormData, setAuthFormData }: Creat
 
                     <InputField
                         placeholder="Enter an username"
-                        type="email"
+                        type="text"
                         onChange={(e: any) => {
                             setAuthFormData({ ...authFormData, username: (e.target.value) })
                         }}
@@ -40,7 +41,6 @@ const CreateUsernameView = ({ onNextStep, authFormData, setAuthFormData }: Creat
                 </div>
             </div>
             <div className="flex flex-col gap-2">
-
                 <ButtonAuth
                     disabled={isLoading || authFormData.username.trim().length == 0}
                     isLoading={isLoading}

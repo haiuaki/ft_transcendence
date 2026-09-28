@@ -4,11 +4,12 @@ import { useEffect, useRef, useState } from "react";
 import SignUpView from "./signUpView";
 import { ArrowLeft, ArrowRight, Eye, EyeClosed, Loader2, LogIn, X } from "lucide-react"
 import ForgotPasswordView from "./forgotPasswordView";
-import CreateUsernameView from "./createUsernameView";
-import CreatePasswordView from "./createPasswordView";
+import CreateUsernameView from "./CreateUsernameView";
+import CreatePasswordView from "./CreatePasswordView";
 import { motion } from "motion/react"
 import VerifyCode from "./verifyCodeView";
 import LogInView from "./logInView";
+import ConfirmAccountView from "./confirmAccountView";
 
 interface AuthModalProps {
     onClose: any;
@@ -23,7 +24,7 @@ export interface AuthFormData {
     code: string,
 }
 
-type StepAuthView = "sign_up" | "log_in" | "forgot_password" | "create_password" | "create_username" | "verify_code";
+type StepAuthView = "sign_up" | "log_in" | "forgot_password" | "create_password" | "create_username" | "verify_code" | "confirm_account";
 
 
 interface InputFieldProps {
@@ -112,7 +113,7 @@ export const AuthModal = ({ onClose, isOpen, view }: AuthModalProps) => {
         <AnimatePresence>
             {isOpen && <CenterModalTemplate onClose={onClose} className={"flex w-full h-full max-w-[550px] max-h-[480px] flex-col pt-4 rounded-4xl bg-white"} overlay="bg-black/75 backdrop-blur-sm">
                 <div className="flex items-center justify-between px-4">
-                    {authViewHistory.length > 0 ? <div className="cursor-pointer flex items-center justify-center p-1.5 hover:bg-black/5 active:bg-black/10 transition-colors duration-200 rounded-full text-black" onClick={goBack}>
+                    {authViewHistory.length > 0 && currentAuthView != "confirm_account" ? <div className="cursor-pointer flex items-center justify-center p-1.5 hover:bg-black/5 active:bg-black/10 transition-colors duration-200 rounded-full text-black" onClick={goBack}>
                         <ArrowLeft size={20} />
                     </div> : <div />}
                     <div className="cursor-pointer flex items-center justify-center p-1.5 hover:bg-black/5 active:bg-black/10 transition-colors duration-200 rounded-full text-black" onClick={onClose}>
@@ -126,6 +127,7 @@ export const AuthModal = ({ onClose, isOpen, view }: AuthModalProps) => {
                         {currentAuthView == "create_password" && <CreatePasswordView onNextStep={goToView} authFormData={authFormData} setAuthFormData={setAuthFormData} />}
                         {currentAuthView == "forgot_password" && <ForgotPasswordView onNextStep={goToView} authFormData={authFormData} setAuthFormData={setAuthFormData} />}
                         {currentAuthView == "create_username" && <CreateUsernameView onNextStep={goToView} authFormData={authFormData} setAuthFormData={setAuthFormData} />}
+                        {currentAuthView == "confirm_account" && <ConfirmAccountView onNextStep={goToView} authFormData={authFormData} setAuthFormData={setAuthFormData} />}
                     </div>
                 </div>
             </CenterModalTemplate>
