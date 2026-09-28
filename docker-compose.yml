@@ -30,8 +30,8 @@ services:
 
   ai-service:
     build:
-      context: .
-      dockerfile: apps/backend/ai/Dockerfile
+      context: ./apps/ai
+      dockerfile: apps/ai/Dockerfile
     container_name: ai_backend
     ports:
       - "8000:8000"
