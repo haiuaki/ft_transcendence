@@ -20,6 +20,7 @@ Our project fulfills the requirements by implementing the following Major and Mi
 
 ## Features List
 * **Authentication:** Secure JWT-based login and signup system with Resend-powered Email Verification and strict Login Lock.
+* **Real-Time Spatial Chat:** Gorilla WebSocket architecture with Ping/Pong heartbeats, Ghost-Avatar auto-cleanup, and spatial anti-cheat DB validation.
 * **User Management:** Full CRUD operations for user profiles and avatars.
 * **Social Network:** Bidirectional friend request system (Add, Accept, Deny, Remove).
 * **AI Assistant:** Integration of a real-time conversational agent using Google Gemini.
@@ -27,7 +28,7 @@ Our project fulfills the requirements by implementing the following Major and Mi
 ## Instructions
 
 ## Technical Stack
-* **Backend:** Go (1.27.1), net/http standard library
+* **Backend:** Go (1.27.1), net/http standard library, Gorilla WebSockets
 * **Backend (AI Service):** Python 3.12, FastAPI, Google GenAI SDK
 * **Database:** PostgreSQL 18, pgx/v5 driver
 * **Third-Party APIs:** Resend Go SDK, Google Gemini API
