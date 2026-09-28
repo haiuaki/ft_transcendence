@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/joho/godotenv"
 
@@ -37,6 +38,9 @@ func main() {
 	// --- AUTHENTICATION -------------------------------------------------- //
 	// POST: Create an account
 	http.HandleFunc("/signup", auth.Signup(dbPool))
+
+	// POST: Verify account
+	http.HandleFunc("/verify", auth.Verify(dbPool))
 
 	// POST: Log in to account
 	http.HandleFunc("/login", auth.Login(dbPool))
@@ -87,6 +91,11 @@ func main() {
 	// DELETE: Delete a 3D room (Owner only)
 	http.HandleFunc("/rooms/delete", auth.RequireAuth(chat.DeleteRoom(dbPool)))
 
-	fmt.Println("Server starting on http://localhost:8080..")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
+	fmt.Printf("Server starting on http://localhost:%s..\n", port)
+	log.Fatal(http.ListenAndServe(":"+port, nil))
 }
