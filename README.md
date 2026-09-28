@@ -15,19 +15,25 @@ Our project fulfills the requirements by implementing the following Major and Mi
 ### User Management
 * **[Major]** Standard user management and authentication
 
+### AI
+* **[Major]** LLM System Interface (Integration of an AI Chatbot via Gemini API)
+
 ## Features List
 * **Authentication:** Secure JWT-based login and signup system with Resend-powered Email Verification and strict Login Lock.
 * **Real-Time Spatial Chat:** Gorilla WebSocket architecture with Ping/Pong heartbeats, Ghost-Avatar auto-cleanup, and spatial anti-cheat DB validation.
 * **User Management:** Full CRUD operations for user profiles and avatars.
 * **Social Network:** Bidirectional friend request system (Add, Accept, Deny, Remove).
+* **AI Assistant:** Integration of a real-time conversational agent using Google Gemini.
 
 ## Instructions
 
 ## Technical Stack
 * **Backend:** Go (1.27.1), net/http standard library, Gorilla WebSockets
+* **Backend (AI Service):** Python 3.12, FastAPI, Google GenAI SDK
 * **Database:** PostgreSQL 18, pgx/v5 driver
-* **Third-Party APIs:** Resend Go SDK
+* **Third-Party APIs:** Resend Go SDK, Google Gemini API
 * **Infrastructure:** Docker & Docker Compose
+* **Testing:** Pytest & HTTPX (Unit testing for AI service)
 * **CI/CD:** GitHub Actions (Automated Go formatting and builds)
 
 ## Database Schema
@@ -38,7 +44,7 @@ Our database utilizes a Domain-Driven Design approach with strict constraints to
 
 ## Team Information
 * **juljin** - Backend Architecture
-* **ksilvest** - 
+* **ksilvest** - AI Service Architecture & Infrastructure
 * **nlienard** - 
 * **dinza-cr** -
 
@@ -48,3 +54,4 @@ Our database utilizes a Domain-Driven Design approach with strict constraints to
 
 ## Resources
 * [Official Go Documentation](https://go.dev/learn/)
+* [Google Gemini API Key Documentation](https://ai.google.dev/gemini-api/docs/api-key)
