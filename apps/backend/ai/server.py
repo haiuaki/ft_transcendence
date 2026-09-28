@@ -3,13 +3,12 @@ from typing import AsyncGenerator
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.middleware.cors import CORSMiddleware
 from google import genai
 from pydantic import BaseModel
 from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
-from fastapi import FastAPI, Request
-from fastapi.middleware.cors import CORSMiddleware
 
 load_dotenv()
 
@@ -55,11 +54,11 @@ async def stream_generator(prompt: str) -> AsyncGenerator[str, None]:
     except Exception as e:
         yield f"data: [ERROR: {str(e)}]\n\n"
 
-@app.get("/health")
+@app.get("/api/health")
 async def health_check():
     return {"status": "ok"}
 
-@app.post("/stream")
+@app.post("/api/stream")
 @limiter.limit("3/minute")
 async def stream_ai(request: Request, body: PromptRequest):
     if not body.prompt.strip():
