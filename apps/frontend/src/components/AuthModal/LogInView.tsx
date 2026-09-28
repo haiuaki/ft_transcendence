@@ -1,12 +1,12 @@
-import userService from "@/src/service/userService";
+import userService from "@/src/services/userService";
 import Link from "next/link";
 import { useState } from "react";
 import { FaGithub } from "react-icons/fa6";
 import { FcGoogle } from "react-icons/fc";
 import { TbLoader2 } from "react-icons/tb";
 import z from "zod";
-import { AuthFormData, ButtonAuth, InputField } from "./authModal";
-import colorTheme from "@/src/lib/color";
+import { AuthFormData, ButtonAuth, InputField } from "./AuthModal";
+import { themeColors } from "@/src/lib/themeColors";
 import Image from "next/image";
 
 interface LogInViewProps {
@@ -19,7 +19,7 @@ interface LogInViewProps {
 const LogInView = ({ onNextStep, authFormData, setAuthFormData }: LogInViewProps) => {
     const [error, setError] = useState<boolean>(false);
     const [isLoading, setIsLoading] = useState<boolean>(false);
-    const colors = colorTheme();
+    const colors = themeColors;
     return (
         <div className="flex flex-col gap-6">
             <p className="text-3xl font-semibold text-center" style={{ color: colors.text }}>Good to see you again!</p>

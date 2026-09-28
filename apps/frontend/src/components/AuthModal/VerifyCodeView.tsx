@@ -1,12 +1,12 @@
-import userService from "@/src/service/userService";
+import userService from "@/src/services/userService";
 import Link from "next/link";
 import { useState } from "react";
 import { FaGithub } from "react-icons/fa6";
 import { FcGoogle } from "react-icons/fc";
 import { TbLoader2 } from "react-icons/tb";
 import z from "zod";
-import { AuthFormData, ButtonAuth, InputField } from "./authModal";
-import colorTheme from "@/src/lib/color";
+import { AuthFormData, ButtonAuth, InputField } from "./AuthModal";
+import { themeColors } from "@/src/lib/themeColors";
 import Image from "next/image";
 
 interface VerifyCodeProps {
@@ -19,7 +19,7 @@ interface VerifyCodeProps {
 const VerifyCode = ({ onNextStep, authFormData, setAuthFormData }: VerifyCodeProps) => {
     const [error, setError] = useState<boolean>(false);
     const [isLoading, setIsLoading] = useState<boolean>(false);
-    const colors = colorTheme();
+    const colors = themeColors;
     return (
         <div className="flex h-full min-h-0 flex-col gap-6">
             <div className="flex-1 flex flex-col gap-6 ">

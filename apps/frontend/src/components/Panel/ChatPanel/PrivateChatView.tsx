@@ -1,9 +1,10 @@
-import colorTheme from "@/src/lib/color";
+import { themeColors } from "@/src/lib/themeColors";
 import { IoMdArrowBack } from "react-icons/io";
-import { CHAT_EXAMPLE, ChatPanelView, UserStatus } from "./chatPanel";
+import { ChatPanelView, UserStatus } from "./ChatPanel";
+import { CHAT_EXAMPLE } from "@/src/constants/mockData";
 
 export default function PrivateChatView({ setChatPanelView, selectedUserId }: { setChatPanelView: React.Dispatch<React.SetStateAction<ChatPanelView>>, selectedUserId: number }) {
-    const colors = colorTheme();
+    const colors = themeColors;
     const user = CHAT_EXAMPLE.find((u) => u.id == selectedUserId)
     if (!user)
         return null;

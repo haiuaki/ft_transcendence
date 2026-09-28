@@ -1,15 +1,15 @@
 import { AnimatePresence } from "motion/react";
-import CenterModalTemplate from "../templateModal/centerModalTemplate";
+import CenterModalTemplate from "../TemplateModal/CenterModalTemplate";
 import { useEffect, useRef, useState } from "react";
-import SignUpView from "./signUpView";
+import SignUpView from "./SignUpView";
 import { ArrowLeft, ArrowRight, Eye, EyeClosed, Loader2, LogIn, X } from "lucide-react"
-import ForgotPasswordView from "./forgotPasswordView";
+import ForgotPasswordView from "./ForgotPasswordView";
 import CreateUsernameView from "./CreateUsernameView";
 import CreatePasswordView from "./CreatePasswordView";
 import { motion } from "motion/react"
-import VerifyCode from "./verifyCodeView";
-import LogInView from "./logInView";
-import ConfirmAccountView from "./confirmAccountView";
+import VerifyCode from "./VerifyCodeView";
+import LogInView from "./LogInView";
+import ConfirmAccountView from "./ConfirmAccountView";
 
 interface AuthModalProps {
     onClose: any;
@@ -105,10 +105,12 @@ export const AuthModal = ({ onClose, isOpen, view }: AuthModalProps) => {
     }
 
     useEffect(() => {
-        setCurrentAuthView(view);
-        setAuthViewHistory([]);
-        setAuthFormData({ email: "", username: "", password: "", code: "", })
-    }, [isOpen])
+        if (isOpen) {
+            setCurrentAuthView(view);
+            setAuthViewHistory([]);
+            setAuthFormData({ email: "", username: "", password: "", code: "", });
+        }
+    }, [isOpen, view]);
     return (
         <AnimatePresence>
             {isOpen && <CenterModalTemplate onClose={onClose} className={"flex w-full h-full max-w-[550px] max-h-[480px] flex-col pt-4 rounded-4xl bg-white"} overlay="bg-black/75 backdrop-blur-sm">
