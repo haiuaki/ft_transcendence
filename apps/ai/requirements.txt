@@ -10,3 +10,6 @@ google-genai
 
 # Rate limiting
 slowapi==0.1.9
+
+# A fast PostgreSQL Database Client Library for Python
+asyncpg
