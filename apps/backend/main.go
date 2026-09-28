@@ -76,6 +76,13 @@ func main() {
 	// DELETE: Reject a pending request
 	http.HandleFunc("/friends/requests/deny", auth.RequireAuth(friends.DenyFriend(dbPool)))
 
+	// --- DIRECT MESSAGES ------------------------------------------------- //
+	// POST: Start or open a Private Message
+	http.HandleFunc("/dms/start", auth.RequireAuth(chat.StartDM(dbPool)))
+
+	// GET: Fetch chat history for a DM
+	http.HandleFunc("/dms/messages", auth.RequireAuth(chat.GetRoomMessages(dbPool)))
+
 	// --- ROOMS ----------------------------------------------------------- //
 	// GET: List all available 3D rooms
 	http.HandleFunc("/rooms", auth.RequireAuth(chat.GetRooms(dbPool)))

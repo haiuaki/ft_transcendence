@@ -35,9 +35,21 @@ type DeleteRoomRequest struct {
 	ChannelID int `json:"channel_id"`
 }
 
+// What we send back when the frontend fetches chat history
 type MessageResponse struct {
 	ID        int       `json:"id"`
 	Username  string    `json:"username"`
 	Content   string    `json:"content"`
 	CreatedAt time.Time `json:"created_at"`
+}
+
+// What the frontend sends to start a DM
+type StartDMRequest struct {
+	TargetUsername string `json:"target_username"`
+}
+
+// What we send back to the frontend when a DM is started
+type DMResponse struct {
+	ChannelID int    `json:"channel_id"`
+	Message   string `json:"message"`
 }
