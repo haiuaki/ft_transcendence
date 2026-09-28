@@ -16,7 +16,7 @@ Our project fulfills the requirements by implementing the following Major and Mi
 * **[Major]** Standard user management and authentication
 
 ## Features List
-* **Authentication:** Secure JWT-based login and signup system.
+* **Authentication:** Secure JWT-based login and signup system with Resend-powered Email Verification and strict Login Lock.
 * **User Management:** Full CRUD operations for user profiles and avatars.
 * **Social Network:** Bidirectional friend request system (Add, Accept, Deny, Remove).
 
@@ -25,6 +25,7 @@ Our project fulfills the requirements by implementing the following Major and Mi
 ## Technical Stack
 * **Backend:** Go (1.27.1), net/http standard library
 * **Database:** PostgreSQL 18, pgx/v5 driver
+* **Third-Party APIs:** Resend Go SDK
 * **Infrastructure:** Docker & Docker Compose
 * **CI/CD:** GitHub Actions (Automated Go formatting and builds)
 

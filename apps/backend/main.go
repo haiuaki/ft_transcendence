@@ -4,11 +4,13 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/joho/godotenv"
 
 	"github.com/haiuaki/ft_transcendence/src/database"
 	"github.com/haiuaki/ft_transcendence/src/services/auth"
+	"github.com/haiuaki/ft_transcendence/src/services/chat"
 	"github.com/haiuaki/ft_transcendence/src/services/friends"
 	"github.com/haiuaki/ft_transcendence/src/services/users"
 )
@@ -24,6 +26,10 @@ func main() {
 	dbPool := database.Connect()
 	defer dbPool.Close()
 
+	// --- BACKGROUND WORKERS ---------------------------------------------- //
+	// Deletes empty rooms older than 24 hours with 0 Active Members
+	chat.StartRoomGarbageCollector(dbPool)
+
 	// --- HOME PAGE ------------------------------------------------------- //
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "Auth Sandbox is running.")
@@ -32,6 +38,9 @@ func main() {
 	// --- AUTHENTICATION -------------------------------------------------- //
 	// POST: Create an account
 	http.HandleFunc("/signup", auth.Signup(dbPool))
+
+	// POST: Verify account
+	http.HandleFunc("/verify", auth.Verify(dbPool))
 
 	// POST: Log in to account
 	http.HandleFunc("/login", auth.Login(dbPool))
@@ -66,6 +75,27 @@ func main() {
 	// DELETE: Reject a pending request
 	http.HandleFunc("/friends/requests/deny", auth.RequireAuth(friends.DenyFriend(dbPool)))
 
-	fmt.Println("Server starting on http://localhost:8080..")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	// --- ROOMS ----------------------------------------------------------- //
+	// GET: List all available 3D rooms
+	http.HandleFunc("/rooms", auth.RequireAuth(chat.GetRooms(dbPool)))
+
+	// POST: Create a new 3D Room
+	http.HandleFunc("/rooms/create", auth.RequireAuth(chat.CreateRoom(dbPool)))
+
+	// POST: Join a room
+	http.HandleFunc("/rooms/join", auth.RequireAuth(chat.JoinRoom(dbPool)))
+
+	// POST: Leave a room
+	http.HandleFunc("/rooms/leave", auth.RequireAuth(chat.LeaveRoom(dbPool)))
+
+	// DELETE: Delete a 3D room (Owner only)
+	http.HandleFunc("/rooms/delete", auth.RequireAuth(chat.DeleteRoom(dbPool)))
+
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
+	fmt.Printf("Server starting on http://localhost:%s..\n", port)
+	log.Fatal(http.ListenAndServe(":"+port, nil))
 }

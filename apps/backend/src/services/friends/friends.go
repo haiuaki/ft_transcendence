@@ -66,6 +66,11 @@ func AddFriend(dbPool *pgxpool.Pool) http.HandlerFunc {
 			return
 		}
 
+		if req.FriendUsername == "" {
+			http.Error(w, "Friend username is required.", http.StatusBadRequest)
+			return
+		}
+
 		insertSQL := `
 			INSERT INTO friendships (user_id, friend_id)
 			VALUES (
@@ -102,6 +107,11 @@ func RemoveFriend(dbPool *pgxpool.Pool) http.HandlerFunc {
 		var req FriendRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			http.Error(w, "Invalid JSON.", http.StatusBadRequest)
+			return
+		}
+
+		if req.FriendUsername == "" {
+			http.Error(w, "Friend username is required.", http.StatusBadRequest)
 			return
 		}
 
