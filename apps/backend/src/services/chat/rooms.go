@@ -63,7 +63,8 @@ func CreateRoom(dbPool *pgxpool.Pool) http.HandlerFunc {
 			UPDATE channel_members 
 			SET status = 'LEFT' 
 			WHERE user_id = (SELECT id FROM users WHERE email = $1) 
-			  AND status = 'ACTIVE'
+			AND status = 'ACTIVE'
+			AND channel_id IN (SELECT id FROM channels WHERE type != 'DIRECT')
 		`
 		dbPool.Exec(context.Background(), standUpSQL, email)
 
@@ -132,7 +133,8 @@ func JoinRoom(dbPool *pgxpool.Pool) http.HandlerFunc {
 			UPDATE channel_members 
 			SET status = 'LEFT' 
 			WHERE user_id = (SELECT id FROM users WHERE email = $1) 
-			  AND status = 'ACTIVE'
+			AND status = 'ACTIVE'
+			AND channel_id IN (SELECT id FROM channels WHERE type != 'DIRECT')
 		`
 		dbPool.Exec(context.Background(), standUpSQL, email)
 
