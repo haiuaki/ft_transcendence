@@ -9,7 +9,7 @@ export default function HomeChatView({ setChatPanelView, onClose, setSelectedUse
     return (
         <div className="flex flex-col gap-4 overflow-hidden">
             <div className="flex items-center justify-between gap-2">
-                <h1 className="text-xl font-playfair-display" style={{ color: colors.textColor }}>Messagerie</h1>
+                <h1 className="text-xl" style={{ color: colors.text }}>Messagerie</h1>
                 <div className="cursor-pointer hover:bg-white/10 duration-200 p-1 rounded-md active:scale-95" onClick={onClose}>
                     <IoCloseOutline size={20} color="white" />
                 </div>
@@ -41,7 +41,7 @@ export default function HomeChatView({ setChatPanelView, onClose, setSelectedUse
                             </div>
                             <div className="flex-1 min-w-0 select-none">
                                 <p className="text-md truncate font-semibold">{item.name}</p>
-                                <p className="text-sm truncate " style={{ color: colors.textColorSecondary }}>{item.lastMessage}</p>
+                                <p className="text-sm truncate " style={{ color: colors.textSecondary }}>{item.lastMessage}</p>
                             </div>
                         </div>
                     </div>

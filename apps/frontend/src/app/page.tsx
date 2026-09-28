@@ -4,37 +4,27 @@ import ThreeScene from "../components/3D/ThreeScene";
 import { FaUser } from "react-icons/fa";
 import { useState } from "react";
 import { ChatPanel } from "../components/panel/chatPanel/chatPanel";
-import Link from "next/link";
 import { AuthModal } from "../components/authModal/authModal";
 
 export default function Home() {
-  const [openChatPanel, setOpenChatPanel] = useState<boolean>(false);
-  const [openSignUpPanel, setOpenSignUpPanel] = useState<boolean>(false);
+  const [openSignUp, setOpenSignUp] = useState<boolean>(false);
+  const [openLogIn, setOpenLogIn] = useState<boolean>(false);
 
   return (
-    <main className="scene-page flex">
-        <div className="flex items-center flex-col fixed top-0 p-5 z-50 gap-2">
-          <div className="cursor-pointer flex items-center p-3 border border-1 border-gray-600 bg-[#1C1C1E] rounded-md">
-            <FaUser size={14} color="white" />
+    <main className="flex w-full h-full overflow-hidden">
+        <div className="flex items-center fixed top-0 right-0 p-5 z-50 gap-2">
+          <div className="cursor-pointer flex items-center py-2 px-3 bg-white rounded-lg" onClick={() => setOpenLogIn(true)}>
+            <p className="text-black">Log in</p>
           </div>
-          <div 
-          className="cursor-pointer flex items-center p-3 border border-1 border-gray-600 bg-[#1C1C1E] rounded-md"
-          onClick={() => setOpenChatPanel(!openChatPanel)}
-          >
-            <FaMessage size={14} color="white" />
-          </div>
-          <div 
-          className="cursor-pointer flex items-center p-3 border border-1 border-gray-600 bg-[#1C1C1E] rounded-md"
-          onClick={() => setOpenSignUpPanel(!openChatPanel)}
-          >
-            <FaUser size={14} color="white" />
+          <div className="cursor-pointer flex items-center py-2 px-3 bg-white rounded-lg" onClick={() => setOpenSignUp(true)}>
+            <p className="text-black">Sign up</p>
           </div>
         </div>
-        <div className="min-w-0 flex-1">
-          <ThreeScene />
-        </div>
-        <ChatPanel isOpen={openChatPanel} onClose={() => setOpenChatPanel(false)}/>
-        <AuthModal isOpen={openSignUpPanel} onClose={() => setOpenSignUpPanel(false)}/>
+          <div className={"scene-page bg-black"}>
+            <ThreeScene />
+          </div>
+        <AuthModal isOpen={openSignUp} onClose={() => setOpenSignUp(false)} view="sign_up"/>
+        <AuthModal isOpen={openLogIn} onClose={() => setOpenLogIn(false)} view="log_in" />
     </main>
   );
 }

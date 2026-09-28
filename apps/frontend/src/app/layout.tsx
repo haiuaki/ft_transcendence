@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import { Geist_Mono, Inter, Playfair_Display } from "next/font/google";
+import { Geist_Mono, Manrope, Playfair_Display } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({
-  variable: "--font-inter",
+const manrope = Manrope({
+  variable: "--font-manrope",
   subsets: ["latin"],
 });
 
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${inter.variable} ${geistMono.variable} ${playfairDisplay.variable} h-full antialiased`} >
+    <html lang="en" className={`${manrope.variable} ${geistMono.variable} ${playfairDisplay.variable} h-full antialiased`} >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );
