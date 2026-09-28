@@ -39,7 +39,7 @@ services:
       - .env
     restart: unless-stopped
       networks:
-      - transcendence-network
+      - app_network
 
 volumes:
   db_data:
