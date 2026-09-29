@@ -50,6 +50,9 @@ func main() {
 	// GET: View user profile
 	http.HandleFunc("/profile", auth.RequireAuth(users.GetProfile(dbPool)))
 
+	// GET: View someone else's public profile
+	http.HandleFunc("/users/{username}", auth.RequireAuth(users.GetPublicProfile(dbPool)))
+
 	// PUT: Edit user informations
 	http.HandleFunc("/profile/edit", auth.RequireAuth(users.UpdateProfile(dbPool)))
 
