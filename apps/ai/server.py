@@ -10,9 +10,9 @@ from pydantic import BaseModel
 from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
+from rag import format_rag_prompt, get_relevant_context, store_message_with_embedding
 
 from database import init_db_pool
-from rag import format_rag_prompt, get_relevant_context
 
 load_dotenv()
 
@@ -90,3 +90,27 @@ async def stream_ai(request: Request, body: PromptRequest):
             stream_generator(augmented_prompt),
             media_type="text/event-stream",
     )
+
+class MessageCreateRequest(BaseModel):
+    sender_id: str
+    channel_id: int
+    content: str
+
+@app.post("/messages", status_code=201)
+async def create_message(request: Request, body: MessageCreateRequest):
+    if not body.content.strip():
+        raise HTTPException(status_code=400, detail="Content cannot be empty")
+
+    try:
+        message_id = await store_message_with_embedding(
+                client=client,
+                db_pool=request.app.state.db_pool,
+                sender_id=body.sender_id,
+                channel_id=body.channel_id,
+                content=body.content,
+        )
+        return {"id": message_id, "status": "stored"}
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Failed to store message: {str(e)}"
+        )

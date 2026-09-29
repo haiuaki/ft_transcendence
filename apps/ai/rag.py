@@ -2,7 +2,6 @@ import json
 import asyncpg
 from google import genai
 
-
 def generate_embedding(client: genai.Client, text: str) -> list[float]:
     """Generates a 768-dimension semantic vector using Google text-embedding-004."""
     result = client.models.embed_content(
@@ -57,3 +56,27 @@ def format_rag_prompt(context: str, user_prompt: str) -> str:
         f"User query: {user_prompt}\n\n"
         "Provide an accurate response based on the contextual information above."
     )
+
+async def store_message_with_embedding(
+    client: genai.Client,
+    db_pool: asyncpg.Pool,
+    sender_id: str,
+    channel_id: int,
+    content: str,
+) -> int:
+    """Calculates semantic vector and persists message to PostgreSQL."""
+    vector = generate_embedding(client, content)
+    vector_json = json.dumps(vector)
+
+    query = """
+        INSERT INTO messages (sender_id, channel_id, content, embedding)
+        VALUES ($1::UUID, $2::INT, $3, $4::vector)
+        RETURNING id
+    """
+
+    async with db_pool.acquire() as connection:
+        message_id = await connection.fetchval(
+            query, sender_id, channel_id, content, vector_json
+        )
+
+    return message_id
