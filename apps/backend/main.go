@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -26,6 +27,12 @@ func main() {
 	// Connect to database
 	dbPool := database.Connect()
 	defer dbPool.Close()
+
+	// --- STARTUP CLEANUP ------------------------------------------------- //
+	// If the server crashes and restarts, reset everyone to OFFLINE
+	if _, err := dbPool.Exec(context.Background(), "UPDATE users SET status = 'OFFLINE'"); err != nil {
+		log.Println("Warning: Failed to reset user statuses on startup")
+	}
 
 	// --- BACKGROUND WORKERS ---------------------------------------------- //
 	// Deletes empty rooms older than 24 hours with 0 Active Members
@@ -106,7 +113,7 @@ func main() {
 	http.HandleFunc("/rooms/messages", auth.RequireAuth(chat.GetRoomMessages(dbPool)))
 
 	// --- WEBSOCKET CENTRAL HUB -------------------------------------------- //
-	hub := sockets.NewHub()
+	hub := sockets.NewHub(dbPool)
 	go hub.Run() // Run the hub in a background Goroutine
 	http.HandleFunc("/ws", sockets.ServeWs(hub, dbPool))
 

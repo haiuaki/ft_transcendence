@@ -20,7 +20,7 @@ Our project fulfills the requirements by implementing the following Major and Mi
 
 ## Features List
 * **Authentication:** Secure JWT-based login and signup system with Resend-powered Email Verification and strict Login Lock.
-* **Real-Time Spatial Chat:** Gorilla WebSocket architecture with Ping/Pong heartbeats, Ghost-Avatar auto-cleanup, and spatial anti-cheat DB validation.
+* **Real-Time Presence & Chat:** Gorilla WebSocket architecture with Ping/Pong heartbeats, real-time presence tracking (ONLINE/OFFLINE), Ghost-Avatar auto-cleanup, and spatial anti-cheat DB validation.
 * **Direct Messaging:** Private, omnipresent 1-on-1 chats elegantly architected on top of the existing spatial channel infrastructure.
 * **User Management:** Full CRUD operations for user profiles and avatars.
 * **Social Network:** Bidirectional friend request system (Add, Accept, Deny, Remove).
