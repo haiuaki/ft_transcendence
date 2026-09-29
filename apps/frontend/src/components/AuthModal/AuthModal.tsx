@@ -3,11 +3,9 @@ import CenterModalTemplate from "../TemplateModal/CenterModalTemplate";
 import { useEffect, useRef, useState } from "react";
 import SignUpView from "./SignUpView";
 import { ArrowLeft, ArrowRight, Eye, EyeClosed, Loader2, LogIn, X } from "lucide-react"
-import ForgotPasswordView from "./ForgotPasswordView";
 import CreateUsernameView from "./CreateUsernameView";
 import CreatePasswordView from "./CreatePasswordView";
 import { motion } from "motion/react"
-import VerifyCode from "./VerifyCodeView";
 import LogInView from "./LogInView";
 import ConfirmAccountView from "./ConfirmAccountView";
 import { themeColors } from "@/src/lib/themeColors";
@@ -58,7 +56,7 @@ export const InputField = ({ placeholder, type = "text", onChange, value, maxLen
                 initial={false}
                 animate={{ y: isFocused || value.length > 0 ? -12 : 0, scale: isFocused || value.length > 0 ? 0.80 : 1 }}
                 transition={{ duration: 0.15, bounce: 0 }}
-                className={`pointer-events-none absolute left-0 origin-left ml-4 text-base font-medium ${colors.textSecondary}`}>
+                className={`pointer-events-none absolute left-0 origin-left ml-4 text-base font-medium ${error ? "text-red-500" : colors.textSecondary}`}>
                 {placeholder}
             </motion.p>
             <input
@@ -81,7 +79,7 @@ export const ButtonAuth = ({ disabled, isLoading, onPress, text, textAction }: B
     return (
         <button
             disabled={disabled}
-            className={`select-none cursor-pointer w-full flex items-center gap-2 justify-center p-3 rounded-xl ${disabled ? "bg-black/90" : "bg-black hover:bg-black/85 active:bg-black/90 active:scale-99"} text-white font-medium`}
+            className={`select-none w-full flex items-center gap-2 justify-center p-3 rounded-xl cursor-pointer ${disabled ? "bg-black/80" : "bg-black hover:bg-black/85 active:bg-black/90 active:scale-99"} text-white font-medium`}
             onClick={onPress}
         >
             {isLoading ? <Loader2 className="animate-spin" /> : null}
@@ -130,9 +128,8 @@ export const AuthModal = ({ onClose, isOpen, view }: AuthModalProps) => {
                         {currentAuthView == "sign_up" && <SignUpView onNextStep={goToView} authFormData={authFormData} setAuthFormData={setAuthFormData} />}
                         {currentAuthView == "log_in" && <LogInView onNextStep={goToView} authFormData={authFormData} setAuthFormData={setAuthFormData} />}
                         {currentAuthView == "create_password" && <CreatePasswordView onNextStep={goToView} authFormData={authFormData} setAuthFormData={setAuthFormData} />}
-                        {currentAuthView == "forgot_password" && <ForgotPasswordView onNextStep={goToView} authFormData={authFormData} setAuthFormData={setAuthFormData} />}
                         {currentAuthView == "create_username" && <CreateUsernameView onNextStep={goToView} authFormData={authFormData} setAuthFormData={setAuthFormData} />}
-                        {currentAuthView == "confirm_account" && <ConfirmAccountView onNextStep={goToView} authFormData={authFormData} setAuthFormData={setAuthFormData} />}
+                        {currentAuthView == "confirm_account" && <ConfirmAccountView authFormData={authFormData} />}
                     </div>
                 </div>
             </CenterModalTemplate>

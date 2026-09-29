@@ -21,7 +21,7 @@ const MAX_LENGTH = 20
 const usernameRegex = /^[a-zA-Z0-9_]{3,20}$/;
 
 const CreateUsernameView = ({ onNextStep, authFormData, setAuthFormData }: CreateUsernameViewProps) => {
-    const [error, setError] = useState<"bad_length" | "bad_caracters" | null>(null);
+    const [error, setError] = useState<"bad_length" | "bad_characters" | null>(null);
     const colors = themeColors;
     const generateRandomUsername = () => {
         const adjectivesName = uniqueNamesGenerator({ dictionaries: [adjectives] });
@@ -47,12 +47,12 @@ const CreateUsernameView = ({ onNextStep, authFormData, setAuthFormData }: Creat
                             setAuthFormData({ ...authFormData, username: (e.target.value) })
                         }}
                         value={authFormData.username}
-                        error={error == "bad_caracters" || error == "bad_length"}
+                        error={error == "bad_characters" || error == "bad_length"}
                     />
                     <div className="flex items-center justify-between">
-                        {(error == "bad_length" || error == "bad_caracters") ? <div className="flex items-center gap-2">
+                        {(error == "bad_length" || error == "bad_characters") ? <div className="flex items-center gap-2">
                             <Info size={14} color="red" />
-                            <p className="text-red-500 text-sm font-semibold">bad length</p>
+                            <p className="text-red-500 text-sm font-semibold">{error == "bad_characters" ? "Invalid characters.": "Must be 3–20 characters."}</p>
                             </div>
                             : <p />
                         }
@@ -68,7 +68,7 @@ const CreateUsernameView = ({ onNextStep, authFormData, setAuthFormData }: Creat
                         text="Continue"
                         onPress={async () => {
                             if (authFormData.username.length > 20) return setError("bad_length")
-                            if (!usernameRegex.test(authFormData.username)) return setError("bad_caracters")
+                            if (!usernameRegex.test(authFormData.username)) return setError("bad_characters")
                             onNextStep("create_password")
                         }}
                     />

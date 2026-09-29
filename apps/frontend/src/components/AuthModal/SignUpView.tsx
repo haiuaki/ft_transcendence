@@ -8,6 +8,7 @@ import z from "zod";
 import { AuthFormData, ButtonAuth, InputField } from "./AuthModal";
 import { themeColors } from "@/src/lib/themeColors";
 import Image from "next/image";
+import { Info } from "lucide-react";
 
 interface SignUpViewProps {
     onNextStep: any;
@@ -27,27 +28,32 @@ const SignUpView = ({ onNextStep, authFormData, setAuthFormData }: SignUpViewPro
                     placeholder="Enter an email"
                     type="email"
                     onChange={(e: any) => {
-                        setAuthFormData({ ...authFormData, email: (e.target.value) })
                         setError(false)
+                        setAuthFormData({ ...authFormData, email: (e.target.value) })
                     }}
                     value={authFormData.email}
+                    error={error}
                 />
-                {error && <p className="text-xs text-red-400 pl-3">Email is not valid.</p>}
-            </div>
-            <ButtonAuth disabled={isLoading} text={"Continue"} textAction={"Continuing..."} isLoading={isLoading} onPress={async() => {
-                    try {
-                        setIsLoading(true);
-                            const emailResult = z.email("").safeParse(authFormData.email);
-                            if (!emailResult.success) return setError(true);
-                            onNextStep("create_username");
-                        }
-                    catch (e) {
-                        console.log(e);
-                    } finally {
-                        setIsLoading(false)
-                    }
+                {(error) && <div className="flex items-center gap-2">
+                    <Info size={14} color="red" />
+                    <p className="text-red-500 text-sm font-semibold">Invalid email.</p>
+                </div>
                 }
-            }/>
+            </div>
+            <ButtonAuth disabled={isLoading} text={"Continue"} textAction={"Continuing..."} isLoading={isLoading} onPress={async () => {
+                try {
+                    setIsLoading(true);
+                    const emailResult = z.email("").safeParse(authFormData.email);
+                    if (!emailResult.success) return setError(true);
+                    onNextStep("create_username");
+                }
+                catch (e) {
+                    console.log(e);
+                } finally {
+                    setIsLoading(false)
+                }
+            }
+            } />
             <div className="flex items-center justify-between gap-4">
                 <div className="flex-1 w-full h-[1px] bg-linear-to-l from-[#ebebeb] to-transparent" />
                 <p className={`text-xs text-medium ${colors.textSecondary}`}>OR</p>
@@ -59,10 +65,10 @@ const SignUpView = ({ onNextStep, authFormData, setAuthFormData }: SignUpViewPro
                     <FcGoogle />
                 </div>
                 <div className="select-none flex items-center justify-center cursor-pointer ring-1 ring-black/10 rounded-xl w-12 h-12 hover:ring-2 active:ring-1 active:ring-black/30 transition-all duration-200">
-                    <FaGithub color="black"/>
+                    <FaGithub color="black" />
                 </div>
                 <div className="select-none flex items-center justify-center cursor-pointer ring-1 ring-black/10 rounded-xl w-12 h-12 hover:ring-2 active:ring-1 active:ring-black/30 transition-all duration-200">
-                    <Image src={"/img/42-logo.png"} alt="42" width={42} height={42}/>
+                    <Image src={"/img/42-logo.png"} alt="42" width={42} height={42} />
                 </div>
             </div>
             <p className={`text-sm text-center ${colors.textSecondary}`}>By continuing, you agree to our <Link className="font-medium text-black cursor-pointer" href={"/privacy-policy"} target="_blank">privacy policy</Link></p>

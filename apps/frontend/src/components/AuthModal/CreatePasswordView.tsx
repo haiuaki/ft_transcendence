@@ -30,15 +30,20 @@ const CreatePasswordView = ({ onNextStep, authFormData, setAuthFormData }: Creat
                     <p className="text-3xl font-semibold text-center">Create your password</p>
                 </div>
                 <div className="flex flex-col gap-4">
-                    <InputField
-                        autoFocus
-                        placeholder="Enter a password"
-                        type="password"
-                        onChange={(e: any) => {
-                            setAuthFormData({...authFormData, password: e.target.value})
-                        }}
-                        value={authFormData.password}
-                    />
+                    <div className="flex flex-col gap-2">
+
+                        <InputField
+                            autoFocus
+                            placeholder="Enter a password"
+                            type="password"
+                            onChange={(e: any) => {
+                                setError(false);
+                                setAuthFormData({ ...authFormData, password: e.target.value })
+                            }}
+                            value={authFormData.password}
+                        />
+                    </div>
+
                     <div className="flex flex-col gap-1">
                         <p className="text-sm text-black mb-1">The password must contains : </p>
                         {passwordConditions.map((condition, idx) => {
@@ -52,28 +57,31 @@ const CreatePasswordView = ({ onNextStep, authFormData, setAuthFormData }: Creat
                     </div>
                 </div>
             </div>
-            {error && <div className="flex items-center gap-2 font-bold text-red-500 text-sm">
-                <Info size={14}/> 
-                <p>Impossible to create user</p></div>}
+            {error &&
+                <div className="flex items-center gap-2 font-bold text-red-500 text-sm">
+                    <Info size={14} />
+                    <p>Impossible to create user</p>
+                </div>
+            }
+
             <div className="flex flex-col">
                 <ButtonAuth
-                isLoading={isLoading}
-                disabled={isLoading}
-                text="Create account"
-                textAction="Creating account..."
-                onPress={async () => {
+                    isLoading={isLoading}
+                    disabled={isLoading || passwordConditions.every((item) => ! item.isValid)}
+                    text="Create account"
+                    textAction="Creating account..."
+                    onPress={async () => {
                         try {
                             setIsLoading(true);
                             await userService.signup(authFormData.email, authFormData.password, authFormData.username);
-                            onNextStep("confirm_account");     
+                            onNextStep("confirm_account");
                         } catch (e) {
                             setError(true)
-                            console.log(e + "\n");
                         } finally {
                             setIsLoading(false)
                         }
                     }}
-                /> 
+                />
             </div>
         </div>
     )
