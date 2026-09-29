@@ -1,5 +1,3 @@
-import userService from "@/src/services/userService";
-import Link from "next/link";
 import { useState } from "react";
 import { FaGithub } from "react-icons/fa6";
 import { FcGoogle } from "react-icons/fc";
@@ -9,6 +7,7 @@ import { AuthFormData, ButtonAuth, InputField } from "./AuthModal";
 import { themeColors } from "@/src/lib/themeColors";
 import Image from "next/image";
 import { Info } from "lucide-react";
+import { useAuth } from "@/src/context/AuthContext";
 
 interface LogInViewProps {
     onNextStep: any;
@@ -18,6 +17,7 @@ interface LogInViewProps {
 
 
 const LogInView = ({ onNextStep, authFormData, setAuthFormData }: LogInViewProps) => {
+    const {login} = useAuth();
     const [error, setError] = useState<boolean>(false);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const colors = themeColors;
@@ -59,7 +59,7 @@ const LogInView = ({ onNextStep, authFormData, setAuthFormData }: LogInViewProps
                     setIsLoading(true);
                     const emailResult = z.email("").safeParse(authFormData.email);
                     if (!emailResult.success) return setError(true);
-                    await userService.login(authFormData.email, authFormData.password);
+                    await login(authFormData.email, authFormData.password);
                 }
                 catch (e) {
                     console.log(e);
