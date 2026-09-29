@@ -10,6 +10,7 @@ import { motion } from "motion/react"
 import VerifyCode from "./VerifyCodeView";
 import LogInView from "./LogInView";
 import ConfirmAccountView from "./ConfirmAccountView";
+import { themeColors } from "@/src/lib/themeColors";
 
 interface AuthModalProps {
     onClose: any;
@@ -49,13 +50,14 @@ export const InputField = ({ placeholder, type = "text", onChange, value, maxLen
     const [showPassword, setShowPassword] = useState<boolean>(false);
     const [isFocused, setIsFocused] = useState<boolean>(false);
     const refInput = useRef<HTMLInputElement | null>(null);
+    const colors = themeColors;
     return (
         <div onClick={() => refInput.current?.focus()} className="relative flex items-center w-full rounded-xl ring-1 ring-black/30 focus-within:ring-black/70 transition-all duration-200 text-black">
             <motion.p
                 initial={false}
                 animate={{ y: isFocused || value.length > 0 ? -12 : 0, scale: isFocused || value.length > 0 ? 0.80 : 1 }}
                 transition={{ duration: 0.15, bounce: 0 }}
-                className="pointer-events-none absolute left-0 origin-left ml-4 text-base font-medium text-black/60">
+                className={`pointer-events-none absolute left-0 origin-left ml-4 text-base font-medium ${colors.textSecondary}`}>
                 {placeholder}
             </motion.p>
             <input
@@ -91,7 +93,7 @@ export const AuthModal = ({ onClose, isOpen, view }: AuthModalProps) => {
     const [currentAuthView, setCurrentAuthView] = useState<StepAuthView>(view)
     const [authViewHistory, setAuthViewHistory] = useState<StepAuthView[]>([])
     const [authFormData, setAuthFormData] = useState<AuthFormData>({ email: "", username: "", password: "", code: "", })
-
+    const colors = themeColors;
     const goBack = () => {
         const previousView = authViewHistory.at(-1);
         if (!previousView) return;
@@ -113,7 +115,7 @@ export const AuthModal = ({ onClose, isOpen, view }: AuthModalProps) => {
     }, [isOpen, view]);
     return (
         <AnimatePresence>
-            {isOpen && <CenterModalTemplate onClose={onClose} className={"flex w-full h-full max-w-[550px] max-h-[480px] flex-col pt-4 rounded-4xl bg-white"} overlay="bg-black/75 backdrop-blur-sm">
+            {isOpen && <CenterModalTemplate onClose={onClose} className={`flex w-full h-full max-w-[550px] max-h-[480px] flex-col pt-4 rounded-4xl bg-white ${colors.text}`} overlay="bg-black/75 backdrop-blur-sm">
                 <div className="flex items-center justify-between px-4">
                     {authViewHistory.length > 0 && currentAuthView != "confirm_account" ? <div className="cursor-pointer flex items-center justify-center p-1.5 hover:bg-black/5 active:bg-black/10 transition-colors duration-200 rounded-full text-black" onClick={goBack}>
                         <ArrowLeft size={20} />

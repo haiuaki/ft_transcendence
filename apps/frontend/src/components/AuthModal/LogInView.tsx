@@ -51,7 +51,7 @@ const LogInView = ({ onNextStep, authFormData, setAuthFormData }: LogInViewProps
                     setIsLoading(true);
                     const emailResult = z.email("").safeParse(authFormData.email);
                     if (!emailResult.success) return setError(true);
-                    const data = await userService.login(authFormData.email, authFormData.password);
+                    await userService.login(authFormData.email, authFormData.password);
                 }
                 catch (e) {
                     console.log(e);
@@ -63,18 +63,18 @@ const LogInView = ({ onNextStep, authFormData, setAuthFormData }: LogInViewProps
             } />
             <div className="flex items-center justify-between gap-4">
                 <div className="flex-1 w-full h-[1px] bg-linear-to-l from-[#ebebeb] to-transparent" />
-                <p className="text-xs text-medium text-black/60">OR</p>
+                <p className={`text-xs text-medium ${colors.textSecondary}`}>OR</p>
                 <div className="flex-1 w-full h-[1px] bg-linear-to-r from-[#ebebeb] to-transparent" />
             </div>
 
             <div className="flex items-center justify-center gap-4">
-                <div className="select-none flex items-center justify-center cursor-pointer ring-1 rounded-xl w-12 h-12 hover:ring-2 active:ring-1 active:ring-black/30 transition-all duration-200">
+                <div className="select-none flex items-center justify-center cursor-pointer ring-1 ring-black/10 rounded-xl w-12 h-12 hover:ring-2 active:ring-1 active:ring-black/30 transition-all duration-200">
                     <FcGoogle />
                 </div>
-                <div className="select-none flex items-center justify-center cursor-pointer ring-1 rounded-xl w-12 h-12 hover:ring-2 active:ring-1 active:ring-black/30 transition-all duration-200">
+                <div className="select-none flex items-center justify-center cursor-pointer ring-1 ring-black/10 rounded-xl w-12 h-12 hover:ring-2 active:ring-1 active:ring-black/30 transition-all duration-200">
                     <FaGithub color="black" />
                 </div>
-                <div className="select-none flex items-center justify-center cursor-pointer ring-1 rounded-xl w-12 h-12 hover:ring-2 active:ring-1 active:ring-black/30 transition-all duration-200">
+                <div className="select-none flex items-center justify-center cursor-pointer ring-1 ring-black/10 rounded-xl w-12 h-12 hover:ring-2 active:ring-1 active:ring-black/30 transition-all duration-200">
                     <Image src={"/img/42-logo.png"} alt="42" width={42} height={42} />
                 </div>
             </div>
