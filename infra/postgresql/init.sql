@@ -1,3 +1,5 @@
+CREATE EXTENSION IF NOT EXISTS vector;
+
 DROP TABLE IF EXISTS messages CASCADE;
 DROP TABLE IF EXISTS channel_members CASCADE;
 DROP TABLE IF EXISTS channels CASCADE;
@@ -64,12 +66,16 @@ CREATE TABLE channel_members (
 );
 
 -- Room's chat history
-CREATE TABLE messages (
+CREATE TABLE IF NOT EXISTS messages (
     id SERIAL PRIMARY KEY,
     sender_id UUID REFERENCES users(id) ON DELETE CASCADE,
     channel_id INTEGER REFERENCES channels(id) ON DELETE CASCADE,
     content TEXT NOT NULL,
+    embedding vector(768),
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE INDEX IF NOT EXISTS messages_embedding_hnsw_idx
+ON messages USING hnsw (embedding vector_cosine_ops);
 
 INSERT INTO users (username, status) VALUES ('admin_test', 'ONLINE');

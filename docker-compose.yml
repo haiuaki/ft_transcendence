@@ -1,6 +1,6 @@
 services:
   database:
-    image: pgvector/pgvector:pg18
+    image: pgvector/pgvector:17
     container_name: postgresql
     restart: unless-stopped
     env_file:
