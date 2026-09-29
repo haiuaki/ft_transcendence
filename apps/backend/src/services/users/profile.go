@@ -42,6 +42,35 @@ func GetProfile(dbPool *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
+func GetPublicProfile(dbPool *pgxpool.Pool) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		targetUsername := r.PathValue("username")
+
+		var profile UserProfile
+
+		query := `
+			SELECT username, avatar_url, status, created_at
+			FROM users
+			WHERE LOWER(username) = LOWER($1) AND deleted_at IS NULL
+		`
+
+		err := dbPool.QueryRow(context.Background(), query, targetUsername).Scan(
+			&profile.Username,
+			&profile.AvatarURL,
+			&profile.Status,
+			&profile.CreatedAt,
+		)
+
+		if err != nil {
+			http.Error(w, "User not found.", http.StatusNotFound)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(profile)
+	}
+}
+
 func UpdateProfile(dbPool *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		email := r.Context().Value(auth.UserEmailKey).(string)
