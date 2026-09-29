@@ -35,6 +35,7 @@ interface InputFieldProps {
     value: string,
     maxLength?: number | undefined,
     autoFocus?: boolean,
+    error?: boolean,
 }
 
 interface ButtonAuthProps {
@@ -46,13 +47,13 @@ interface ButtonAuthProps {
 }
 
 
-export const InputField = ({ placeholder, type = "text", onChange, value, maxLength = undefined, autoFocus = false }: InputFieldProps) => {
+export const InputField = ({ placeholder, type = "text", onChange, value, maxLength = undefined, autoFocus = false, error = false}: InputFieldProps) => {
     const [showPassword, setShowPassword] = useState<boolean>(false);
     const [isFocused, setIsFocused] = useState<boolean>(false);
     const refInput = useRef<HTMLInputElement | null>(null);
     const colors = themeColors;
     return (
-        <div onClick={() => refInput.current?.focus()} className="relative flex items-center w-full rounded-xl ring-1 ring-black/30 focus-within:ring-black/70 transition-all duration-200 text-black">
+        <div onClick={() => refInput.current?.focus()} className={`relative flex items-center w-full rounded-xl ring-1 ${error ? "ring-red-500/30 focus-within:ring-red-500/70" : "ring-black/30 focus-within:ring-black/70"} transition-all duration-200 text-black`}>
             <motion.p
                 initial={false}
                 animate={{ y: isFocused || value.length > 0 ? -12 : 0, scale: isFocused || value.length > 0 ? 0.80 : 1 }}
