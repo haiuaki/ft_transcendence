@@ -66,7 +66,7 @@ async def stream_generator(prompt: str) -> AsyncGenerator[str, None]:
 
     except Exception as e:
         clean_error = str(e).replace("\n", " ")
-        yield f"data: [ERROR: {str(clean_error)}]\n\n"
+        yield f"data: [ERROR: {clean_error}]\n\n"
 
 @app.get("/health")
 async def health_check():
@@ -79,12 +79,14 @@ async def stream_ai(request: Request, body: PromptRequest):
         raise HTTPException(status_code=400, detail="Prompt cannot be empty")
 
     context = await get_relevant_context(
-        db_pool=request.app.state.db_pool,
-        channel_id=body.channel_id,
+            client=client,
+            db_pool=request.app.state.db_pool,
+            user_prompt=body.prompt,
+            channel_id=body.channel_id,
     )
 
     augmented_prompt = format_rag_prompt(context=context, user_prompt=body.prompt)
     return StreamingResponse(
             stream_generator(augmented_prompt),
             media_type="text/event-stream",
-            )
+    )
