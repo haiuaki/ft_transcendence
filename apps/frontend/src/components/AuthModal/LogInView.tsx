@@ -8,6 +8,7 @@ import z from "zod";
 import { AuthFormData, ButtonAuth, InputField } from "./AuthModal";
 import { themeColors } from "@/src/lib/themeColors";
 import Image from "next/image";
+import { Info } from "lucide-react";
 
 interface LogInViewProps {
     onNextStep: any;
@@ -32,6 +33,7 @@ const LogInView = ({ onNextStep, authFormData, setAuthFormData }: LogInViewProps
                             setAuthFormData({ ...authFormData, email: (e.target.value) })
                             setError(false)
                         }}
+                        error={error}
                         value={authFormData.email}
                     />
                     <InputField
@@ -41,10 +43,16 @@ const LogInView = ({ onNextStep, authFormData, setAuthFormData }: LogInViewProps
                             setAuthFormData({ ...authFormData, password: (e.target.value) })
                             setError(false)
                         }}
+                        error={error}
                         value={authFormData.password}
                     />
                 </div>
-                {error && <p className="text-xs text-red-400 pl-3">Email is not valid or wrong password</p>}
+            {error &&
+                <div className="flex items-center gap-2 font-bold text-red-500 text-sm">
+                    <Info size={14} />
+                    <p>Email is not valid or wrong password</p>
+                </div>
+            }
             </div>
             <ButtonAuth disabled={isLoading} text={"Continue"} textAction={"Continuing..."} isLoading={isLoading} onPress={async () => {
                 try {
