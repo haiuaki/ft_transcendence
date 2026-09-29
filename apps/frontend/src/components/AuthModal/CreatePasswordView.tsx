@@ -2,6 +2,7 @@ import { useState } from "react";
 import { AuthFormData, ButtonAuth, InputField } from "./AuthModal";
 import { Loader2, CheckCircle, Check, Circle, Info } from "lucide-react";
 import userService from "@/src/services/userService";
+import { themeColors } from "@/src/lib/themeColors";
 
 interface CreatePasswordViewProps {
     onNextStep: any;
@@ -21,7 +22,7 @@ const CreatePasswordView = ({ onNextStep, authFormData, setAuthFormData }: Creat
 
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [error, setError] = useState<boolean>(false);
-
+    const colors = themeColors;
     return (
         <div className="flex flex-col h-full min-h-0 text-black">
             <div className="flex-1 flex flex-col gap-6">
@@ -42,7 +43,7 @@ const CreatePasswordView = ({ onNextStep, authFormData, setAuthFormData }: Creat
                         <p className="text-sm text-black mb-1">The password must contains : </p>
                         {passwordConditions.map((condition, idx) => {
                             return (
-                                <div key={idx} className={`flex items-center gap-2 text-sm py-1 px-2 rounded-sm ${condition.isValid ? "text-[#1b6636] bg-[#e4f7eb] font-bold" : "text-black/60 font-semibold"}`}>
+                                <div key={idx} className={`flex items-center gap-2 text-sm py-1 px-2 rounded-sm ${condition.isValid ? "text-[#1b6636] bg-[#e4f7eb] font-bold" : `${colors.textSecondary} font-semibold`}`}>
                                     {condition.isValid && <Check size={12} />}
                                     {condition.text}
                                 </div>

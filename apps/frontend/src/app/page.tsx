@@ -1,14 +1,11 @@
 "use client"
-import { FaMessage } from "react-icons/fa6";
+
 import ThreeScene from "../components/3D/ThreeScene";
-import { FaUser } from "react-icons/fa";
 import { Suspense, useEffect, useState } from "react";
-import { ChatPanel } from "../components/Panel/ChatPanel/ChatPanel";
 import { AuthModal } from "../components/AuthModal/AuthModal";
 import { useSearchParams } from "next/navigation";
 import userService from "../services/userService";
 import { toast, Toaster } from "sonner";
-import Link from "next/link";
 
 function HomeContent() {
   const params = useSearchParams();
@@ -21,22 +18,23 @@ function HomeContent() {
     const verifyAccount = async () => {
       try {
         await userService.verify(verifyToken);
-        toast.success("Verified account")
+        toast.success("Your account has been successfully verified. You can now log in.")
         setOpenLogIn(true);
       } catch (e) {
-        console.log(e);
+        toast.error(e instanceof Error ? e.message : "Failed to verify account")
       }
     }
     verifyAccount();
   }, [verifyToken])
+
   return (
     <main className="flex w-full h-full overflow-hidden">
-        <div className="flex items-center fixed top-0 right-0 p-5 z-50 gap-2">
-          <div className="cursor-pointer flex items-center py-2 px-3 bg-white rounded-lg" onClick={() => setOpenLogIn(true)}>
-            <p className="text-black">Log in</p>
+        <div className="select-none flex items-center fixed top-0 right-0 p-5 z-50 gap-2">
+          <div className="cursor-pointer font-semibold flex items-center py-2 px-3 text-black bg-white rounded-md hover:bg-white/80 active:bg-white" onClick={() => setOpenLogIn(true)}>
+            <p>Log in</p>
           </div>
-          <div className="cursor-pointer flex items-center py-2 px-3 bg-white rounded-lg" onClick={() => setOpenSignUp(true)}>
-            <p className="text-black">Sign up</p>
+          <div className="cursor-pointer font-semibold flex items-center py-2 px-3 text-white bg-black rounded-md hover:bg-black/80 active:bg-black" onClick={() => setOpenSignUp(true)}>
+            <p>Sign up</p>
           </div>
         </div>
           <div className={"scene-page bg-black"}>

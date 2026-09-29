@@ -25,7 +25,7 @@ const VerifyCode = ({ onNextStep, authFormData, setAuthFormData }: VerifyCodePro
             <div className="flex-1 flex flex-col gap-6 ">
                 <div className="flex flex-col gap-2">
                     <p className="text-3xl font-bold text-center" style={{ color: colors.text }}>Check your inbox</p>
-                    <p className="text-base font-medium text-center text-black/60">We've sent a code to {authFormData.email}</p>
+                    <p className={`text-base font-medium text-center ${colors.textSecondary}`}>We've sent a code to {authFormData.email}</p>
                 </div>
                 <div className="flex flex-col gap-2">
                     <InputField
@@ -53,7 +53,7 @@ const VerifyCode = ({ onNextStep, authFormData, setAuthFormData }: VerifyCodePro
                     }
                 }
                 } />
-                <p className="text-center text-sm font-medium text-black/60">Didn't receive the code?<Link className="cursor-pointer font-semibold text-black" href={"/privacy-policy"} target="_blank"> Resend a code</Link></p>
+                <p className={`text-center text-sm font-medium ${colors.textSecondary}`}>Didn't receive the code?<Link className="cursor-pointer font-semibold text-black" href={"/privacy-policy"} target="_blank"> Resend a code</Link></p>
             </div>
         </div>
     )

@@ -7,6 +7,7 @@ import {
 } from "unique-names-generator";
 import { Loader2 } from "lucide-react";
 import { error } from "console";
+import { themeColors } from "@/src/lib/themeColors";
 
 interface CreateUsernameViewProps {
     onNextStep: any;
@@ -17,7 +18,7 @@ interface CreateUsernameViewProps {
 
 const CreateUsernameView = ({ onNextStep, authFormData, setAuthFormData }: CreateUsernameViewProps) => {
     const [isLoading, setIsLoading] = useState<boolean>(false);
-
+    const colors = themeColors;
     const generateRandomUsername = () => {
         const adjectivesName = uniqueNamesGenerator({ dictionaries: [adjectives] });
         const animalsName = uniqueNamesGenerator({ dictionaries: [animals] });
@@ -50,7 +51,7 @@ const CreateUsernameView = ({ onNextStep, authFormData, setAuthFormData }: Creat
                         onNextStep("create_password")
                     }}
                 />
-                <p className="select-none text-sm text-black/60 font-semibold text-center">No username in mind? <span onClick={generateRandomUsername} className="text-black cursor-pointer">Generate one</span></p>
+                <p className={`select-none text-sm ${colors.textSecondary} font-semibold text-center`}>No username in mind? <span onClick={generateRandomUsername} className="text-black cursor-pointer">Generate one</span></p>
             </div>
         </div>
     )
