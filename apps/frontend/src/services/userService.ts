@@ -15,7 +15,7 @@ const userService = {
         })
         if (!response.ok)
             throw new Error("Failed to login user")
-        return response.json;
+        return response.json();
     },
     signup: async (email: string, password: string, username: string) => {
         const response = await fetch(URL + "/signup", {
@@ -35,6 +35,17 @@ const userService = {
     },
     verify: async (token: string) => {
         const response = await fetch(URL + "/verify?token=" + encodeURIComponent(token), {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+        })
+        if (!response.ok)
+            throw new Error("Failed to verify user")
+        return response.text;
+    },
+    profile: async (token: string) => {
+        const response = await fetch(URL + "/profile?token=" + encodeURIComponent(token), {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
