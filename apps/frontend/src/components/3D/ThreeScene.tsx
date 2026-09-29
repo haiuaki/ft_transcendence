@@ -5,110 +5,168 @@ import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
-const positions = [
-  { x: 0, y: 10, z: 0 },
-  { x: 40, y: 10, z: 0 },
-  { x: 80, y: 10, z: 0 },
-  { x: 120, y: 10, z: 0 },
-  { x: 0, y: 10, z: 40 },
-  { x: 40, y: 10, z: 40 },
-  { x: 80, y: 10, z: 40 },
-  { x: 120, y: 10, z: 40 },
-  { x: 0, y: 10, z: 80 },
-  { x: 40, y: 10, z: 80 },
-  { x: 80, y: 10, z: 80 },
-  { x: 120, y: 10, z: 80 },
-  { x: 0, y: 10, z: 120 },
-  { x: 40, y: 10, z: 120 },
-  { x: 80, y: 10, z: 120 },
-  { x: 120, y: 10, z: 120 },
-];
-
 export default function ThreeScene() {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const container = containerRef.current;
 
-    if (!container) {
-      return;
-    }
+    if (!container) return;
 
+    // SCÈNE
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xEEE9DD);
+    scene.background = new THREE.Color(0xffffff);
 
+    // CAMÉRA
     const camera = new THREE.PerspectiveCamera(
       45,
       container.clientWidth / container.clientHeight,
       0.1,
       10000,
     );
-    camera.position.set(1500, 1500, 1500);
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    camera.position.set(250, 250, 250);
+
+    // RENDERER
+    const renderer = new THREE.WebGLRenderer({
+      antialias: true,
+    });
+
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(container.clientWidth, container.clientHeight);
+
     container.appendChild(renderer.domElement);
 
+    // CONTRÔLES SOURIS
     const controls = new OrbitControls(camera, renderer.domElement);
+
     controls.enableDamping = true;
-    controls.enablePan = false;
-    controls.minDistance = 1000;
-    controls.maxDistance = 2000;
+
+    controls.minDistance = 100;
+    controls.maxDistance = 500;
+
     controls.minPolarAngle = THREE.MathUtils.degToRad(0);
-    controls.maxPolarAngle = THREE.MathUtils.degToRad(99);
-    controls.minAzimuthAngle = THREE.MathUtils.degToRad(-10);
-    controls.maxAzimuthAngle = THREE.MathUtils.degToRad(98);
+    controls.maxPolarAngle = THREE.MathUtils.degToRad(95);
 
-    scene.add(new THREE.AmbientLight(0xffffff, 1));
+    controls.minAzimuthAngle = THREE.MathUtils.degToRad(-3);
+    controls.maxAzimuthAngle = THREE.MathUtils.degToRad(95);
 
+    controls.enablePan = false;
+
+    // LUMIÈRES
+    const ambientLight = new THREE.AmbientLight(0x000000, 100);
+    scene.add(ambientLight);
+
+    // CHARGEMENT DU MODÈLE
     const loader = new GLTFLoader();
-    loader.load(
-      "/assets/room.glb",
-      (gltf) => {
-        scene.add(gltf.scene);
-        const bounds = new THREE.Box3().setFromObject(gltf.scene);
-        controls.target.copy(bounds.getCenter(new THREE.Vector3()));
-        controls.update();
-      },
-      undefined,
-      (error) => console.error("Erreur avec le modèle de la pièce :", error),
-    );
+
+    let model: THREE.Group | null = null;
 
     loader.load(
-      "/assets/cube.glb",
+      "/assets/cluster.glb",
+
       (gltf) => {
-        positions.forEach(({ x, y, z }) => {
-          const cube = gltf.scene.clone();
-          cube.position.set(x, y, z);
-          cube.scale.set(10, 10, 10);
-          scene.add(cube);
-        });
+        model = gltf.scene;
+
+        model.scale.set(1, 1, 1);
+        model.rotation.y = Math.PI / 2;
+
+        scene.add(model);
+
+        // Cherche l'objet Blender nommé "murs.001"
+        const murs = model.getObjectByName("murs.001");
+
+        if (murs) {
+          // Centre réel de murs.001
+          const box = new THREE.Box3().setFromObject(murs);
+          const center = box.getCenter(new THREE.Vector3());
+
+          // OrbitControls tourne autour de ce point
+          controls.target.copy(center);
+
+          // Taille de l'objet
+          const size = box.getSize(new THREE.Vector3());
+
+          const distance =
+            Math.max(size.x, size.y, size.z) * 2;
+
+          // Positionnement caméra
+          camera.position.set(
+            center.x + distance,
+            center.y + distance * 0.5,
+            center.z + distance,
+          );
+
+          camera.lookAt(center);
+
+          controls.update();
+        } else {
+          console.warn(
+            'Objet "murs.001" introuvable dans le GLB',
+          );
+        }
       },
+
       undefined,
-      (error) => console.error("Erreur avec le modèle des cubes :", error),
+
+      (error) => {
+        console.error("Erreur avec le modèle :", error);
+      },
     );
 
+    // RESIZE
     const handleResize = () => {
-      camera.aspect = container.clientWidth / container.clientHeight;
+      const width = container.clientWidth;
+      const height = container.clientHeight;
+
+      camera.aspect = width / height;
       camera.updateProjectionMatrix();
-      renderer.setSize(container.clientWidth, container.clientHeight);
+
+      renderer.setSize(width, height);
     };
 
-    const animationFrame = () => {
+    window.addEventListener("resize", handleResize);
+
+    // ANIMATION
+    const animate = () => {
       controls.update();
+
       renderer.render(scene, camera);
     };
 
-    renderer.setAnimationLoop(animationFrame);
-    window.addEventListener("resize", handleResize);
+    renderer.setAnimationLoop(animate);
 
+    // CLEANUP REACT
     return () => {
       window.removeEventListener("resize", handleResize);
+
       renderer.setAnimationLoop(null);
+
       controls.dispose();
+
+      if (model) {
+        scene.remove(model);
+
+        model.traverse((object) => {
+          if (object instanceof THREE.Mesh) {
+            object.geometry?.dispose();
+
+            if (Array.isArray(object.material)) {
+              object.material.forEach((material) =>
+                material.dispose(),
+              );
+            } else {
+              object.material?.dispose();
+            }
+          }
+        });
+      }
+
       renderer.dispose();
-      container.removeChild(renderer.domElement);
+
+      if (container.contains(renderer.domElement)) {
+        container.removeChild(renderer.domElement);
+      }
     };
   }, []);
 

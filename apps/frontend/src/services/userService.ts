@@ -7,14 +7,16 @@ const userService = {
             headers: {
                 "Content-Type": "application/json"
             },
-            credentials: "include",
             body: JSON.stringify({
                 email,
                 password,
             })
         })
         if (!response.ok)
-            throw new Error("Failed to login user")
+        {
+            const message = await response.text();
+            throw new Error(message || "Failed to login user")
+        }
         return response.json();
     },
     signup: async (email: string, password: string, username: string) => {
@@ -45,15 +47,15 @@ const userService = {
         return response.text;
     },
     profile: async (token: string) => {
-        const response = await fetch(URL + "/profile?token=" + encodeURIComponent(token), {
-            method: "POST",
+        const response = await fetch(URL + "/profile", {
+            method: "GET",
             headers: {
-                "Content-Type": "application/json"
+                Authorization: `Bearer ${token}`
             },
         })
         if (!response.ok)
-            throw new Error("Failed to verify user")
-        return response.text;
+            throw new Error("Failed to get user")
+        return response.json();
     }
 }
 
