@@ -107,13 +107,14 @@ func (c *Client) readPump() {
 				return []byte(secretKey), nil
 			})
 
-			if err == nil && token.Valid {
+			if !c.IsAuthenticated && err == nil && token.Valid {
 				if claims, ok := token.Claims.(jwt.MapClaims); ok {
 					c.Email = claims["email"].(string)
 					c.IsAuthenticated = true
 					log.Println("Client authenticated successfully:", c.Email)
+					c.hub.authenticate <- c
 				}
-			} else {
+			} else if !c.IsAuthenticated {
 				log.Println("Invalid JWT token provided over WebSocket.")
 			}
 		case "chat":
