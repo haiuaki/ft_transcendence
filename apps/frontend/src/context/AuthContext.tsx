@@ -44,6 +44,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     const logout = async () => {
         localStorage.removeItem("token");
     }
+
     return (
         <AuthContext.Provider
             value={{ token, login, logout, isAuthenticated, isLoading, user }}
