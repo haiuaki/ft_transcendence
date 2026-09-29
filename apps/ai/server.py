@@ -1,5 +1,6 @@
 import os
 from typing import AsyncGenerator
+from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse, StreamingResponse
@@ -10,6 +11,9 @@ from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
+from database import init_db_pool
+from rag import format_rag_prompt, get_relevant_context
+
 load_dotenv()
 
 api_key = os.getenv("GOOGLE_API_KEY")
@@ -17,7 +21,15 @@ if not api_key:
     raise RuntimeError("Missing GOOGLE_API_KEY environment variable")
 
 client = genai.Client(api_key=api_key)
-app = FastAPI(title="LLM")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Manages application lifecycle"""
+    app.state.db_pool = await init_db_pool()
+    yield
+    await app.state.db_pool.close()
+
+app = FastAPI(title="LLM", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -39,6 +51,7 @@ async def rate_limit_handler(request: Request, exc: Exception) -> JSONResponse:
 
 class PromptRequest(BaseModel):
     prompt: str
+    channel_id: int | None = None
 
 async def stream_generator(prompt: str) -> AsyncGenerator[str, None]:
     try:
@@ -52,7 +65,8 @@ async def stream_generator(prompt: str) -> AsyncGenerator[str, None]:
         yield "data: Done\n\n"
 
     except Exception as e:
-        yield f"data: [ERROR: {str(e)}]\n\n"
+        clean_error = str(e).replace("\n", " ")
+        yield f"data: [ERROR: {str(clean_error)}]\n\n"
 
 @app.get("/api/health")
 async def health_check():
@@ -63,7 +77,14 @@ async def health_check():
 async def stream_ai(request: Request, body: PromptRequest):
     if not body.prompt.strip():
         raise HTTPException(status_code=400, detail="Prompt cannot be empty")
+
+    context = await get_relevant_context(
+        db_pool=request.app.state.db_pool,
+        channel_id=body.channel_id,
+    )
+
+    augmented_prompt = format_rag_prompt(context=context, user_prompt=body.prompt)
     return StreamingResponse(
-            stream_generator(body.prompt),
+            stream_generator(augmented_prompt),
             media_type="text/event-stream",
             )
