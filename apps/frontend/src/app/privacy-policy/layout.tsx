@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { Geist_Mono, Inter, Playfair_Display } from "next/font/google";
 
 export const metadata: Metadata = {
   title: "Privacy policy",

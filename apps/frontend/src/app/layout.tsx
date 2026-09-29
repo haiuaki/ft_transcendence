@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
-import { Geist_Mono, Manrope, Playfair_Display } from "next/font/google";
+import { Geist_Mono, Manrope } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "../context/AuthContext";
+import { Toaster } from "sonner";
 
 const manrope = Manrope({
   variable: "--font-manrope",
@@ -25,6 +26,19 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <AuthProvider>
           {children}
         </AuthProvider>
+        <Toaster
+          position="bottom-right"
+          richColors
+          closeButton
+          toastOptions={{
+            style: {
+              borderRadius: "16px",
+              padding: "16px",
+              border: "1px solid rgba(0, 0, 0, 0.08)",
+              boxShadow: "0 16px 40px rgba(0, 0, 0, 0.12)",
+            },
+          }}
+        />
       </body>
     </html>
   );

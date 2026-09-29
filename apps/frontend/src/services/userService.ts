@@ -31,9 +31,10 @@ const userService = {
                 password,
             })
         })
+        const message = await response.text();
         if (!response.ok)
-            throw new Error("Failed to create user")
-        return response.text;
+            throw new Error(message || "Unable to create account.")
+        return message;
     },
     verify: async (token: string) => {
         const response = await fetch(URL + "/verify?token=" + encodeURIComponent(token), {
@@ -44,7 +45,7 @@ const userService = {
         })
         if (!response.ok)
             throw new Error("Failed to verify user")
-        return response.text;
+        return response.text();
     },
     profile: async (token: string) => {
         const response = await fetch(URL + "/profile", {

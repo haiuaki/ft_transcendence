@@ -1,17 +1,18 @@
 import { useState } from "react";
-import { AuthFormData, ButtonAuth, InputField } from "./AuthModal";
-import { Loader2, CheckCircle, Check, Circle, Info } from "lucide-react";
+import { AuthFormData, ButtonAuth, InputField, SetAuthFormData } from "./AuthModal";
+import { Check, Info, MailCheck } from "lucide-react";
 import userService from "@/src/services/userService";
 import { themeColors } from "@/src/lib/themeColors";
+import { toast } from "sonner";
 
 interface CreatePasswordViewProps {
-    onNextStep: any;
     authFormData: AuthFormData;
-    setAuthFormData: any;
+    setAuthFormData: SetAuthFormData;
+    onClose: () => void;
 }
 
 
-const CreatePasswordView = ({ onNextStep, authFormData, setAuthFormData }: CreatePasswordViewProps) => {
+const CreatePasswordView = ({ authFormData, setAuthFormData, onClose }: CreatePasswordViewProps) => {
 
     const passwordConditions = [
         { isValid: authFormData.password.length >= 10, text: "10 characters minimum" },
@@ -21,7 +22,7 @@ const CreatePasswordView = ({ onNextStep, authFormData, setAuthFormData }: Creat
     ]
 
     const [isLoading, setIsLoading] = useState<boolean>(false);
-    const [error, setError] = useState<boolean>(false);
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const colors = themeColors;
     return (
         <div className="flex flex-col h-full min-h-0 text-black">
@@ -36,8 +37,8 @@ const CreatePasswordView = ({ onNextStep, authFormData, setAuthFormData }: Creat
                             autoFocus
                             placeholder="Enter a password"
                             type="password"
-                            onChange={(e: any) => {
-                                setError(false);
+                            onChange={(e) => {
+                                setErrorMessage(null);
                                 setAuthFormData({ ...authFormData, password: e.target.value })
                             }}
                             value={authFormData.password}
@@ -57,26 +58,32 @@ const CreatePasswordView = ({ onNextStep, authFormData, setAuthFormData }: Creat
                     </div>
                 </div>
             </div>
-            {error &&
-                <div className="flex items-center gap-2 font-bold text-red-500 text-sm">
+            {errorMessage &&
+                <div className="flex items-center gap-2 font-bold text-red-500 text-sm mb-2">
                     <Info size={14} />
-                    <p>Impossible to create user</p>
+                    <p>{errorMessage}</p>
                 </div>
             }
 
             <div className="flex flex-col">
                 <ButtonAuth
                     isLoading={isLoading}
-                    disabled={isLoading || passwordConditions.every((item) => ! item.isValid)}
+                    disabled={isLoading || passwordConditions.some((item) => !item.isValid)}
                     text="Create account"
                     textAction="Creating account..."
                     onPress={async () => {
                         try {
                             setIsLoading(true);
                             await userService.signup(authFormData.email, authFormData.password, authFormData.username);
-                            onNextStep("confirm_account");
+                            onClose();
+                            toast.success("Account created!", {
+                                description: `A verification email has been sent to ${authFormData.email}.`,
+                                icon: <MailCheck size={20} />,
+                                duration: 7000,
+                            });
+
                         } catch (e) {
-                            setError(true)
+                            setErrorMessage(e instanceof Error ? e.message : "Unable to create account.")
                         } finally {
                             setIsLoading(false)
                         }

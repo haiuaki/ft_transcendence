@@ -36,14 +36,25 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     const isAuthenticated = token !== null;
 
     useEffect(() => {
-        const fetchUser = async (token: string) => {
-            const connectedUser = await userService.profile(token);
-            setUser(connectedUser);
+        const restoreSession = async () => {
+            const token = localStorage.getItem("token");
+            if (!token) {
+                setIsLoading(false);
+                return;
+            }
+            try {
+                const connectedUser = await userService.profile(token);
+                setToken(token);
+                setUser(connectedUser);
+            } catch {
+                localStorage.removeItem("token");
+                setToken(null)
+                setUser(null)
+            } finally {
+                setIsLoading(false)
+            }
         }
-        const token = localStorage.getItem("token")
-        setToken(token);
-        fetchUser(token || "")
-        setIsLoading(false)
+        restoreSession();
     }, [])
 
     const login = async (email: string, password: string) => {
@@ -61,6 +72,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
     const logout = async () => {
         localStorage.removeItem("token");
+        setToken(null)
+        setUser(null)
     }
 
     return (

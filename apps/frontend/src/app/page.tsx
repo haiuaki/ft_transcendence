@@ -1,11 +1,8 @@
 "use client"
 
 import ThreeScene from "../components/3D/ThreeScene";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useState } from "react";
 import { AuthModal } from "../components/AuthModal/AuthModal";
-import { useSearchParams } from "next/navigation";
-import userService from "../services/userService";
-import { toast, Toaster } from "sonner";
 import { useAuth } from "../context/AuthContext";
 
 function HomeContent() {

@@ -1,19 +1,17 @@
-import userService from "@/src/services/userService";
 import Link from "next/link";
 import { useState } from "react";
 import { FaGithub } from "react-icons/fa6";
 import { FcGoogle } from "react-icons/fc";
-import { TbLoader2 } from "react-icons/tb";
 import z from "zod";
-import { AuthFormData, ButtonAuth, InputField } from "./AuthModal";
+import { AuthFormData, ButtonAuth, InputField, SetAuthFormData, StepAuthView } from "./AuthModal";
 import { themeColors } from "@/src/lib/themeColors";
 import Image from "next/image";
 import { Info } from "lucide-react";
 
 interface SignUpViewProps {
-    onNextStep: any;
+    onNextStep: (view: StepAuthView) => void;
     authFormData: AuthFormData;
-    setAuthFormData: any;
+    setAuthFormData: SetAuthFormData;
 }
 
 const SignUpView = ({ onNextStep, authFormData, setAuthFormData }: SignUpViewProps) => {
@@ -27,7 +25,7 @@ const SignUpView = ({ onNextStep, authFormData, setAuthFormData }: SignUpViewPro
                 <InputField
                     placeholder="Enter an email"
                     type="email"
-                    onChange={(e: any) => {
+                    onChange={(e) => {
                         setError(false)
                         setAuthFormData({ ...authFormData, email: (e.target.value) })
                     }}

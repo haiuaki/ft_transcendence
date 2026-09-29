@@ -1,18 +1,17 @@
 import { AnimatePresence } from "motion/react";
 import CenterModalTemplate from "../TemplateModal/CenterModalTemplate";
-import { useEffect, useRef, useState } from "react";
+import { ChangeEventHandler, Dispatch, SetStateAction, useRef, useState } from "react";
 import SignUpView from "./SignUpView";
-import { ArrowLeft, ArrowRight, Eye, EyeClosed, Loader2, LogIn, X } from "lucide-react"
+import { ArrowLeft, Eye, EyeClosed, Loader2, X } from "lucide-react"
 import CreateUsernameView from "./CreateUsernameView";
 import CreatePasswordView from "./CreatePasswordView";
 import { motion } from "motion/react"
 import LogInView from "./LogInView";
-import ConfirmAccountView from "./ConfirmAccountView";
 import { themeColors } from "@/src/lib/themeColors";
 
 interface AuthModalProps {
-    onClose: any;
-    isOpen: any;
+    onClose: () => void;
+    isOpen: boolean;
     view: "sign_up" | "log_in";
 }
 
@@ -23,13 +22,15 @@ export interface AuthFormData {
     code: string,
 }
 
-type StepAuthView = "sign_up" | "log_in" | "forgot_password" | "create_password" | "create_username" | "verify_code" | "confirm_account";
+export type StepAuthView = "sign_up" | "log_in" | "forgot_password" | "create_password" | "create_username" | "verify_code" | "confirm_account";
 
+export type SetAuthFormData =
+    Dispatch<SetStateAction<AuthFormData>>;
 
 interface InputFieldProps {
     placeholder: string,
     type?: string,
-    onChange: any,
+    onChange: ChangeEventHandler<HTMLInputElement>;
     value: string,
     maxLength?: number | undefined,
     autoFocus?: boolean,
@@ -41,11 +42,11 @@ interface ButtonAuthProps {
     isLoading: boolean,
     text: string,
     textAction: string,
-    onPress: any,
+    onPress: () => void | Promise<void>;
 }
 
 
-export const InputField = ({ placeholder, type = "text", onChange, value, maxLength = undefined, autoFocus = false, error = false}: InputFieldProps) => {
+export const InputField = ({ placeholder, type = "text", onChange, value, maxLength = undefined, autoFocus = false, error = false }: InputFieldProps) => {
     const [showPassword, setShowPassword] = useState<boolean>(false);
     const [isFocused, setIsFocused] = useState<boolean>(false);
     const refInput = useRef<HTMLInputElement | null>(null);
@@ -93,6 +94,7 @@ export const AuthModal = ({ onClose, isOpen, view }: AuthModalProps) => {
     const [authViewHistory, setAuthViewHistory] = useState<StepAuthView[]>([])
     const [authFormData, setAuthFormData] = useState<AuthFormData>({ email: "", username: "", password: "", code: "", })
     const colors = themeColors;
+
     const goBack = () => {
         const previousView = authViewHistory.at(-1);
         if (!previousView) return;
@@ -105,31 +107,35 @@ export const AuthModal = ({ onClose, isOpen, view }: AuthModalProps) => {
         setCurrentAuthView(nextView)
     }
 
-    useEffect(() => {
-        if (isOpen) {
-            setCurrentAuthView(view);
-            setAuthViewHistory([]);
-            setAuthFormData({ email: "", username: "", password: "", code: "", });
-        }
-    }, [isOpen, view]);
+    const closeModal = () => {
+        setCurrentAuthView(view);
+        setAuthViewHistory([]);
+        setAuthFormData({
+            email: "",
+            username: "",
+            password: "",
+            code: "",
+        });
+
+        onClose();
+    };
     return (
         <AnimatePresence>
-            {isOpen && <CenterModalTemplate onClose={onClose} className={`flex w-full h-full max-w-[550px] max-h-[480px] flex-col pt-4 rounded-4xl bg-white ${colors.text}`} overlay="bg-black/75 backdrop-blur-sm">
+            {isOpen && <CenterModalTemplate onClose={closeModal} className={`flex w-full h-full max-w-[550px] max-h-[480px] flex-col pt-4 rounded-4xl bg-white ${colors.text}`} overlay="bg-black/75 backdrop-blur-sm">
                 <div className="flex items-center justify-between px-4">
                     {authViewHistory.length > 0 && currentAuthView != "confirm_account" ? <div className="cursor-pointer flex items-center justify-center p-1.5 hover:bg-black/5 active:bg-black/10 transition-colors duration-200 rounded-full text-black" onClick={goBack}>
                         <ArrowLeft size={20} />
                     </div> : <div />}
-                    <div className="cursor-pointer flex items-center justify-center p-1.5 hover:bg-black/5 active:bg-black/10 transition-colors duration-200 rounded-full text-black" onClick={onClose}>
+                    <div className="cursor-pointer flex items-center justify-center p-1.5 hover:bg-black/5 active:bg-black/10 transition-colors duration-200 rounded-full text-black" onClick={closeModal}>
                         <X size={20} />
                     </div>
                 </div>
                 <div className="flex min-h-0 flex-1 flex-col items-center justify-center pb-6">
                     <div className="h-full w-full max-w-[450px]">
                         {currentAuthView == "sign_up" && <SignUpView onNextStep={goToView} authFormData={authFormData} setAuthFormData={setAuthFormData} />}
-                        {currentAuthView == "log_in" && <LogInView onNextStep={goToView} authFormData={authFormData} setAuthFormData={setAuthFormData} />}
-                        {currentAuthView == "create_password" && <CreatePasswordView onNextStep={goToView} authFormData={authFormData} setAuthFormData={setAuthFormData} />}
+                        {currentAuthView == "log_in" && <LogInView authFormData={authFormData} setAuthFormData={setAuthFormData} onClose={closeModal} />}
+                        {currentAuthView == "create_password" && <CreatePasswordView authFormData={authFormData} setAuthFormData={setAuthFormData} onClose={closeModal} />}
                         {currentAuthView == "create_username" && <CreateUsernameView onNextStep={goToView} authFormData={authFormData} setAuthFormData={setAuthFormData} />}
-                        {currentAuthView == "confirm_account" && <ConfirmAccountView authFormData={authFormData} />}
                     </div>
                 </div>
             </CenterModalTemplate>

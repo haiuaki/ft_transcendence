@@ -1,19 +1,18 @@
 import { useState } from "react";
-import { AuthFormData, ButtonAuth, InputField } from "./AuthModal";
+import { AuthFormData, ButtonAuth, InputField, SetAuthFormData, StepAuthView } from "./AuthModal";
 import {
     uniqueNamesGenerator,
     adjectives,
     animals,
 } from "unique-names-generator";
 
-import { Info, Loader2 } from "lucide-react";
-import { error } from "console";
+import { Info } from "lucide-react";
 import { themeColors } from "@/src/lib/themeColors";
 
 interface CreateUsernameViewProps {
-    onNextStep: any;
+    onNextStep: (view: StepAuthView) => void;
     authFormData: AuthFormData;
-    setAuthFormData: any;
+    setAuthFormData: SetAuthFormData;
 }
 
 const MAX_LENGTH = 20
@@ -26,8 +25,8 @@ const CreateUsernameView = ({ onNextStep, authFormData, setAuthFormData }: Creat
     const generateRandomUsername = () => {
         const adjectivesName = uniqueNamesGenerator({ dictionaries: [adjectives] });
         const animalsName = uniqueNamesGenerator({ dictionaries: [animals] });
-        const randomNumber = Math.floor(Math.random() * 100)
-        const username = adjectivesName.charAt(0).toUpperCase() + adjectivesName.slice(1) + (animalsName.charAt(0).toUpperCase() + animalsName.slice(1)) + randomNumber
+        const randomNumber = crypto.getRandomValues(new Uint32Array(1))[0] % 100;
+          const username = adjectivesName.charAt(0).toUpperCase() + adjectivesName.slice(1) + (animalsName.charAt(0).toUpperCase() + animalsName.slice(1)) + randomNumber
         if (username.length > 20)
             generateRandomUsername();
         else
@@ -42,7 +41,7 @@ const CreateUsernameView = ({ onNextStep, authFormData, setAuthFormData }: Creat
                         placeholder="Enter an username"
                         type="text"
                         maxLength={MAX_LENGTH}
-                        onChange={(e: any) => {
+                        onChange={(e) => {
                             setError(null);
                             setAuthFormData({ ...authFormData, username: (e.target.value) })
                         }}

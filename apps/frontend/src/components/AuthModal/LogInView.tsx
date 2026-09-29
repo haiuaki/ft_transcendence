@@ -1,22 +1,21 @@
 import { useState } from "react";
 import { FaGithub } from "react-icons/fa6";
 import { FcGoogle } from "react-icons/fc";
-import { TbLoader2 } from "react-icons/tb";
 import z from "zod";
-import { AuthFormData, ButtonAuth, InputField } from "./AuthModal";
+import { AuthFormData, ButtonAuth, InputField, SetAuthFormData } from "./AuthModal";
 import { themeColors } from "@/src/lib/themeColors";
 import Image from "next/image";
 import { Info } from "lucide-react";
 import { useAuth } from "@/src/context/AuthContext";
 
 interface LogInViewProps {
-    onNextStep: any;
     authFormData: AuthFormData;
-    setAuthFormData: any;
+    setAuthFormData: SetAuthFormData;
+    onClose: () => void;
 }
 
 
-const LogInView = ({ onNextStep, authFormData, setAuthFormData }: LogInViewProps) => {
+const LogInView = ({ authFormData, setAuthFormData, onClose }: LogInViewProps) => {
     const {login} = useAuth();
     const [error, setError] = useState<boolean>(false);
     const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -29,7 +28,7 @@ const LogInView = ({ onNextStep, authFormData, setAuthFormData }: LogInViewProps
                     <InputField
                         placeholder="Enter your email"
                         type="email"
-                        onChange={(e: any) => {
+                        onChange={(e) => {
                             setAuthFormData({ ...authFormData, email: (e.target.value) })
                             setError(false)
                         }}
@@ -39,7 +38,7 @@ const LogInView = ({ onNextStep, authFormData, setAuthFormData }: LogInViewProps
                     <InputField
                         placeholder="Enter your password"
                         type="password"
-                        onChange={(e: any) => {
+                        onChange={(e) => {
                             setAuthFormData({ ...authFormData, password: (e.target.value) })
                             setError(false)
                         }}
@@ -60,6 +59,7 @@ const LogInView = ({ onNextStep, authFormData, setAuthFormData }: LogInViewProps
                     const emailResult = z.email("").safeParse(authFormData.email);
                     if (!emailResult.success) return setError(true);
                     await login(authFormData.email, authFormData.password);
+                    onClose()
                 }
                 catch (e) {
                     console.log(e);
