@@ -55,6 +55,7 @@ func (c *Client) readPump() {
 				SET status = 'LEFT'
 				WHERE user_id = (SELECT id FROM users WHERE email = $1)
 				AND status = 'ACTIVE'
+				AND channel_id IN (SELECT id FROM channels WHERE type != 'DIRECT')
 			`
 			// Use `context.Background()` for a quick background execution
 			_, err := c.dbPool.Exec(context.Background(), standUpSQL, c.Email)

@@ -13,7 +13,7 @@ RUN python3 -m venv /app/.venv && \
     /app/.venv/bin/pip install --no-cache-dir --upgrade pip && \
     /app/.venv/bin/pip install --no-cache-dir -r /app/requirements.txt
 
-COPY . /app
+COPY . /app/
 
 EXPOSE 8000
 

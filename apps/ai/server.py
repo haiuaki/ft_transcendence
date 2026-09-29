@@ -68,11 +68,11 @@ async def stream_generator(prompt: str) -> AsyncGenerator[str, None]:
         clean_error = str(e).replace("\n", " ")
         yield f"data: [ERROR: {str(clean_error)}]\n\n"
 
-@app.get("/api/health")
+@app.get("/health")
 async def health_check():
     return {"status": "ok"}
 
-@app.post("/api/stream")
+@app.post("/stream")
 @limiter.limit("3/minute")
 async def stream_ai(request: Request, body: PromptRequest):
     if not body.prompt.strip():
