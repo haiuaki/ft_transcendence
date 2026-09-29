@@ -10,7 +10,9 @@ on:
   pull_request:
     branches: [ "main" ]
     paths:
-      - 'apps/backend/**'
+      - 'apps/ai/**'
+      - '.github/workflows/ci-ai.yml'
+      - 'pytest.ini'
 
 jobs:
   test-ai-service:
