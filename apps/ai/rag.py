@@ -1,34 +1,59 @@
+import json
 import asyncpg
+from google import genai
 
-async def get_relevant_context(db_pool: asyncpg.Pool, channel_id: int | None = None, limit: int = 50) -> str:
-    """Retrieves recent channel messages with author usernames from PostgreSQL."""
+
+def generate_embedding(client: genai.Client, text: str) -> list[float]:
+    """Generates a 768-dimension semantic vector using Google text-embedding-004."""
+    result = client.models.embed_content(
+        model="text-embedding-004",
+        contents=text,
+    )
+    return result.embeddings[0].values
+
+
+async def get_relevant_context(
+    client: genai.Client,
+    db_pool: asyncpg.Pool,
+    user_prompt: str,
+    channel_id: int | None = None,
+    limit: int = 5,
+) -> str:
+    """Retrieves messages with the highest semantic similarity to the prompt."""
+    prompt_vector = generate_embedding(client, user_prompt)
+    vector_json = json.dumps(prompt_vector)
+
     query = """
-        SELECT u.username, m.content, m.created_at
+        SELECT 
+            u.username, 
+            m.content, 
+            m.created_at,
+            (m.embedding <=> $1::vector) AS distance
         FROM messages m
         JOIN users u ON m.sender_id = u.id
-        WHERE ($1::INT IS NULL OR m.channel_id = $1)
-        ORDER BY m.created_at DESC
-        LIMIT $2
+        WHERE m.embedding IS NOT NULL
+          AND ($2::INT IS NULL OR m.channel_id = $2)
+        ORDER BY distance ASC
+        LIMIT $3
     """
+
     async with db_pool.acquire() as connection:
-        rows = await connection.fetch(query, channel_id, limit)
+        rows = await connection.fetch(query, vector_json, channel_id, limit)
 
     if not rows:
-        return "No recent message history found."
+        return "No semantically relevant messages found in database archives."
 
-    # Reverse rows to maintain chronological order for the model
-    ordered_rows = list(reversed(rows))
-    context_lines = [
-        f"[{r['created_at'].strftime('%H:%M')}] {r['username']}: {r['content']}"
-        for r in ordered_rows
+    lines = [
+        f"[{r['created_at'].strftime('%Y-%m-%d %H:%M')}] {r['username']}: {r['content']} (relevance: {1 - r['distance']:.2f})"
+        for r in rows
     ]
-    return "Recent chat history:\n" + "\n".join(context_lines)
+    return "Relevant context extracted from archives:\n" + "\n".join(lines)
 
 
 def format_rag_prompt(context: str, user_prompt: str) -> str:
-    """Merges the extracted database context with the user prompt."""
+    """Merges semantic context with the user query."""
     return (
         f"System context:\n{context}\n\n"
         f"User query: {user_prompt}\n\n"
-        "Provide a helpful response based on the conversation history above."
+        "Provide an accurate response based on the contextual information above."
     )
