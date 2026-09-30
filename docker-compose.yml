@@ -1,35 +1,16 @@
 services:
   database:
-    image: postgres:18-alpine
+    build: ./infra/postgresql
     container_name: postgresql
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
-
-    ports:
-      - "5432:5432"
     networks:
       - app_network
     volumes:
       - db_data:/var/lib/postgresql
-      - ./infra/postgresql/init.sql:/docker-entrypoint-initdb.d/init.sql
-
-  frontend:
-    build:
-      context: ./apps/frontend
-      dockerfile: Dockerfile
-    container_name: nextjs
-    restart: unless-stopped
-    ports:
-      - "3000:3000"
-    volumes:
-      - ./apps/frontend:/app
-      - /app/node_modules
-      - /app/.next
-    networks:
-      - app_network
 
   backend:
     build: ./apps/backend
@@ -39,8 +20,6 @@ services:
       - .env
     environment:
       - POSTGRES_HOST=database
-    ports:
-      - "8080:8080"
     depends_on:
       - database
     networks:
@@ -49,11 +28,36 @@ services:
   ai-service:
     build: ./apps/ai
     container_name: ai_bot
-    ports:
-      - "8000:8000"
     env_file:
       - .env
     restart: unless-stopped
+    networks:
+      - app_network
+
+  frontend:
+    build:
+      context: ./apps/frontend
+      dockerfile: Dockerfile
+    container_name: nextjs
+    restart: unless-stopped
+    depends_on:
+      - backend
+      - ai-service
+    volumes:
+      - ./apps/frontend:/app
+      - /app/node_modules
+      - /app/.next
+    networks:
+      - app_network
+
+  nginx:
+    build: ./infra/nginx
+    container_name: reverse_proxy
+    restart: unless-stopped
+    ports:
+      - "443:443"
+    depends_on:
+      - frontend
     networks:
       - app_network
 

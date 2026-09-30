@@ -101,7 +101,7 @@ func Signup(dbPool *pgxpool.Pool) http.HandlerFunc {
 			// Construct the link pointing to the frontend (fallback to 3000 if not set)
 			frontendURL := os.Getenv("FRONTEND_URL")
 			if frontendURL == "" {
-				frontendURL = "http://localhost:3000"
+				frontendURL = "https://localhost"
 			}
 			verifyLink := fmt.Sprintf("%s/verify?token=%s", frontendURL, verificationToken)
 
