@@ -65,7 +65,7 @@ const SignUpView = ({ onNextStep, authFormData, setAuthFormData }: SignUpViewPro
                 <div className="select-none flex items-center justify-center cursor-pointer ring-1 ring-black/10 rounded-xl w-12 h-12 hover:ring-2 active:ring-1 active:ring-black/30 transition-all duration-200">
                     <FaGithub color="black" />
                 </div>
-                <div className="select-none flex items-center justify-center cursor-pointer ring-1 ring-black/10 rounded-xl w-12 h-12 hover:ring-2 active:ring-1 active:ring-black/30 transition-all duration-200">
+                <div onClick={() => window.location.href = "/api/oauth/42/login"} className="select-none flex items-center justify-center cursor-pointer ring-1 ring-black/10 rounded-xl w-12 h-12 hover:ring-2 active:ring-1 active:ring-black/30 transition-all duration-200">
                     <Image src={"/img/42-logo.png"} alt="42" width={42} height={42} />
                 </div>
             </div>

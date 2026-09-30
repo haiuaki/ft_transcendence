@@ -55,10 +55,10 @@ func main() {
 
 	// --- OAUTH 2.0 ------------------------------------------------------- //
 	// GET: Redirect user to the provider (e.g., 42 API)
-	http.HandleFunc("/{provider}/login", auth.OAuthLogin())
+	http.HandleFunc("/oauth/{provider}/login", auth.OAuthLogin())
 
 	// GET: Handle the callback from the provider
-	http.HandleFunc("/{provider}/callback", auth.OAuthCallback(dbPool))
+	http.HandleFunc("/oauth/{provider}/callback", auth.OAuthCallback(dbPool))
 
 	// --- PROFILE --------------------------------------------------------- //
 	// GET: View user profile

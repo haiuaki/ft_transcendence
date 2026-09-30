@@ -2,16 +2,20 @@ package auth
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"os"
+	"time"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/oauth2"
 )
 
 type ProviderConfig struct {
 	OAuth      *oauth2.Config
-	ProfileURL string
+	ProfileURL string // Custom profile URL
+	Extract    func(rawData map[string]any) (email, username, avatarURL string)
 }
 
 var oauthProviders = map[string]ProviderConfig{
@@ -19,7 +23,7 @@ var oauthProviders = map[string]ProviderConfig{
 		OAuth: &oauth2.Config{
 			ClientID:     os.Getenv("FT_CLIENT_ID"),
 			ClientSecret: os.Getenv("FT_CLIENT_SECRET"),
-			RedirectURL:  "http://localhost:3000/api/42/callback",
+			RedirectURL:  os.Getenv("FRONTEND_URL") + "/api/oauth/42/callback",
 			Scopes:       []string{"public"},
 			Endpoint: oauth2.Endpoint{
 				AuthURL:  "https://api.intra.42.fr/oauth/authorize",
@@ -28,6 +32,18 @@ var oauthProviders = map[string]ProviderConfig{
 		},
 
 		ProfileURL: "https://api.intra.42.fr/v2/me",
+
+		Extract: func(rawData map[string]any) (email, username, avatarURL string) {
+			email = rawData["email"].(string)
+			username = rawData["login"].(string)
+
+			if imageObj, ok := rawData["image"].(map[string]any); ok {
+				if link, ok := imageObj["link"].(string); ok {
+					avatarURL = link
+				}
+			}
+			return
+		},
 	},
 }
 
@@ -85,13 +101,68 @@ func OAuthCallback(dbPool *pgxpool.Pool) http.HandlerFunc {
 		}
 		defer resp.Body.Close()
 
-		// Copy the JSON response into the browser (temporary)
-		w.Header().Set("Content-Type", "application/json")
 		var rawData map[string]any
-
 		importErr := json.NewDecoder(resp.Body).Decode(&rawData)
-		if importErr == nil {
-			json.NewEncoder(w).Encode(rawData)
+		if importErr != nil {
+			http.Error(w, "Failed to parse profile data.", http.StatusInternalServerError)
+			return
 		}
+
+		// Extract the data using the provider's specific extraction function
+		email, username, avatarURL := config.Extract(rawData)
+
+		// Database Upsert (check if exists, if not create)
+		var userID string
+		checkQuery := `SELECT id FROM users WHERE email = $1`
+		err = dbPool.QueryRow(r.Context(), checkQuery, email).Scan(&userID)
+		if err != nil {
+			// Email doesn't exist, brand new user
+
+			// USERNAME RESOLVER: ensure usernamee is unique before insert
+			uniqueUsername := username
+			counter := 1
+			for {
+				var existingID string
+				usernameCheck := `SELECT id FROM users WHERE LOWER(username) = LOWER($1)`
+				err := dbPool.QueryRow(r.Context(), usernameCheck, uniqueUsername).Scan(&existingID)
+				if err != nil {
+					// No row found: Username is available, break the loop
+					break
+				}
+
+				// It is taken, append a number (e.g., johndoe1, johndoe2..) and loop
+				uniqueUsername = fmt.Sprintf("%s%d", username, counter)
+				counter++
+			}
+
+			// Safely insert the `uniqueUsername`
+			insertQuery := `
+				INSERT INTO users (email, username, avatar_url, is_verified)
+				VALUES ($1, $2, $3, true)
+				RETURNING id
+			`
+			err = dbPool.QueryRow(r.Context(), insertQuery, email, uniqueUsername, avatarURL).Scan(&userID)
+			if err != nil {
+				http.Error(w, "Failed to create OAuth user in database.", http.StatusInternalServerError)
+				return
+			}
+		}
+
+		// Generate JWT Token
+		secretKey := os.Getenv("JWT_SECRET")
+		jwtToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+			"email": email,
+			"exp":   time.Now().Add(time.Hour * 24).Unix(),
+		})
+
+		tokenString, err := jwtToken.SignedString([]byte(secretKey))
+		if err != nil {
+			http.Error(w, "Failed to sign token.", http.StatusInternalServerError)
+			return
+		}
+
+		// Redirect to frontend with the secure token attached
+		frontendURL := os.Getenv("FRONTEND_URL") + "/oauth/callback?token=" + tokenString
+		http.Redirect(w, r, frontendURL, http.StatusTemporaryRedirect)
 	}
 }
