@@ -136,17 +136,28 @@ func OAuthLogin() http.HandlerFunc {
 
 func OAuthCallback(dbPool *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		// Helper function to bounce any errors back to the frontend homepage
+		failAndRedirect := func() {
+			http.Redirect(w, r, os.Getenv("FRONTEND_URL")+"?error=oauth_failed", http.StatusTemporaryRedirect)
+		}
+
+		// Handle "Access Denied" (user clicked 'Cancel' on the consent screen)
+		if r.FormValue("error") != "" {
+			failAndRedirect()
+			return
+		}
+
 		// Grab the provider configuration
 		providerName := r.PathValue("provider")
 		config, exists := oauthProviders[providerName]
 		if !exists {
-			http.Error(w, "Unsupported OAuth provider.", http.StatusBadRequest)
+			failAndRedirect()
 			return
 		}
 
 		// Verify state string matches
 		if r.FormValue("state") != "random-secure-state-string" {
-			http.Error(w, "State string does not match.", http.StatusBadRequest)
+			failAndRedirect()
 			return
 		}
 
@@ -154,7 +165,7 @@ func OAuthCallback(dbPool *pgxpool.Pool) http.HandlerFunc {
 		code := r.FormValue("code")
 		token, err := config.OAuth.Exchange(r.Context(), code)
 		if err != nil {
-			http.Error(w, "Failed to exchange token.", http.StatusInternalServerError)
+			failAndRedirect()
 			return
 		}
 
@@ -162,7 +173,7 @@ func OAuthCallback(dbPool *pgxpool.Pool) http.HandlerFunc {
 		client := config.OAuth.Client(r.Context(), token)
 		resp, err := client.Get(config.ProfileURL)
 		if err != nil {
-			http.Error(w, "Failed to fetch user informations from provider.", http.StatusInternalServerError)
+			failAndRedirect()
 			return
 		}
 		defer resp.Body.Close()
@@ -170,7 +181,7 @@ func OAuthCallback(dbPool *pgxpool.Pool) http.HandlerFunc {
 		var rawData map[string]any
 		importErr := json.NewDecoder(resp.Body).Decode(&rawData)
 		if importErr != nil {
-			http.Error(w, "Failed to parse profile data.", http.StatusInternalServerError)
+			failAndRedirect()
 			return
 		}
 
@@ -184,7 +195,7 @@ func OAuthCallback(dbPool *pgxpool.Pool) http.HandlerFunc {
 		if err != nil {
 			// Email doesn't exist, brand new user
 
-			// USERNAME RESOLVER: ensure usernamee is unique before insert
+			// USERNAME RESOLVER: ensure username is unique before insert
 			uniqueUsername := username
 			counter := 1
 			for {
@@ -209,7 +220,7 @@ func OAuthCallback(dbPool *pgxpool.Pool) http.HandlerFunc {
 			`
 			err = dbPool.QueryRow(r.Context(), insertQuery, email, uniqueUsername, avatarURL).Scan(&userID)
 			if err != nil {
-				http.Error(w, "Failed to create OAuth user in database.", http.StatusInternalServerError)
+				failAndRedirect()
 				return
 			}
 		}
@@ -223,7 +234,7 @@ func OAuthCallback(dbPool *pgxpool.Pool) http.HandlerFunc {
 
 		tokenString, err := jwtToken.SignedString([]byte(secretKey))
 		if err != nil {
-			http.Error(w, "Failed to sign token.", http.StatusInternalServerError)
+			failAndRedirect()
 			return
 		}
 
