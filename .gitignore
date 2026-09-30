@@ -3,6 +3,39 @@
 
 # Environment variables
 .env
+.env.*
+!.env.example
+
+# IDEs and Editors
+.vscode/
+
+# Dependencies
+**/node_modules/
+
+# Python
 .venv
-pyrightconfig.json
 __pycache__/
+pyrightconfig.json
+
+# Next.js
+**/.next/
+**/out/
+
+# Build
+**/build/
+**/dist/
+
+# Tests
+**/coverage/
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# TypeScript
+**/*.tsbuildinfo
+**/next-env.d.ts
+
+# Vercel
+.vercel/
