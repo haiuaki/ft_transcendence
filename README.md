@@ -27,13 +27,19 @@ Our project fulfills the requirements by implementing the following Major and Mi
 * **AI Assistant:** Integration of a real-time conversational agent using Google Gemini.
 
 ## Instructions
+1. Copy `.env.example` to `.env` and fill in your API keys.
+2. Run `make up` (or `docker compose up --build -d`).
+3. Open your browser and navigate to **`https://localhost`**.
+   *Note: Because we use self-signed 42-compliant SSL certificates, your browser will warn you that the connection is not private. Click "Advanced" -> "Proceed to localhost".*
 
 ## Technical Stack
+* **Frontend:** Next.js (React), TypeScript, Tailwind CSS
+* **Frontend (3D):** Three.js, React Three Fiber
 * **Backend:** Go (1.27.1), net/http standard library, Gorilla WebSockets
 * **Backend (AI Service):** Python 3.12, FastAPI, Google GenAI SDK
 * **Database:** PostgreSQL 18, pgx/v5 driver
 * **Third-Party APIs:** Resend Go SDK, Google Gemini API
-* **Infrastructure:** Docker & Docker Compose
+* **Infrastructure:** Docker, Docker Compose, NGINX (HTTPS Reverse Proxy)
 * **Testing:** Pytest & HTTPX (Unit testing for AI service)
 * **CI/CD:** GitHub Actions (Automated Go formatting and builds)
 
@@ -44,10 +50,10 @@ Our database utilizes a Domain-Driven Design approach with strict constraints to
 * **Friendships:** Utilizes a custom Bidirectional Unique Index (LEAST/GREATEST) to elegantly handle overlapping friend requests and race conditions.
 
 ## Team Information
-* **juljin** - Backend Architecture
+* **juljin** - Backend Architecture & DevOps
 * **ksilvest** - AI Service Architecture & Infrastructure
-* **nlienard** - 
-* **dinza-cr** -
+* **nlienard** - Frontend Architecture & UI/UX
+* **dinza-cr** - 3D Modeling & Three.js Integration
 
 ## Project Management
 
