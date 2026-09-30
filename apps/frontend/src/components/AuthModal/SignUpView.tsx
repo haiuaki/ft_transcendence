@@ -18,6 +18,20 @@ const SignUpView = ({ onNextStep, authFormData, setAuthFormData }: SignUpViewPro
     const [error, setError] = useState<boolean>(false);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const colors = themeColors;
+    const addEmail = () => {
+        try {
+            setIsLoading(true);
+            const emailResult = z.email("").safeParse(authFormData.email);
+            if (!emailResult.success) return setError(true);
+            onNextStep("create_username");
+        }
+        catch (e) {
+            console.log(e);
+        } finally {
+            setIsLoading(false)
+        }
+
+    }
     return (
         <div className={`flex flex-col gap-6`}>
             <p className="text-3xl font-semibold text-center">Create an account</p>
@@ -31,6 +45,7 @@ const SignUpView = ({ onNextStep, authFormData, setAuthFormData }: SignUpViewPro
                     }}
                     value={authFormData.email}
                     error={error}
+                    onPress={addEmail}
                 />
                 {(error) && <div className="flex items-center gap-2">
                     <Info size={14} color="red" />
@@ -38,20 +53,7 @@ const SignUpView = ({ onNextStep, authFormData, setAuthFormData }: SignUpViewPro
                 </div>
                 }
             </div>
-            <ButtonAuth disabled={isLoading} text={"Continue"} textAction={"Continuing..."} isLoading={isLoading} onPress={async () => {
-                try {
-                    setIsLoading(true);
-                    const emailResult = z.email("").safeParse(authFormData.email);
-                    if (!emailResult.success) return setError(true);
-                    onNextStep("create_username");
-                }
-                catch (e) {
-                    console.log(e);
-                } finally {
-                    setIsLoading(false)
-                }
-            }
-            } />
+            <ButtonAuth disabled={isLoading} text={"Continue"} textAction={"Continuing..."} isLoading={isLoading} onPress={addEmail} />
             <div className="flex items-center justify-between gap-4">
                 <div className="flex-1 w-full h-[1px] bg-linear-to-l from-[#ebebeb] to-transparent" />
                 <p className={`text-xs text-medium ${colors.textSecondary}`}>OR</p>

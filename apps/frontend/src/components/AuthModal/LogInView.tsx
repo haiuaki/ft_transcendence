@@ -16,10 +16,27 @@ interface LogInViewProps {
 
 
 const LogInView = ({ authFormData, setAuthFormData, onClose }: LogInViewProps) => {
-    const {login} = useAuth();
+    const { login } = useAuth();
     const [error, setError] = useState<boolean>(false);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const colors = themeColors;
+
+    const launchLogin = async () => {
+        try {
+            setIsLoading(true);
+            const emailResult = z.email("").safeParse(authFormData.email);
+            if (!emailResult.success) return setError(true);
+            await login(authFormData.email, authFormData.password);
+            onClose()
+        }
+        catch (e) {
+            console.log(e);
+            setError(true)
+        } finally {
+            setIsLoading(false)
+        }
+
+    }
     return (
         <div className="flex flex-col gap-6">
             <p className="text-3xl font-semibold text-center" style={{ color: colors.text }}>Good to see you again!</p>
@@ -32,6 +49,7 @@ const LogInView = ({ authFormData, setAuthFormData, onClose }: LogInViewProps) =
                             setAuthFormData({ ...authFormData, email: (e.target.value) })
                             setError(false)
                         }}
+                        onPress={() => { }}
                         error={error}
                         value={authFormData.email}
                     />
@@ -44,31 +62,17 @@ const LogInView = ({ authFormData, setAuthFormData, onClose }: LogInViewProps) =
                         }}
                         error={error}
                         value={authFormData.password}
+                        onPress={launchLogin}
                     />
                 </div>
-            {error &&
-                <div className="flex items-center gap-2 font-bold text-red-500 text-sm">
-                    <Info size={14} />
-                    <p>Email is not valid or wrong password</p>
-                </div>
-            }
+                {error &&
+                    <div className="flex items-center gap-2 font-bold text-red-500 text-sm">
+                        <Info size={14} />
+                        <p>Email is not valid or wrong password</p>
+                    </div>
+                }
             </div>
-            <ButtonAuth disabled={isLoading} text={"Continue"} textAction={"Continuing..."} isLoading={isLoading} onPress={async () => {
-                try {
-                    setIsLoading(true);
-                    const emailResult = z.email("").safeParse(authFormData.email);
-                    if (!emailResult.success) return setError(true);
-                    await login(authFormData.email, authFormData.password);
-                    onClose()
-                }
-                catch (e) {
-                    console.log(e);
-                    setError(true)
-                } finally {
-                    setIsLoading(false)
-                }
-            }
-            } />
+            <ButtonAuth disabled={isLoading} text={"Continue"} textAction={"Continuing..."} isLoading={isLoading} onPress={launchLogin} />
             <div className="flex items-center justify-between gap-4">
                 <div className="flex-1 w-full h-[1px] bg-linear-to-l from-[#ebebeb] to-transparent" />
                 <p className={`text-xs text-medium ${colors.textSecondary}`}>OR</p>
