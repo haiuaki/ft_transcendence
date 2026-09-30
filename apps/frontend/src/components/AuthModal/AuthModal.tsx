@@ -35,6 +35,7 @@ interface InputFieldProps {
     maxLength?: number | undefined,
     autoFocus?: boolean,
     error?: boolean,
+    onPress?: () => void
 }
 
 interface ButtonAuthProps {
@@ -46,7 +47,7 @@ interface ButtonAuthProps {
 }
 
 
-export const InputField = ({ placeholder, type = "text", onChange, value, maxLength = undefined, autoFocus = false, error = false }: InputFieldProps) => {
+export const InputField = ({ placeholder, type = "text", onChange, value, maxLength = undefined, autoFocus = false, error = false, onPress = () => {} }: InputFieldProps) => {
     const [showPassword, setShowPassword] = useState<boolean>(false);
     const [isFocused, setIsFocused] = useState<boolean>(false);
     const refInput = useRef<HTMLInputElement | null>(null);
@@ -61,6 +62,14 @@ export const InputField = ({ placeholder, type = "text", onChange, value, maxLen
                 {placeholder}
             </motion.p>
             <input
+                onKeyDown={(e) => {
+                    if (e.key == "Enter")
+                    {
+                        onPress();
+                        refInput.current?.blur();
+                        setIsFocused(false);
+                    }
+                }}
                 ref={refInput}
                 onFocus={() => setIsFocused(true)}
                 onBlur={() => setIsFocused(false)}

@@ -12,8 +12,7 @@ const userService = {
                 password,
             })
         })
-        if (!response.ok)
-        {
+        if (!response.ok) {
             const message = await response.text();
             throw new Error(message || "Failed to login user")
         }
@@ -37,6 +36,8 @@ const userService = {
         return message;
     },
     verify: async (token: string) => {
+        if (!token.trim())
+            throw new Error("Token is required")
         const response = await fetch(URL + "/verify?token=" + encodeURIComponent(token), {
             method: "POST",
             headers: {
@@ -48,6 +49,8 @@ const userService = {
         return response.text();
     },
     profile: async (token: string) => {
+        if (!token.trim())
+            throw new Error("Token is required")
         const response = await fetch(URL + "/profile", {
             method: "GET",
             headers: {
@@ -57,6 +60,19 @@ const userService = {
         if (!response.ok)
             throw new Error("Failed to get user")
         return response.json();
+    },
+    delete: async (token: string) => {
+        if (!token.trim())
+            throw new Error("Token is required")
+        const response = await fetch(URL + "/profile/delete", {
+            method: "DELETE",
+            headers: {
+                Authorization: `Bearer ${token}`
+            },
+        })
+        if (!response.ok)
+            throw new Error("Failed to delete user")
+        return response.text();
     }
 }
 

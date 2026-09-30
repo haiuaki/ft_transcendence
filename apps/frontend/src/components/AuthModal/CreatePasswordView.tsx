@@ -24,6 +24,25 @@ const CreatePasswordView = ({ authFormData, setAuthFormData, onClose }: CreatePa
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const colors = themeColors;
+
+    const createAccount = async () => {
+        try {
+            setIsLoading(true);
+            await userService.signup(authFormData.email, authFormData.password, authFormData.username);
+            onClose();
+            toast.success("Account created!", {
+                description: `A verification email has been sent to ${authFormData.email}.`,
+                icon: <MailCheck size={20} />,
+                duration: 7000,
+            });
+
+        } catch (e) {
+            setErrorMessage(e instanceof Error ? e.message : "Unable to create account.")
+        } finally {
+            setIsLoading(false)
+        }
+
+    }
     return (
         <div className="flex flex-col h-full min-h-0 text-black">
             <div className="flex-1 flex flex-col gap-6">
@@ -41,6 +60,7 @@ const CreatePasswordView = ({ authFormData, setAuthFormData, onClose }: CreatePa
                                 setErrorMessage(null);
                                 setAuthFormData({ ...authFormData, password: e.target.value })
                             }}
+                            onPress={createAccount}
                             value={authFormData.password}
                         />
                     </div>
@@ -71,23 +91,7 @@ const CreatePasswordView = ({ authFormData, setAuthFormData, onClose }: CreatePa
                     disabled={isLoading || passwordConditions.some((item) => !item.isValid)}
                     text="Create account"
                     textAction="Creating account..."
-                    onPress={async () => {
-                        try {
-                            setIsLoading(true);
-                            await userService.signup(authFormData.email, authFormData.password, authFormData.username);
-                            onClose();
-                            toast.success("Account created!", {
-                                description: `A verification email has been sent to ${authFormData.email}.`,
-                                icon: <MailCheck size={20} />,
-                                duration: 7000,
-                            });
-
-                        } catch (e) {
-                            setErrorMessage(e instanceof Error ? e.message : "Unable to create account.")
-                        } finally {
-                            setIsLoading(false)
-                        }
-                    }}
+                    onPress={createAccount}
                 />
             </div>
         </div>
