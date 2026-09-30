@@ -17,6 +17,7 @@ Our project fulfills the requirements by implementing the following Major and Mi
 
 ### AI
 * **[Major]** LLM System Interface (Integration of an AI Chatbot via Gemini API)
+* **[Major]** Retrieval-Augmented Generation (RAG with pgvector semantic search and dataset export)
 
 ## Features List
 * **Authentication:** Secure JWT-based login and signup system with Resend-powered Email Verification and strict Login Lock.
@@ -56,3 +57,4 @@ Our database utilizes a Domain-Driven Design approach with strict constraints to
 ## Resources
 * [Official Go Documentation](https://go.dev/learn/)
 * [Google Gemini API Key Documentation](https://ai.google.dev/gemini-api/docs/api-key)
+* [Retrieval-Augmented Generation (RAG) - Real Python](https://realpython.com/ref/ai-coding-glossary/retrieval-augmented-generation/)
