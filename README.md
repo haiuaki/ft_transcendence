@@ -19,7 +19,7 @@ Our project fulfills the requirements by implementing the following Major and Mi
 * **[Major]** LLM System Interface (Integration of an AI Chatbot via Gemini API)
 
 ## Features List
-* **Authentication:** Secure JWT-based login and signup system with Resend-powered Email Verification and strict Login Lock.
+* **Authentication:** Secure JWT-based session management, Email Verification, and robust **Multi-Provider OAuth 2.0** integration (42 Intra, Google, GitHub) featuring a smart auto-incrementing username resolver for collision prevention.
 * **Real-Time Presence & Chat:** Gorilla WebSocket architecture with Ping/Pong heartbeats, real-time presence tracking (ONLINE/OFFLINE), Ghost-Avatar auto-cleanup, and spatial anti-cheat DB validation.
 * **Direct Messaging:** Private, omnipresent 1-on-1 chats elegantly architected on top of the existing spatial channel infrastructure.
 * **User Management:** Full CRUD operations for user profiles and avatars.

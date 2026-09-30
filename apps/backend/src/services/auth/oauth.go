@@ -19,6 +19,67 @@ type ProviderConfig struct {
 }
 
 var oauthProviders = map[string]ProviderConfig{
+	"google": {
+		OAuth: &oauth2.Config{
+			ClientID:     os.Getenv("GOOGLE_CLIENT_ID"),
+			ClientSecret: os.Getenv("GOOGLE_CLIENT_SECRET"),
+			RedirectURL:  os.Getenv("FRONTEND_URL") + "/api/oauth/google/callback",
+			Scopes:       []string{"https://www.googleapis.com/auth/userinfo.email", "https://www.googleapis.com/auth/userinfo.profile"},
+			Endpoint: oauth2.Endpoint{
+				AuthURL:  "https://accounts.google.com/o/oauth2/auth",
+				TokenURL: "https://oauth2.googleapis.com/token",
+			},
+		},
+
+		ProfileURL: "https://www.googleapis.com/oauth2/v2/userinfo",
+
+		Extract: func(rawData map[string]any) (email, username, avatarURL string) {
+			if val, ok := rawData["email"].(string); ok {
+				email = val
+			}
+			if val, ok := rawData["name"].(string); ok {
+				username = val
+			}
+			if val, ok := rawData["picture"].(string); ok {
+				avatarURL = val
+			}
+			return
+		},
+	},
+
+	"github": {
+		OAuth: &oauth2.Config{
+			ClientID:     os.Getenv("GITHUB_CLIENT_ID"),
+			ClientSecret: os.Getenv("GITHUB_CLIENT_SECRET"),
+			RedirectURL:  os.Getenv("FRONTEND_URL") + "/api/oauth/github/callback",
+			Scopes:       []string{"read:user", "user:email"},
+			Endpoint: oauth2.Endpoint{
+				AuthURL:  "https://github.com/login/oauth/authorize",
+				TokenURL: "https://github.com/login/oauth/access_token",
+			},
+		},
+
+		ProfileURL: "https://api.github.com/user",
+
+		Extract: func(rawData map[string]any) (email, username, avatarURL string) {
+			if val, ok := rawData["login"].(string); ok {
+				username = val
+			}
+
+			// GitHub users can hide their email. We use a fallback if it's missing
+			if val, ok := rawData["email"].(string); ok {
+				email = val
+			} else {
+				email = username + "@users.noreply.github.com"
+			}
+
+			if val, ok := rawData["avatar_url"].(string); ok {
+				avatarURL = val
+			}
+			return
+		},
+	},
+
 	"42": {
 		OAuth: &oauth2.Config{
 			ClientID:     os.Getenv("FT_CLIENT_ID"),
@@ -34,8 +95,13 @@ var oauthProviders = map[string]ProviderConfig{
 		ProfileURL: "https://api.intra.42.fr/v2/me",
 
 		Extract: func(rawData map[string]any) (email, username, avatarURL string) {
-			email = rawData["email"].(string)
-			username = rawData["login"].(string)
+			if val, ok := rawData["email"].(string); ok {
+				email = val
+			}
+
+			if val, ok := rawData["login"].(string); ok {
+				username = val
+			}
 
 			if imageObj, ok := rawData["image"].(map[string]any); ok {
 				if link, ok := imageObj["link"].(string); ok {
