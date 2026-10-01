@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
@@ -11,442 +11,376 @@ import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { OutlinePass } from "three/addons/postprocessing/OutlinePass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
 
+import KewanWindow from "./windows/KewanWindow";
+import MenuWindow from "./windows/MenuWindow";
+import PorteWindow from "./windows/PorteWindow";
+import R1s1Window from "./windows/r1s1Window";
+import R1s2Window from "./windows/r1s2Window";
+import R1s3Window from "./windows/r1s3Window";
+
+
 export default function ThreeScene() {
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const container = containerRef.current;
-
-    if (!container) return;
-
-    // SCÈNE
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xffffff);
-
-    // CAMÉRA
-    const camera = new THREE.PerspectiveCamera(
-      45,
-      container.clientWidth / container.clientHeight,
-      0.1,
-      10000
-    );
-
-    camera.position.set(250, 250, 250);
-
-    // RENDERER
-    const renderer = new THREE.WebGLRenderer({
-      antialias: true,
-    });
-
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setSize(
-      container.clientWidth,
-      container.clientHeight
-    );
-
-    container.appendChild(renderer.domElement);
-
-    // POST PROCESSING
-    const composer = new EffectComposer(renderer);
-
-    const renderPass = new RenderPass(scene, camera);
-    composer.addPass(renderPass);
-
-    const outlinePass = new OutlinePass(
-      new THREE.Vector2(
-        container.clientWidth,
-        container.clientHeight
-      ),
-      scene,
-      camera
-    );
-
-    outlinePass.visibleEdgeColor.set(0xffffff);
-    outlinePass.hiddenEdgeColor.set(0x000000);
-
-    outlinePass.edgeStrength = 5;
-    outlinePass.edgeThickness = 2;
-
-    composer.addPass(outlinePass);
-
-    const outputPass = new OutputPass();
-    composer.addPass(outputPass);
-
-    // CATÉGORIES INTERACTIVES
-    const interactionGroups = [
-      {
-        name: "porte",
-        members: [
-          "porte gauche",
-          "porte droite",
-          "poignee",
-          "Cube",
-          "separation",
-        ],
-      },
-      {
-        name: "menu",
-        members: ["menu", "Cube.003"],
-      },
-
-      ...[
-        "user.r1s1",
-        "user.r1s1.001",
-        "user.r1s1.002",
-      ].map((name) => ({
-        name,
-        members: [name],
-      })),
-
-      {
-        name: "mesh_node",
-        members: ["mesh_node"],
-      },
-    ].map((group) => ({
-      ...group,
-      objects: [] as THREE.Object3D[],
-    }));
-
-    // Permet de retrouver rapidement le groupe d'un objet
-    const groupsByObjectName = new Map(
-      interactionGroups.flatMap((group) =>
-        group.members.map(
-          (name) => [name, group] as const
-        )
-      )
-    );
-
-    const interactiveObjects = new Map<
-      THREE.Object3D,
-      (typeof interactionGroups)[number]
-    >();
-
-    // RAYCASTER
-    const raycaster = new THREE.Raycaster();
-
-    const pointer = new THREE.Vector2();
-
-    let pointerInside = false;
-
-    let model: THREE.Group | null = null;
-
-    // MET À JOUR LA POSITION DE LA SOURIS
-    const updatePointer = (event: PointerEvent) => {
-      const bounds =
-        renderer.domElement.getBoundingClientRect();
+	const containerRef = useRef<HTMLDivElement>(null);
+
+	const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
+
+	useEffect(() => {
+		const container = containerRef.current;
+
+		if (!container)
+			return;
+
+		// SCENE
+		const scene = new THREE.Scene();
+		scene.background = new THREE.Color(0xFFFFFF);
+
+		//CAMERA
+		const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 10000);
+
+		camera.position.set(250, 250, 250);
+
+		//RENDERER
+		 const renderer = new THREE.WebGLRenderer({ antialias: true, });
+
+		renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+		renderer.setSize(container.clientWidth, container.clientHeight);
+
+		container.appendChild(renderer.domElement);
+	
+		const composer = new EffectComposer(renderer);
+
+		const renderPass = new RenderPass(scene, camera);
+		composer.addPass(renderPass);
+
+		const outlinePass = new OutlinePass(new THREE.Vector2(container.clientWidth,container.clientHeight), scene, camera);
+		outlinePass.visibleEdgeColor.set(0xffffff);
+		outlinePass.hiddenEdgeColor.set(0x000000);
+	    outlinePass.edgeStrength = 5;
+	    outlinePass.edgeThickness = 2;
+		composer.addPass(outlinePass);
+
+	    const outputPass = new OutputPass();
+	    composer.addPass(outputPass);
+
+		// CATÉGORIES INTERACTIVES
+		const interactionGroups = [
+		{
+			name: "porte",
+			members: ["porte gauche", "porte droite", "poignee", "Cube", "separation"],
+			objects: [] as THREE.Object3D[],
+		},
 
-      pointer.set(
-        ((event.clientX - bounds.left) /
-          bounds.width) *
-          2 -
-          1,
+		{
+			name: "menu",
+			members: ["menu", "Cube.003"],
+			objects: [] as THREE.Object3D[],
+		},
+		
+		{
+			name: "user.r1s1",
+			members: ["user.r1s1"],
+			objects: [] as THREE.Object3D[],
+		},
 
-        -(
-          (event.clientY - bounds.top) /
-          bounds.height
-        ) *
-          2 +
-          1
-      );
+		{
+			name: "user.r1s2",
+			members: ["user.r1s1.002"],
+			objects: [] as THREE.Object3D[],
+		},
 
-      pointerInside =
-        event.clientX >= bounds.left &&
-        event.clientX <= bounds.right &&
-        event.clientY >= bounds.top &&
-        event.clientY <= bounds.bottom;
-    };
+		{
+			name: "user.r1s3",
+			members: ["user.r1s1.001"],
+			objects: [] as THREE.Object3D[],
+		},
 
-    // RETOURNE LE GROUPE SOUS LA SOURIS
-    const getPointedGroup = () => {
-      if (!model || !pointerInside) {
-        return null;
-      }
+		{
+			name: "mesh_node",
+			members: ["mesh_node"],
+			objects: [] as THREE.Object3D[],
+		},
+		];
 
-      raycaster.setFromCamera(pointer, camera);
+		const groupsByObjectName = new Map(
+			interactionGroups.flatMap((group) =>
+				group.members.map(
+					(name) => [name, group] as const
+				)
+			)
+		);
 
-      const intersection =
-        raycaster.intersectObject(model, true)[0];
+		const interactiveObjects = new Map<THREE.Object3D, (typeof interactionGroups)[number]>();
 
-      let object = intersection?.object;
+		// RAYCASTER
+		const raycaster = new THREE.Raycaster();
+		const pointer = new THREE.Vector2();
 
-      /*
-       * On remonte dans les parents jusqu'à trouver
-       * un objet appartenant à une catégorie interactive.
-       */
-      while (object) {
-        const group = interactiveObjects.get(object);
+		let pointerInside = false;
+		let model: THREE.Group | null = null;
 
-        if (group) {
-          return group;
-        }
+		//UPDATE POSITION DE LA SOURIS
+		const updatePointer = (event: PointerEvent) => {
+		const bounds = renderer.domElement.getBoundingClientRect();
 
-        object = object.parent ?? undefined;
-      }
+		pointer.set(((event.clientX - bounds.left) / bounds.width) * 2 - 1, -((event.clientY - bounds.top) / bounds.height) * 2 + 1);
 
-      return null;
-    };
+		pointerInside =
+		event.clientX >= bounds.left
+		&& event.clientX <= bounds.right
+		&& event.clientY >= bounds.top
+		&& event.clientY <= bounds.bottom;
+		};
 
-    // MOUVEMENT DE SOURIS
-    const handlePointerMove = (
-      event: PointerEvent
-    ) => {
-      updatePointer(event);
-    };
+		//GROUPE POINTE
+		const getPointedGroup = () => {
 
-    const handlePointerLeave = () => {
-      pointerInside = false;
+			if (!model || !pointerInside)
+				return null;
+			
+			raycaster.setFromCamera(pointer, camera);
 
-      outlinePass.selectedObjects = [];
+			const intersection = raycaster.intersectObject(model, true)[0];
 
-      renderer.domElement.style.cursor = "";
-    };
+			let object: THREE.Object3D | null = intersection?.object ?? null;
 
-    renderer.domElement.addEventListener(
-      "pointermove",
-      handlePointerMove
-    );
+			while (object)
+			{
+				const group = interactiveObjects.get(object);
 
-    renderer.domElement.addEventListener(
-      "pointerleave",
-      handlePointerLeave
-    );
+				if (group)
+					return group;
 
-    // ORBIT CONTROLS
-    const controls = new OrbitControls(
-      camera,
-      renderer.domElement
-    );
+				object = object.parent;
+			}
 
-    controls.enableDamping = true;
+			return null;
+		};
 
-    controls.minDistance = 100;
-    controls.maxDistance = 500;
-
-    controls.minPolarAngle =
-      THREE.MathUtils.degToRad(0);
+		const handlePointerMove = (event: PointerEvent) => {
+		    updatePointer(event);
 
-    controls.maxPolarAngle =
-      THREE.MathUtils.degToRad(95);
+		    const offset = camera.position.clone().sub(controls.target);
 
-    controls.minAzimuthAngle =
-      THREE.MathUtils.degToRad(-3);
-
-    controls.maxAzimuthAngle =
-      THREE.MathUtils.degToRad(95);
-
-    controls.enablePan = false;
+		    const spherical = new THREE.Spherical().setFromVector3(offset);
 
-    // LUMIÈRE
-    const ambientLight = new THREE.AmbientLight(
-      0x000000,
-      100
-    );
-
-    scene.add(ambientLight);
-
-    // CHARGEMENT DU GLB
-    const loader = new GLTFLoader();
-
-    loader.load(
-      "/assets/cluster.glb",
-
-      (gltf) => {
-        model = gltf.scene;
-
-        model.scale.set(1, 1, 1);
-
-        model.rotation.y = Math.PI / 2;
+		    spherical.theta -= event.movementX * 0.001;
+		    spherical.phi   -= event.movementY * 0.001;
 
-        scene.add(model);
-
-        // ASSOCIE LES OBJETS AUX CATÉGORIES
-        model.traverse((object) => {
-          /*
-           * GLTFLoader peut modifier certains noms.
-           * userData.name permet de récupérer
-           * le nom venant de Blender.
-           */
-          const name =
-            object.userData.name || object.name;
-
-          const group =
-            groupsByObjectName.get(name);
-
-          if (group) {
-            group.objects.push(object);
-
-            interactiveObjects.set(
-              object,
-              group
-            );
-          }
-        });
-
-        // CHERCHE murs.001
-        let murs: THREE.Object3D | undefined;
-
-        model.traverse((object) => {
-          const name =
-            object.userData.name || object.name;
-
-          if (name === "murs.001") {
-            murs = object;
-          }
-        });
-
-        if (murs) {
-          const box =
-            new THREE.Box3().setFromObject(murs);
-
-          const center =
-            box.getCenter(
-              new THREE.Vector3()
-            );
-
-          controls.target.copy(center);
-
-          const size =
-            box.getSize(
-              new THREE.Vector3()
-            );
-
-          const distance =
-            Math.max(
-              size.x,
-              size.y,
-              size.z
-            ) * 2;
-
-          camera.position.set(
-            center.x + distance,
-            center.y + distance * 0.5,
-            center.z + distance
-          );
-
-          camera.lookAt(center);
-
-          controls.update();
-        } else {
-          console.warn(
-            'Objet "murs.001" introuvable dans le GLB'
-          );
-        }
-      },
+		    spherical.phi = THREE.MathUtils.clamp(spherical.phi,THREE.MathUtils.degToRad(5),THREE.MathUtils.degToRad(175));
 
-      undefined,
-
-      (error) => {
-        console.error(
-          "Erreur avec le modèle :",
-          error
-        );
-      }
-    );
-
-    // RESIZE
-    const handleResize = () => {
-      const width =
-        container.clientWidth;
-
-      const height =
-        container.clientHeight;
-
-      camera.aspect =
-        width / height;
-
-      camera.updateProjectionMatrix();
-
-      renderer.setSize(
-        width,
-        height
-      );
-
-      composer.setSize(
-        width,
-        height
-      );
-
-      outlinePass.resolution.set(
-        width,
-        height
-      );
-    };
-
-    window.addEventListener(
-      "resize",
-      handleResize
-    );
-
-    // ANIMATION
-    const animate = () => {
-      controls.update();
-
-      scene.updateMatrixWorld();
-
-      camera.updateMatrixWorld();
-
-      // OBJET SURVOLÉ
-      const hoveredGroup =
-        getPointedGroup();
-
-      // CONTOUR BLANC
-      outlinePass.selectedObjects =
-        hoveredGroup
-          ? hoveredGroup.objects
-          : [];
-
-      // CURSEUR
-      renderer.domElement.style.cursor =
-        hoveredGroup
-          ? "pointer"
-          : "";
-
-      composer.render();
-    };
-
-    renderer.setAnimationLoop(animate);
-
-    // CLEANUP REACT
-    return () => {
-      renderer.setAnimationLoop(null);
-
-      window.removeEventListener(
-        "resize",
-        handleResize
-      );
-
-      renderer.domElement.removeEventListener(
-        "pointermove",
-        handlePointerMove
-      );
-
-      renderer.domElement.removeEventListener(
-        "pointerleave",
-        handlePointerLeave
-      );
-
-      controls.dispose();
-
-      composer.dispose();
-
-      renderer.dispose();
-
-      if (
-        container.contains(
-          renderer.domElement
-        )
-      ) {
-        container.removeChild(
-          renderer.domElement
-        );
-      }
-    };
-  }, []);
-
-  return (
-    <div
-      ref={containerRef}
-      className="three-scene"
-    />
-  );
+		    offset.setFromSpherical(spherical);
+
+		    camera.position.copy(controls.target.clone().add(offset));
+
+	 	   camera.lookAt(controls.target);
+		};
+
+		const handlePointerLeave = () => {
+			pointerInside = false;
+
+			outlinePass.selectedObjects = [];
+
+			renderer.domElement.style.cursor = "";
+		};
+
+		renderer.domElement.addEventListener("pointermove", handlePointerMove);
+		renderer.domElement.addEventListener("pointerleave", handlePointerLeave);
+
+		//ORBIT CONTROLS
+		const controls = new OrbitControls(camera,renderer.domElement);
+
+		controls.enableDamping = true;
+		controls.dampingFactor = 0.03;
+
+		controls.minDistance = 100;
+		controls.maxDistance = 500;
+
+		controls.minPolarAngle = THREE.MathUtils.degToRad(0);
+
+		controls.maxPolarAngle = THREE.MathUtils.degToRad(95);
+
+		controls.minAzimuthAngle = THREE.MathUtils.degToRad(-3);
+
+		controls.maxAzimuthAngle = THREE.MathUtils.degToRad(95);
+
+		controls.enablePan = false;
+
+		// LUMIÈRE
+		const ambientLight = new THREE.AmbientLight(0x000000, 100);
+		scene.add(ambientLight);
+
+		//CHARGEMENT DU MODELE
+		const loader = new GLTFLoader();
+		
+		loader.load("/assets/cluster.glb", (gltf) => {
+				model = gltf.scene;
+				model.scale.set(1, 1, 1);
+				model.rotation.y = Math.PI / 2;
+				scene.add(model);
+
+			//ASSOCIER OBJETS AUX CATEGORIES
+			model.traverse((object) => {
+				const name = object.userData.name || object.name;
+				const group = groupsByObjectName.get(name);
+				if (group)
+				{
+					group.objects.push(object);
+
+					interactiveObjects.set(object, group);
+				}
+			});
+
+			//CENTRAGE DE LA CAM
+			let murs: THREE.Object3D | undefined;
+
+			model.traverse((object) => {
+				const name = object.userData.name || object.name;
+
+				if (name === "murs.001")
+					murs = object;
+			});
+
+				if (murs)
+				{
+					const box = new THREE.Box3().setFromObject(murs);
+					const center = box.getCenter(new THREE.Vector3());
+
+					controls.target.copy(center);
+					controls.target.x += 21;
+
+					const size = box.getSize(new THREE.Vector3());
+					const distance = Math.max(size.x, size.y, size.z) * 2;
+
+					camera.position.set(center.x + distance, center.y + distance * 0.5, center.z + distance);
+
+					camera.lookAt(center);
+
+					controls.update();
+				}
+				else 
+					console.warn('Objet "murs.001" introuvable dans le GLB');
+				},
+
+				undefined,
+
+				(error) => {
+					console.error("Erreur avec le modèle :", error);
+				}
+		);
+		//RESIZE
+		const handleResize = () => {
+			const width = container.clientWidth;
+
+			const height = container.clientHeight;
+
+			camera.aspect = width / height;
+
+			camera.updateProjectionMatrix();
+
+			renderer.setSize(width, height);
+
+			composer.setSize(width, height);
+
+			outlinePass.resolution.set(width, height);
+		};
+
+		window.addEventListener("resize", handleResize);
+
+		//CLIC
+		const handleClick = () => {
+			const group = getPointedGroup();
+
+			if (group)
+				setSelectedGroup(group.name);
+		};
+
+		renderer.domElement.addEventListener("click", handleClick);
+
+		
+
+		// ANIMATION
+		const animate = () => {
+			controls.update();
+
+			scene.updateMatrixWorld();
+			camera.updateMatrixWorld();
+
+			const hoveredGroup = getPointedGroup();
+
+			outlinePass.selectedObjects = hoveredGroup ? hoveredGroup.objects : [];
+
+			renderer.domElement.style.cursor = hoveredGroup ? "pointer" : "";
+
+			composer.render();
+		};
+
+		renderer.setAnimationLoop(animate);
+
+		// CLEANUP REACT
+		return () => {
+			renderer.setAnimationLoop(null);
+
+			window.removeEventListener("resize", handleResize);
+
+			renderer.domElement.removeEventListener("pointermove", handlePointerMove);
+
+			renderer.domElement.removeEventListener("pointerleave", handlePointerLeave);
+
+			controls.dispose();
+
+			composer.dispose();
+
+			renderer.dispose();
+
+			renderer.domElement.removeEventListener("click", handleClick);
+
+			if (container.contains(renderer.domElement))
+				container.removeChild(renderer.domElement);
+		};
+		
+	}, []);
+	return (
+		<>
+			<div
+				ref={containerRef}
+				className="three-scene"
+			/>
+
+			{selectedGroup === "menu" && (
+				<MenuWindow
+				onClose={() => setSelectedGroup(null)}
+			/>
+			)}
+
+			{selectedGroup === "mesh_node" && (
+				<KewanWindow
+				onClose={() => setSelectedGroup(null)}
+			/>
+			)}
+
+			{selectedGroup === "porte" && (
+				<PorteWindow
+				onClose={() => setSelectedGroup(null)}
+			/>
+			)}
+
+			{selectedGroup === "user.r1s1" && (
+				<R1s1Window
+				onClose={() => setSelectedGroup(null)}
+			/>
+			)}
+
+			{selectedGroup === "user.r1s2" && (
+				<R1s2Window
+				onClose={() => setSelectedGroup(null)}
+			/>
+			)}
+
+			{selectedGroup === "user.r1s3" && (
+				<R1s3Window
+				onClose={() => setSelectedGroup(null)}
+			/>
+			)}
+		</>
+	);
 }
