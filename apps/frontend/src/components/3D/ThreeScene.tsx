@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
@@ -11,8 +11,18 @@ import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { OutlinePass } from "three/addons/postprocessing/OutlinePass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
 
+import KewanWindow from "./windows/KewanWindow";
+import MenuWindow from "./windows/MenuWindow";
+import PorteWindow from "./windows/PorteWindow";
+import R1s1Window from "./windows/r1s1Window";
+import R1s2Window from "./windows/r1s2Window";
+import R1s3Window from "./windows/r1s3Window";
+
+
 export default function ThreeScene() {
 	const containerRef = useRef<HTMLDivElement>(null);
+
+	const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
 
 	useEffect(() => {
 		const container = containerRef.current;
@@ -73,13 +83,13 @@ export default function ThreeScene() {
 		},
 
 		{
-			name: "user.r1s1.001",
+			name: "user.r1s2",
 			members: ["user.r1s1.001"],
 			objects: [] as THREE.Object3D[],
 		},
 
 		{
-			name: "user.r1s1.002",
+			name: "user.r1s3",
 			members: ["user.r1s1.002"],
 			objects: [] as THREE.Object3D[],
 		},
@@ -149,27 +159,18 @@ export default function ThreeScene() {
 		const handlePointerMove = (event: PointerEvent) => {
 		    updatePointer(event);
 
-		    const offset = camera.position
-		        .clone()
-		        .sub(controls.target);
+		    const offset = camera.position.clone().sub(controls.target);
 
-		    const spherical = new THREE.Spherical()
-		        .setFromVector3(offset);
+		    const spherical = new THREE.Spherical().setFromVector3(offset);
 
 		    spherical.theta -= event.movementX * 0.001;
 		    spherical.phi   -= event.movementY * 0.001;
 
-		    spherical.phi = THREE.MathUtils.clamp(
-		        spherical.phi,
-		        THREE.MathUtils.degToRad(5),
-		        THREE.MathUtils.degToRad(175)
-		    );
+		    spherical.phi = THREE.MathUtils.clamp(spherical.phi,THREE.MathUtils.degToRad(5),THREE.MathUtils.degToRad(175));
 
 		    offset.setFromSpherical(spherical);
 
-		    camera.position.copy(
-		        controls.target.clone().add(offset)
-		    );
+		    camera.position.copy(controls.target.clone().add(offset));
 
 	 	   camera.lookAt(controls.target);
 		};
@@ -285,6 +286,18 @@ export default function ThreeScene() {
 
 		window.addEventListener("resize", handleResize);
 
+		//CLIC
+		const handleClick = () => {
+			const group = getPointedGroup();
+
+			if (group)
+				setSelectedGroup(group.name);
+		};
+
+		renderer.domElement.addEventListener("click", handleClick);
+
+		
+
 		// ANIMATION
 		const animate = () => {
 			controls.update();
@@ -302,6 +315,7 @@ export default function ThreeScene() {
 		};
 
 		renderer.setAnimationLoop(animate);
+
 		// CLEANUP REACT
 		return () => {
 			renderer.setAnimationLoop(null);
@@ -318,15 +332,55 @@ export default function ThreeScene() {
 
 			renderer.dispose();
 
+			renderer.domElement.removeEventListener("click", handleClick);
+
 			if (container.contains(renderer.domElement))
 				container.removeChild(renderer.domElement);
 		};
 		
 	}, []);
 	return (
-		<div
-			ref={containerRef}
-			className="three-scene"
-		/>
+		<>
+			<div
+				ref={containerRef}
+				className="three-scene"
+			/>
+
+			{selectedGroup === "menu" && (
+				<MenuWindow
+				onClose={() => setSelectedGroup(null)}
+			/>
+			)}
+
+			{selectedGroup === "mesh_node" && (
+				<KewanWindow
+				onClose={() => setSelectedGroup(null)}
+			/>
+			)}
+
+			{selectedGroup === "porte" && (
+				<PorteWindow
+				onClose={() => setSelectedGroup(null)}
+			/>
+			)}
+
+			{selectedGroup === "user.r1s1" && (
+				<R1s1Window
+				onClose={() => setSelectedGroup(null)}
+			/>
+			)}
+
+			{selectedGroup === "user.r1s2" && (
+				<R1s2Window
+				onClose={() => setSelectedGroup(null)}
+			/>
+			)}
+
+			{selectedGroup === "user.r1s3" && (
+				<R1s3Window
+				onClose={() => setSelectedGroup(null)}
+			/>
+			)}
+		</>
 	);
 }
