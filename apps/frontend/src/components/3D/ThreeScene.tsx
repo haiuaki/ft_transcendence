@@ -84,13 +84,13 @@ export default function ThreeScene() {
 
 		{
 			name: "user.r1s2",
-			members: ["user.r1s1.001"],
+			members: ["user.r1s1.002"],
 			objects: [] as THREE.Object3D[],
 		},
 
 		{
 			name: "user.r1s3",
-			members: ["user.r1s1.002"],
+			members: ["user.r1s1.001"],
 			objects: [] as THREE.Object3D[],
 		},
 
