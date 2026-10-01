@@ -1,26 +1,25 @@
-type r1s2Props = {
+type R1s2Props = {
     onClose: () => void;
 };
 
-export default function r1s2Window({ onClose }: r1s2Props) {
+export default function R1s2Window({ onClose }: R1s2Props) {
     return (
-        <div
-            style={{
-                position: "fixed",
-                top: "20px",
-                left: "20px",
-                zIndex: 9999,
-                background: "white",
-                color: "black",
-                padding: "30px",
-                border: "2px solid black",
-            }}
-        >
-            <h2>Profil r1s2</h2>
+        <div className="fixed top-5 left-5 z-[9999] w-[420px] rounded-2xl bg-white p-8 shadow-2xl ring-1 ring-black/10">
+            <div className="flex flex-col gap-6">
+                <div className="flex items-center justify-between">
+                    <h2 className="text-3xl font-semibold text-black">
+                        R1s2 profile
+                    </h2>
 
-            <button onClick={onClose}>
-                Fermer
-            </button>
+                    <button
+                        onClick={onClose}
+                        className="flex h-9 w-9 items-center justify-center rounded-xl text-black/50 transition-all duration-200 hover:bg-black/5 hover:text-black"
+                    >
+                        ✕
+                    </button>
+                </div>
+
+            </div>
         </div>
     );
 }
