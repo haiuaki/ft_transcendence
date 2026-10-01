@@ -19,8 +19,23 @@ import R1s2Window from "./windows/r1s2Window";
 import R1s3Window from "./windows/r1s3Window";
 
 
+const switchableTextures = new Set(["0", "0.001", "0.002", "0.003", "0.004", "0.005","MECCHA", "NT11", "NT12", "NT13", "NT14", "NT14.001","NT15", "NT2", "NT4", "NT5", "NT6", "NT8","Untitled", "Untitled.001", "m", "m.001", "m.002", "m.003","m.004", "m.005", "nt16", "nt17", "nt18", "nt19","nt20", "nt21", "nt22", "nt23", "nt23.001", "nt23.002","nt23.003", "nt23.004", "nt24", "nt25", "nt99", "nt99.001","nt99.002", "nt99.003", "nt99.004", "nt99.005", "nt99.006", "nt99.007","nt99.008", "nt99.009", "nt99.010", "nt99.011", "nt99.012", "nt99.013","nt99.014", "nt99.015", "nt99.016", "nt99.017", "nt99.018", "p", "p.001", "p.002", "p.003", "p.004", "p.005", "p.006","p.007"]);
+
+type TextureMode = "day" | "night";
+
+const backgroundColors: Record<TextureMode, number> = {
+	day: 0xffffff,
+	night: 0x6581a5,
+};
+
 export default function ThreeScene() {
 	const containerRef = useRef<HTMLDivElement>(null);
+	const switchModeRef = useRef<((mode: TextureMode) => Promise<void>) | null>(null);
+	const [textureMode, setTextureMode] = useState<TextureMode>("day");
+	const [texturesLoading, setTexturesLoading] = useState(true);
+	const [texturesReady, setTexturesReady] = useState(false);
+	const [transitioning, setTransitioning] = useState(false);
+	const [textureError, setTextureError] = useState<string | null>(null);
 
 	const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
 
@@ -32,7 +47,7 @@ export default function ThreeScene() {
 
 		// SCENE
 		const scene = new THREE.Scene();
-		scene.background = new THREE.Color(0xFFFFFF);
+		scene.background = new THREE.Color(backgroundColors.day);
 
 		//CAMERA
 		const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 10000);
@@ -209,11 +224,146 @@ export default function ThreeScene() {
 		const ambientLight = new THREE.AmbientLight(0x000000, 100);
 		scene.add(ambientLight);
 
+		// NIGHT MODE
+		let disposed = false;
+		const textureLoader = new THREE.TextureLoader();
+		const textureCache = new Map<string, Promise<THREE.Texture>>();
+		const ownedTextures = new Set<THREE.Texture>();
+		const materialMaps = new Map<THREE.MeshBasicMaterial | THREE.MeshStandardMaterial, THREE.Texture>();
+
+		const blend = { value: 0 };
+		const targetMaps = new Map<THREE.Material, { value: THREE.Texture }>();
+		let transition: {
+			start: number;
+			duration: number;
+			from: THREE.Color;
+			to: THREE.Color;
+			finish: () => void;
+		} | null = null;
+		let switching = false;
+
+		const loadModeTexture = (original: THREE.Texture, mode: TextureMode) => {
+			const key = `${mode}:${original.uuid}`;
+			let pending = textureCache.get(key);
+			if (!pending)
+			{
+				pending = textureLoader.loadAsync(`/textures/${mode}/${encodeURIComponent(original.name)}.png`)
+					.then((loaded) => {
+						const texture = original.clone();
+						texture.source = loaded.source;
+						texture.needsUpdate = true;
+						loaded.dispose();
+						if (disposed) texture.dispose();
+						else ownedTextures.add(texture);
+						return texture;
+					}).catch((error: unknown) => {
+						textureCache.delete(key);
+						throw error;
+					});
+				textureCache.set(key, pending);
+			}
+			return pending;
+		};
+
+		const switchMode = async (mode: TextureMode) => {
+			if (switching || disposed) return;
+			switching = true;
+			setTexturesLoading(true);
+			setTextureError(null);
+			try {
+				const replacements = await Promise.all(Array.from(materialMaps, async ([material, original]) =>
+					({ material, texture: await loadModeTexture(original, mode) })
+				));
+				if (disposed) return;
+				for (const { material, texture } of replacements) {
+					let targetMap = targetMaps.get(material);
+					if (!targetMap) {
+						targetMap = { value: texture };
+						targetMaps.set(material, targetMap);
+						const mapUniform = targetMap;
+						material.onBeforeCompile = (shader) => {
+							shader.uniforms.modeBlend = blend;
+							shader.uniforms.targetMap = mapUniform;
+							shader.fragmentShader = `uniform float modeBlend;
+								uniform sampler2D targetMap;
+						` + shader.fragmentShader;
+							shader.fragmentShader = shader.fragmentShader.replace(
+								"#include <map_fragment>",
+								`#ifdef USE_MAP
+									diffuseColor *= mix(texture2D(map, vMapUv), texture2D(targetMap, vMapUv), modeBlend);
+								#endif`
+							);
+						};
+						material.customProgramCacheKey = () => "day-night-blend";
+						material.needsUpdate = true;
+					}
+					targetMap.value = texture;
+				}
+				setTexturesLoading(false);
+				setTransitioning(true);
+				await new Promise<void>((resolve) => {
+					transition = {
+						start: performance.now(),
+						duration: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 1000,
+						from: (scene.background as THREE.Color).clone(),
+						to: new THREE.Color(backgroundColors[mode]),
+						finish: resolve,
+					};
+				});
+				if (disposed) return;
+				for (const { material, texture } of replacements) material.map = texture;
+				blend.value = 0;
+				setTextureMode(mode);
+			} catch (error) {
+				if (!disposed) {
+					console.error("Could not load scene textures:", error);
+					setTextureError("Could not load textures. Please try again.");
+				}
+			} finally {
+				switching = false;
+				if (!disposed) {
+					setTexturesLoading(false);
+					setTransitioning(false);
+				}
+			}
+		};
+
 		//CHARGEMENT DU MODELE
 		const loader = new GLTFLoader();
 		
 		loader.load("/assets/cluster.glb", (gltf) => {
+				if (disposed) return;
 				model = gltf.scene;
+				model.traverse((object) => {
+					if (!(object instanceof THREE.Mesh)) return;
+					const materials = Array.isArray(object.material) ? object.material : [object.material];
+					for (const material of materials) {
+						if ((material instanceof THREE.MeshBasicMaterial || material instanceof THREE.MeshStandardMaterial)
+							&& material.map && switchableTextures.has(material.map.name)) {
+							materialMaps.set(material, material.map);
+						}
+					}
+				});
+				// Enable switching only after both complete sets are in the cache.
+				void (async () => {
+					try {
+						await Promise.all(Array.from(new Set(materialMaps.values()), async (original) => {
+							await Promise.all([
+								loadModeTexture(original, "day"),
+								loadModeTexture(original, "night"),
+							]);
+						}));
+						if (disposed) return;
+						switchModeRef.current = switchMode;
+						setTexturesReady(true);
+						await switchMode("day");
+					} catch (error) {
+						if (disposed) return;
+						console.error("Could not preload day/night textures:", error);
+						setTexturesLoading(false);
+						setTextureError("Could not load all textures. Reload the page to try again.");
+					}
+				})();
 				model.scale.set(1, 1, 1);
 				model.rotation.y = Math.PI / 2;
 				scene.add(model);
@@ -265,6 +415,10 @@ export default function ThreeScene() {
 
 				(error) => {
 					console.error("Erreur avec le modèle :", error);
+					if (!disposed) {
+						setTexturesLoading(false);
+						setTextureError("Could not load the scene.");
+					}
 				}
 		);
 		//RESIZE
@@ -300,6 +454,15 @@ export default function ThreeScene() {
 
 		// ANIMATION
 		const animate = () => {
+			if (transition) {
+				const progress = transition.duration === 0 ? 1 : Math.min((performance.now() - transition.start) / transition.duration, 1);
+				blend.value = progress * progress * (3 - 2 * progress);
+				(scene.background as THREE.Color).lerpColors(transition.from, transition.to, blend.value);
+				if (progress === 1) {
+					transition.finish();
+					transition = null;
+				}
+			}
 			controls.update();
 
 			scene.updateMatrixWorld();
@@ -318,6 +481,11 @@ export default function ThreeScene() {
 
 		// CLEANUP REACT
 		return () => {
+			disposed = true;
+			transition?.finish();
+			transition = null;
+			switchModeRef.current = null;
+			ownedTextures.forEach((texture) => texture.dispose());
 			renderer.setAnimationLoop(null);
 
 			window.removeEventListener("resize", handleResize);
@@ -345,6 +513,20 @@ export default function ThreeScene() {
 				ref={containerRef}
 				className="three-scene"
 			/>
+
+			<div className="fixed right-4 bottom-4 z-10 flex flex-col items-end gap-2">
+				<button
+					type="button"
+					aria-label="Night mode"
+					aria-pressed={textureMode === "night"}
+					disabled={!texturesReady || texturesLoading || transitioning}
+					onClick={() => void switchModeRef.current?.(textureMode === "day" ? "night" : "day")}
+					className="rounded-full border border-slate-300 bg-slate-900 px-5 py-3 text-sm font-medium text-white shadow-lg hover:bg-slate-700 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-500 disabled:cursor-wait disabled:opacity-60"
+				>
+					{texturesLoading ? "Loading day & night…" : !texturesReady ? "Textures unavailable" : transitioning ? "Switching…" : textureMode === "day" ? "Switch to night" : "Switch to day"}
+				</button>
+				{textureError && <p role="alert" className="rounded bg-white px-3 py-2 text-sm text-red-700">{textureError}</p>}
+			</div>
 
 			{selectedGroup === "menu" && (
 				<MenuWindow
