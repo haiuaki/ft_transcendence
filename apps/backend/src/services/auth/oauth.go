@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -126,9 +128,22 @@ func OAuthLogin() http.HandlerFunc {
 		}
 
 		// Security measure to prevent Cross-Site Request Forgery (CSRF)
-		oauthStateString := "random-secure-state-string"
+		// Generate a truly random string
+		stateBytes := make([]byte, 16)
+		rand.Read(stateBytes)
+		oauthStateString := hex.EncodeToString(stateBytes)
 
-		// Generate the login URL for the provider
+		// Save it securely inside the user's browser via an HttpOnly cookie
+		stateCookie := http.Cookie{
+			Name:     "oauth_state",
+			Value:    oauthStateString,
+			Expires:  time.Now().Add(10 * time.Minute),
+			HttpOnly: true,
+			Path:     "/",
+		}
+		http.SetCookie(w, &stateCookie)
+
+		// Generate the login URL for the provider using our random string
 		url := config.OAuth.AuthCodeURL(oauthStateString)
 		http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 	}
@@ -155,11 +170,23 @@ func OAuthCallback(dbPool *pgxpool.Pool) http.HandlerFunc {
 			return
 		}
 
-		// Verify state string matches
-		if r.FormValue("state") != "random-secure-state-string" {
+		// Verify state string against our secure HttpOnly cookie
+		stateCookie, err := r.Cookie("oauth_state")
+		if err != nil || r.FormValue("state") != stateCookie.Value {
+			// They either don't have the cookie, or the string doesn't match (hacker alert)
 			failAndRedirect()
 			return
 		}
+
+		// Security: Delete the cookie now that it's verified, so it can't be reused
+		clearCookie := http.Cookie{
+			Name:     "oauth_state",
+			Value:    "",
+			Expires:  time.Unix(0, 0),
+			HttpOnly: true,
+			Path:     "/",
+		}
+		http.SetCookie(w, &clearCookie)
 
 		// Exchange temporary URL 'code' for an Official Access Token
 		code := r.FormValue("code")
