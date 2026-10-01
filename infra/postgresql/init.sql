@@ -10,7 +10,6 @@ CREATE TABLE users (
 	password_hash VARCHAR(255),
 
     username VARCHAR(30) UNIQUE NOT NULL,
-    oauth_42_id INTEGER UNIQUE,
     avatar_url VARCHAR(255),
 
 	is_verified BOOLEAN DEFAULT FALSE,
