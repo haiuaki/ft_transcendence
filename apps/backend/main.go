@@ -53,6 +53,13 @@ func main() {
 	// POST: Log in to account
 	http.HandleFunc("/login", auth.Login(dbPool))
 
+	// --- OAUTH 2.0 ------------------------------------------------------- //
+	// GET: Redirect user to the provider (e.g., 42 API)
+	http.HandleFunc("/oauth/{provider}/login", auth.OAuthLogin())
+
+	// GET: Handle the callback from the provider
+	http.HandleFunc("/oauth/{provider}/callback", auth.OAuthCallback(dbPool))
+
 	// --- PROFILE --------------------------------------------------------- //
 	// GET: View user profile
 	http.HandleFunc("/profile", auth.RequireAuth(users.GetProfile(dbPool)))

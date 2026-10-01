@@ -14,12 +14,13 @@ Our project fulfills the requirements by implementing the following Major and Mi
 
 ### User Management
 * **[Major]** Standard user management and authentication
+* **[Minor]** Remote authentication with OAuth 2.0
 
 ### AI
 * **[Major]** LLM System Interface (Integration of an AI Chatbot via Gemini API)
 
 ## Features List
-* **Authentication:** Secure JWT-based login and signup system with Resend-powered Email Verification and strict Login Lock.
+* **Authentication:** Secure JWT-based session management, Email Verification, and robust **Multi-Provider OAuth 2.0** integration (Google, GitHub, 42 Intra) featuring a smart auto-incrementing username resolver for collision prevention.
 * **Real-Time Presence & Chat:** Gorilla WebSocket architecture with Ping/Pong heartbeats, real-time presence tracking (ONLINE/OFFLINE), Ghost-Avatar auto-cleanup, and spatial anti-cheat DB validation.
 * **Direct Messaging:** Private, omnipresent 1-on-1 chats elegantly architected on top of the existing spatial channel infrastructure.
 * **User Management:** Full CRUD operations for user profiles and avatars.
@@ -62,3 +63,6 @@ Our database utilizes a Domain-Driven Design approach with strict constraints to
 ## Resources
 * [Official Go Documentation](https://go.dev/learn/)
 * [Google Gemini API Key Documentation](https://ai.google.dev/gemini-api/docs/api-key)
+* [Google OAuth 2.0 Documentation](https://developers.google.com/identity/protocols/oauth2)
+* [GitHub OAuth Apps Documentation](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps)
+* [42 Intra API Documentation](https://api.intra.42.fr/apidoc)
