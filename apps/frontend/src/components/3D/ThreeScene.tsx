@@ -25,7 +25,7 @@ type TextureMode = "day" | "night";
 
 const backgroundColors: Record<TextureMode, number> = {
 	day: 0xffffff,
-	night: 0x6581a5,
+	night: 0x2d3b4d,
 };
 
 export default function ThreeScene() {
