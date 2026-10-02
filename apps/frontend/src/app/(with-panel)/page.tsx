@@ -6,6 +6,7 @@ import { useAuth } from "../../context/AuthContext";
 import {
   CirclePlusIcon,
   DoorOpen,
+  HomeIcon,
   LayoutGrid,
 } from "lucide-react";
 import { themeColors } from "../../lib/themeColors";
@@ -25,6 +26,10 @@ export const HomePanel = () => {
     <div className="flex flex- justify-between gap-5 h-full w-[300px] shrink-0 flex-col p-4 text-black">
       <div className="flex flex-col gap-5">
         <Link className="w-fit text-2xl font-bold" href={"/"}>FT_Cluster</Link>
+        <Link href={"/"} className="cursor-pointer flex items-center gap-2 p-2 rounded-md hover:bg-[#dededc] ">
+          <HomeIcon size={12} />
+          <p>Home</p>
+        </Link>
         <div className="flex flex-col gap-2">
           <p className={`text-sm font-semibold ${colors.textSecondary}`}>Rooms</p>
           <div className="flex flex-col gap-1">

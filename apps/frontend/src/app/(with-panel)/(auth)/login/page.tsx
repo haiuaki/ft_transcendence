@@ -16,13 +16,45 @@ interface AuthFormData {
   password: string,
 }
 
+interface InputFieldProp {
+  title: string,
+  placeholder?: string,
+  value: string,
+  onChange: any,
+  maxLength?: number | undefined,
+  type?: string,
+  disabled?: boolean, 
+}
+
+export const InputField = ({ title, placeholder = "", value, onChange, maxLength = undefined, type = "text", disabled = false }: InputFieldProp) => {
+  const colors = themeColors;
+  const [showPassword, setShowPassword] = useState(false)
+  return (
+    <div className="flex flex-col gap-2 w-full">
+      <div className="flex items-center justify-between">
+        <p className="text-sm font-semibold">{title}</p>
+        {maxLength != undefined && <p className={`text-xs ${colors.textSecondary}`}>{value.length}/{maxLength}</p>}
+      </div>
+      <div className={`flex items-center justify-between gap-2 w-full ring-1 ring-[#dedede] focus-within:ring-black/80 rounded-md ${disabled ? "pointer-events-none bg-black/5" : ""}`}>
+        <input placeholder={placeholder} maxLength={maxLength} onChange={onChange} value={value} type={(type === "password" && !showPassword) ? "password" : "text"} className="w-full pl-2 py-2 outline-none text-sm" />
+        {(type === "password" && !disabled) && <div className="pr-2" onClick={() => setShowPassword(!showPassword)}>
+          {showPassword ? <Eye size={12} /> : <EyeClosed size={12} />}
+        </div>
+        }
+      </div>
+    </div>
+  )
+
+}
+
 export default function LogIn() {
   const [showPassword, setShowPassword] = useState(false)
   const [authFormData, setAuthFormData] = useState<AuthFormData>({ email: "", password: "" })
   const [isLoading, setIsLoading] = useState(false);
-  const {login} = useAuth();
+  const { login } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const colors = themeColors;
+
   const oauth = [
     { icon: FcGoogle, text: "Continue with Google", href: "/api/oauth/google/login" },
     { icon: "/img/42-logo.png", text: "Continue with 42", href: "/api/oauth/42/login" },
@@ -51,24 +83,7 @@ export default function LogIn() {
       <div className="h-[0.5px] w-full bg-[#dedede]" />
       <div className="flex flex-col gap-5">
         {inputs.map((item, idx) => {
-          return (
-            <div key={idx} className="flex flex-col gap-2 w-full">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-semibold">{item.title}</p>
-                {item.maxLength != undefined && <p className={`text-xs ${colors.textSecondary}`}>{item.value.length}/{item.maxLength}</p>}
-              </div>
-              <div className="flex items-center justify-between gap-2 w-full ring-1 ring-[#dedede] focus-within:ring-black/80 rounded-md">
-                <input placeholder={item.placeholder} maxLength={item.maxLength} onChange={(e) => {
-                  setError(null);
-                  item.onChange(e)
-                  }} value={item.value} type={item.isPassword && !showPassword ? "password" : "text"} className="w-full pl-2 py-2 outline-none text-sm" />
-                {item.isPassword && <div className="pr-2" onClick={() => setShowPassword(!showPassword)}>
-                  {showPassword ? <Eye size={12} /> : <EyeClosed size={12} />}
-                </div>
-                }
-              </div>
-            </div>
-          )
+          return <InputField key={idx} title={item.title} maxLength={item.maxLength} value={item.value} onChange={item.onChange} type={item.isPassword ? "password" : "text"} />
         })}
       </div>
       {error && <p className="text-sm text-red-500 font-semibold">{error}</p>}
