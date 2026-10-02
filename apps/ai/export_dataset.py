@@ -5,10 +5,8 @@ from pathlib import Path
 import asyncpg
 from dotenv import load_dotenv
 
-# Load .env explicitly from root of the project
 root_env = Path(__file__).resolve().parent.parent.parent / ".env"
 load_dotenv(dotenv_path=root_env)
-
 
 async def export_to_json():
     user = os.getenv("POSTGRES_USER")
