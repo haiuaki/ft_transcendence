@@ -19,13 +19,13 @@ import R1s2Window from "./windows/r1s2Window";
 import R1s3Window from "./windows/r1s3Window";
 
 
-const switchableTextures = new Set(["0", "0.001", "0.002", "0.003", "0.004", "0.005","MECCHA", "NT11", "NT12", "NT13", "NT14", "NT14.001","NT15", "NT2", "NT4", "NT5", "NT6", "NT8","Untitled", "Untitled.001", "m", "m.001", "m.002", "m.003","m.004", "m.005", "nt16", "nt17", "nt18", "nt19","nt20", "nt21", "nt22", "nt23", "nt23.001", "nt23.002","nt23.003", "nt23.004", "nt24", "nt25", "nt99", "nt99.001","nt99.002", "nt99.003", "nt99.004", "nt99.005", "nt99.006", "nt99.007","nt99.008", "nt99.009", "nt99.010", "nt99.011", "nt99.012", "nt99.013","nt99.014", "nt99.015", "nt99.016", "nt99.017", "nt99.018", "p", "p.001", "p.002", "p.003", "p.004", "p.005", "p.006","p.007"]);
+const switchableTextures = new Set([ "Untitled", "Untitled.001", "Untitled.002", "Untitled.003", "Untitled.004", "Untitled.005", "Untitled.006", "Untitled.007", "Untitled.008", "Untitled.009", "Untitled.010", "Untitled.011", "Untitled.012", "Untitled.013", "Untitled.014", "Untitled.015", "Untitled.016",]);
 
 type TextureMode = "day" | "night";
 
 const backgroundColors: Record<TextureMode, number> = {
-	day: 0xffffff,
-	night: 0x2d3b4d,
+	day: 0xfffdff,
+	night: 0x3f526a,
 };
 
 export default function ThreeScene() {
@@ -87,7 +87,7 @@ export default function ThreeScene() {
 
 		{
 			name: "menu",
-			members: ["menu", "Cube.003"],
+			members: ["menu", "menu.cadre"],
 			objects: [] as THREE.Object3D[],
 		},
 		
@@ -99,13 +99,13 @@ export default function ThreeScene() {
 
 		{
 			name: "user.r1s2",
-			members: ["user.r1s1.002"],
+			members: ["user.r1s2"],
 			objects: [] as THREE.Object3D[],
 		},
 
 		{
 			name: "user.r1s3",
-			members: ["user.r1s1.001"],
+			members: ["user.r1s3"],
 			objects: [] as THREE.Object3D[],
 		},
 
@@ -254,7 +254,10 @@ export default function ThreeScene() {
 						texture.needsUpdate = true;
 						loaded.dispose();
 						if (disposed) texture.dispose();
-						else ownedTextures.add(texture);
+						else {
+							ownedTextures.add(texture);
+							renderer.initTexture(texture);
+						}
 						return texture;
 					}).catch((error: unknown) => {
 						textureCache.delete(key);
@@ -344,7 +347,6 @@ export default function ThreeScene() {
 						}
 					}
 				});
-				// Enable switching only after both complete sets are in the cache.
 				void (async () => {
 					try {
 						await Promise.all(Array.from(new Set(materialMaps.values()), async (original) => {
