@@ -29,7 +29,7 @@ const roomService = {
             body: JSON.stringify({
                 name: name.trim(),
                 type: type,
-                password: password || undefined,
+                password: type === "PRIVATE" ? password : undefined,
             })
         });
         const message = await response.text();
