@@ -33,7 +33,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r apps/ai/requirements.txt
-          pip install httpx pytest pyright
+          pip install httpx pytest pytest-asyncio pyright
 
       - name: Check code with Pyright
         run: pyright apps/ai/server.py
@@ -41,4 +41,5 @@ jobs:
       - name: Run Unit Tests
         env:
           GOOGLE_API_KEY: "dummy_key_for_ci"
+          DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/transcendence"
         run: pytest apps/ai/tests/
