@@ -14,13 +14,6 @@ interface CreatePasswordViewProps {
 
 const CreatePasswordView = ({ authFormData, setAuthFormData, onClose }: CreatePasswordViewProps) => {
 
-    const passwordConditions = [
-        { isValid: authFormData.password.length >= 10, text: "10 characters minimum" },
-        { isValid: /[^a-zA-Z0-9]/.test(authFormData.password), text: "1 special character" },
-        { isValid: /[0-9]/.test(authFormData.password), text: "1 number" },
-        { isValid: authFormData.password.trim().length > 0 && authFormData.password.length == authFormData.password.trim().length, text: "No leading or trailing whitespace" },
-    ]
-
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const colors = themeColors;
