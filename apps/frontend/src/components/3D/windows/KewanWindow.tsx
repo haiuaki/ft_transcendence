@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { ArrowUp } from 'lucide-react';
+import { ArrowUp, Pin, PinOff } from 'lucide-react';
 import { motion, useDragControls } from 'motion/react';
 
 type KewanProps = {
@@ -20,11 +20,11 @@ export default function KewanWindow({ onClose }: KewanProps) {
     const dragControls = useDragControls();
     const windowRef = useRef<HTMLDivElement>(null);
     const [message, setMessage] = useState('');
+    const [isPinned, setIsPinned] = useState(false);
     const [greeting] = useState(() => {
         return GREETINGS[Math.floor(Math.random() * GREETINGS.length)];
     });
 
-    // Récupère le brouillon sauvegardé à l'ouverture de la fenêtre
     useEffect(() => {
         const savedDraft = sessionStorage.getItem('kewan_ai_draft');
         if (savedDraft) {
@@ -40,6 +40,9 @@ export default function KewanWindow({ onClose }: KewanProps) {
 
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
+            if (isPinned) {
+                return;
+            }
             if (windowRef.current && !windowRef.current.contains(event.target as Node)) {
                 onClose();
             }
@@ -49,7 +52,7 @@ export default function KewanWindow({ onClose }: KewanProps) {
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
-    }, [onClose]);
+    }, [onClose, isPinned]);
 
     return (
         <motion.div
@@ -69,13 +72,33 @@ export default function KewanWindow({ onClose }: KewanProps) {
                         Kewan AI
                     </h2>
 
-                    <button
-                        onClick={onClose}
-                        onPointerDown={(e) => e.stopPropagation()}
-                        className="flex h-9 w-9 items-center justify-center rounded-xl text-black/50 transition-all duration-200 hover:bg-black/5 hover:text-black cursor-pointer"
-                    >
-                        ✕
-                    </button>
+                    <div className="flex items-center gap-1">
+                        <button
+                            type="button"
+                            onClick={() => setIsPinned((prev) => !prev)}
+                            onPointerDown={(e) => e.stopPropagation()}
+                            className={`flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-200 cursor-pointer ${
+                                isPinned
+                                    ? 'bg-black text-white hover:bg-black/80'
+                                    : 'text-black/50 hover:bg-black/5 hover:text-black'
+                            }`}
+                            title={isPinned ? 'Unpin window' : 'Pin window'}
+                        >
+                            {isPinned ? (
+                                <PinOff strokeWidth={1.5} size={18} />
+                            ) : (
+                                <Pin strokeWidth={1.5} size={18} />
+                            )}
+                        </button>
+
+                        <button
+                            onClick={onClose}
+                            onPointerDown={(e) => e.stopPropagation()}
+                            className="flex h-9 w-9 items-center justify-center rounded-xl text-black/50 transition-all duration-200 hover:bg-black/5 hover:text-black cursor-pointer"
+                        >
+                            ✕
+                        </button>
+                    </div>
                 </div>
 
                 <p className="text-sm leading-6 text-black/60">
