@@ -1,0 +1,45 @@
+name: CI - RAG Service
+
+on:
+  push:
+    branches: [ "main", "feat/ai/rag" ]
+    paths:
+      - 'apps/ai/**'
+      - '.github/workflows/ci-rag.yml'
+      - 'pytest.ini'
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - 'apps/ai/**'
+      - '.github/workflows/ci-rag.yml'
+      - 'pytest.ini'
+
+jobs:
+  test-rag-service:
+    name: Test RAG & Dataset Pipelines
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r apps/ai/requirements.txt
+          pip install pytest pytest-asyncio httpx pyright
+
+      - name: Type Check with Pyright
+        run: pyright apps/ai/rag.py apps/ai/export_dataset.py apps/ai/import_dataset.py
+
+      - name: Run RAG & Export Unit Tests
+        env:
+          GOOGLE_API_KEY: "dummy_key_for_ci"
+          DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/transcendence"
+        run: pytest apps/ai/tests/test_rag.py apps/ai/tests/test_export.py -v
