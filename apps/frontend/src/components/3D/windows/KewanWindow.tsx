@@ -1,3 +1,5 @@
+import { ArrowUp } from 'lucide-react';
+
 type KewanProps = {
     onClose: () => void;
 };
@@ -22,6 +24,14 @@ export default function KewanWindow({ onClose }: KewanProps) {
                 <p className="text-sm leading-6 text-black/60">
                     Welcome to Kewan AI.
                 </p>
+                    <div className="w-full ring-2 ring-black/30 shadow-lg rounded-xl" >
+                        <textarea className="resize-none text-black w-full p-2 outline-none" maxLength={150} placeholder="Type your message here..." />
+                        <div className="flex items-center justify-end w-full p-1">
+                        <div className="rounded-full bg-black p-1 flex items-center justify-center">
+                        <ArrowUp size={16} />
+                        </div>
+                        </div>
+                    </div>
             </div>
         </div>
     );
