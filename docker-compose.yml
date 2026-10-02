@@ -7,7 +7,6 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
-
     ports:
       - "5432:5432"
     networks:
@@ -15,6 +14,7 @@ services:
     volumes:
       - db_data:/var/lib/postgresql
       - ./infra/postgresql/init.sql:/docker-entrypoint-initdb.d/init.sql
+
   frontend:
     build:
       context: ./apps/frontend
