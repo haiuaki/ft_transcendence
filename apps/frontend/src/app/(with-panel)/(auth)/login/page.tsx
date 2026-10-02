@@ -35,7 +35,7 @@ export default function LogIn() {
   ]
 
 
-  return <div className="mt-10 flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-5 items-center w-full h-full p-5 text-black">
+  return <div className="mt-7 flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-5 items-center w-full h-full p-5 text-black">
     <h1 className="text-3xl font-semibold">Log in</h1>
     <div className="flex flex-col gap-5 max-w-[400px] w-full">
       <div className="flex flex-col gap-4 w-full">
@@ -79,6 +79,7 @@ export default function LogIn() {
           try {
             setIsLoading(true);
             await login(authFormData.email, authFormData.password)
+            window.location.href = "/"
           } catch (e) {
             setError(e instanceof Error ? e.message : "Failed to log in user");
           } finally {

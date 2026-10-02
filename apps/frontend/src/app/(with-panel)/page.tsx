@@ -2,7 +2,6 @@
 
 import ThreeScene from "../../components/3D/ThreeScene";
 import { Suspense, useState } from "react";
-import { AuthModal } from "../../components/AuthModal/AuthModal";
 import { useAuth } from "../../context/AuthContext";
 import {
   CirclePlusIcon,
@@ -14,9 +13,6 @@ import Link from "next/link";
 
 export const HomePanel = () => {
   const { isAuthenticated, user, logout } = useAuth();
-  const [openSignUp, setOpenSignUp] = useState<boolean>(false);
-  const [openLogIn, setOpenLogIn] = useState<boolean>(false);
-  const [activeItem, setActiveItem] = useState("profile");
 
   const colors = themeColors;
 
@@ -43,16 +39,20 @@ export const HomePanel = () => {
           </div>
         </div>
       </div>
-      <div className="flex items-center gap-2">
-        <Link href="/signup" className="cursor-pointer w-full flex items-center justify-center p-2 rounded-md font-semibold ring-[#dededc] ring-1">
-          <p>Sign up</p>
-        </Link>
-        <Link href="/login" className="cursor-pointer w-full flex items-center justify-center p-2 rounded-md font-semibold bg-black hover:bg-black/90 text-white">
-          <p>Log in</p>
-        </Link>
-      </div>
-      <AuthModal isOpen={openSignUp} onClose={() => setOpenSignUp(false)} view="sign_up" />
-      <AuthModal isOpen={openLogIn} onClose={() => setOpenLogIn(false)} view="log_in" />
+      {(isAuthenticated && user) ?
+        <div className="cursor-pointer flex items-center gap-2 text-black py-2 px-3 rounded-md bg-[#dededc]">
+          <img className="rounded-full" width={28} height={28} src={user?.avatar_url || "/img/avatar.jpg"} />
+          <p className="font-semibold">{user?.username}</p>
+        </div>
+        : <div className="flex items-center gap-2">
+          <Link href="/signup" className="cursor-pointer w-full flex items-center justify-center p-2 rounded-md font-semibold ring-[#dededc] ring-1">
+            <p>Sign up</p>
+          </Link>
+          <Link href="/login" className="cursor-pointer w-full flex items-center justify-center p-2 rounded-md font-semibold bg-black hover:bg-black/90 text-white">
+            <p>Log in</p>
+          </Link>
+        </div>
+      }
     </div>
   )
 }

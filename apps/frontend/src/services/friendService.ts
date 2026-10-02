@@ -11,7 +11,7 @@ const friendService = {
             }
         });
         if (!response.ok)
-            throw new Error("Failed to fetch friends")
+            throw new Error(await response.text() || "Failed to fetch friends")
         const data = await response.json();
         return (data);
     },
