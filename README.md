@@ -36,6 +36,10 @@ _This project has been created as part of the 42 curriculum by juljin, ksilvest,
   - *Justification:* To provide users with an interactive, on-demand study assistant.
   - *Implementation:* Created a Python streaming API powered by the Google Gemini SDK.
   - *Team:* ksilvest
+- **[Major - 2pts] Retrieval-Augmented Generation (RAG)**
+  - *Justification:* Ground AI responses in contextual workspace data using pgvector semantic search.
+  - *Implementation:* Built a RAG pipeline utilizing pgvector for vector cosine search and dataset export.
+  - *Team:* ksilvest
 
 ### Gaming & User Experience
 - **[Major - 2pts] Advanced 3D Graphics**
@@ -198,6 +202,7 @@ No core logic was blindly copy-pasted; all AI-assisted code was thoroughly peer-
 ### References
 * [Official Go Documentation](https://go.dev/learn/)
 * [Google Gemini API Key Documentation](https://ai.google.dev/gemini-api/docs/api-key)
+* [Retrieval-Augmented Generation (RAG) - Real Python](https://realpython.com/ref/ai-coding-glossary/retrieval-augmented-generation/)
 * [Google OAuth 2.0 Documentation](https://developers.google.com/identity/protocols/oauth2)
 * [GitHub OAuth Apps Documentation](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps)
 * [42 Intra API Documentation](https://api.intra.42.fr/apidoc)

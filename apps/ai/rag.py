@@ -1,0 +1,120 @@
+import json
+import asyncpg
+from google import genai
+
+def generate_embedding(client: genai.Client, text: str) -> list[float]:
+    """Generates a 768-dimension semantic vector using Google text-embedding-004."""
+    result = client.models.embed_content(
+        model="text-embedding-004",
+        contents=text,
+    )
+    if not result.embeddings or not result.embeddings[0].values:
+        raise ValueError("Failed to retrieve embeddings from Gemini API")
+    return list(result.embeddings[0].values)
+
+
+async def sync_pending_embeddings(client: genai.Client, db_pool: asyncpg.Pool) -> int:
+    """Finds messages without embeddings and calculates them automatically."""
+    query_select = """
+        SELECT id, content 
+        FROM messages 
+        WHERE embedding IS NULL
+        LIMIT 50
+    """
+    async with db_pool.acquire() as connection:
+        rows = await connection.fetch(query_select)
+        if not rows:
+            return 0
+
+        for r in rows:
+            try:
+                vector = generate_embedding(client, r["content"])
+                vector_json = json.dumps(vector)
+                await connection.execute(
+                    "UPDATE messages SET embedding = $1::vector WHERE id = $2",
+                    vector_json,
+                    r["id"],
+                )
+            except Exception as e:
+                print(f"Error computing embedding for message {r['id']}: {e}")
+                continue
+
+    return len(rows)
+
+
+async def get_relevant_context(
+    client: genai.Client,
+    db_pool: asyncpg.Pool,
+    user_prompt: str,
+    channel_id: int | None = None,
+    limit: int = 5,
+) -> str:
+    """Retrieves messages with the highest semantic similarity to the prompt."""
+    # Ensure any recent messages without embeddings get vectorized
+    try:
+        await sync_pending_embeddings(client, db_pool)
+    except Exception as e:
+        print(f"Sync embeddings warning: {e}")
+
+    prompt_vector = generate_embedding(client, user_prompt)
+    vector_json = json.dumps(prompt_vector)
+
+    query = """
+        SELECT 
+            u.username, 
+            m.content, 
+            m.created_at,
+            (m.embedding <=> $1::vector) AS distance
+        FROM messages m
+        JOIN users u ON m.sender_id = u.id
+        WHERE m.embedding IS NOT NULL
+          AND ($2::INT IS NULL OR m.channel_id = $2)
+        ORDER BY distance ASC
+        LIMIT $3
+    """
+
+    async with db_pool.acquire() as connection:
+        rows = await connection.fetch(query, vector_json, channel_id, limit)
+
+    if not rows:
+        return "No semantically relevant messages found in database archives."
+
+    lines = [
+        f"[{r['created_at'].strftime('%Y-%m-%d %H:%M')}] {r['username']}: {r['content']} (relevance: {1 - r['distance']:.2f})"
+        for r in rows
+    ]
+    return "Relevant context extracted from archives:\n" + "\n".join(lines)
+
+
+def format_rag_prompt(context: str, user_prompt: str) -> str:
+    """Merges semantic context with the user query."""
+    return (
+        f"System context:\n{context}\n\n"
+        f"User query: {user_prompt}\n\n"
+        "Provide an accurate response based on the contextual information above."
+    )
+
+
+async def store_message_with_embedding(
+    client: genai.Client,
+    db_pool: asyncpg.Pool,
+    sender_id: str,
+    channel_id: int,
+    content: str,
+) -> int:
+    """Calculates semantic vector and persists message to PostgreSQL."""
+    vector = generate_embedding(client, content)
+    vector_json = json.dumps(vector)
+
+    query = """
+        INSERT INTO messages (sender_id, channel_id, content, embedding)
+        VALUES ($1::UUID, $2::INT, $3, $4::vector)
+        RETURNING id
+    """
+
+    async with db_pool.acquire() as connection:
+        message_id = await connection.fetchval(
+            query, sender_id, channel_id, content, vector_json
+        )
+
+    return message_id
