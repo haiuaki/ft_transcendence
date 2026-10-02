@@ -8,7 +8,9 @@ def generate_embedding(client: genai.Client, text: str) -> list[float]:
         model="text-embedding-004",
         contents=text,
     )
-    return result.embeddings[0].values
+    if not result.embeddings or not result.embeddings[0].values:
+        raise ValueError("Failed to retrieve embeddings from Gemini API")
+    return list(result.embeddings[0].values)
 
 
 async def sync_pending_embeddings(client: genai.Client, db_pool: asyncpg.Pool) -> int:
