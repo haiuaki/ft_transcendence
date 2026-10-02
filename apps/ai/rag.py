@@ -11,6 +11,35 @@ def generate_embedding(client: genai.Client, text: str) -> list[float]:
     return result.embeddings[0].values
 
 
+async def sync_pending_embeddings(client: genai.Client, db_pool: asyncpg.Pool) -> int:
+    """Finds messages without embeddings and calculates them automatically."""
+    query_select = """
+        SELECT id, content 
+        FROM messages 
+        WHERE embedding IS NULL
+        LIMIT 50
+    """
+    async with db_pool.acquire() as connection:
+        rows = await connection.fetch(query_select)
+        if not rows:
+            return 0
+
+        for r in rows:
+            try:
+                vector = generate_embedding(client, r["content"])
+                vector_json = json.dumps(vector)
+                await connection.execute(
+                    "UPDATE messages SET embedding = $1::vector WHERE id = $2",
+                    vector_json,
+                    r["id"],
+                )
+            except Exception as e:
+                print(f"Error computing embedding for message {r['id']}: {e}")
+                continue
+
+    return len(rows)
+
+
 async def get_relevant_context(
     client: genai.Client,
     db_pool: asyncpg.Pool,
@@ -19,6 +48,12 @@ async def get_relevant_context(
     limit: int = 5,
 ) -> str:
     """Retrieves messages with the highest semantic similarity to the prompt."""
+    # Ensure any recent messages without embeddings get vectorized
+    try:
+        await sync_pending_embeddings(client, db_pool)
+    except Exception as e:
+        print(f"Sync embeddings warning: {e}")
+
     prompt_vector = generate_embedding(client, user_prompt)
     vector_json = json.dumps(prompt_vector)
 
@@ -56,6 +91,7 @@ def format_rag_prompt(context: str, user_prompt: str) -> str:
         f"User query: {user_prompt}\n\n"
         "Provide an accurate response based on the contextual information above."
     )
+
 
 async def store_message_with_embedding(
     client: genai.Client,
