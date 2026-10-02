@@ -44,12 +44,12 @@ export const HomePanel = () => {
         </div>
       </div>
       <div className="flex items-center gap-2">
-        <div className="cursor-pointer w-full flex items-center justify-center p-2 rounded-md font-semibold ring-[#dededc] ring-1">
+        <Link href="/signup" className="cursor-pointer w-full flex items-center justify-center p-2 rounded-md font-semibold ring-[#dededc] ring-1">
           <p>Sign up</p>
-        </div>
-        <div className="cursor-pointer w-full flex items-center justify-center p-2 rounded-md font-semibold bg-black hover:bg-black/90 text-white">
+        </Link>
+        <Link href="/login" className="cursor-pointer w-full flex items-center justify-center p-2 rounded-md font-semibold bg-black hover:bg-black/90 text-white">
           <p>Log in</p>
-        </div>
+        </Link>
       </div>
       <AuthModal isOpen={openSignUp} onClose={() => setOpenSignUp(false)} view="sign_up" />
       <AuthModal isOpen={openLogIn} onClose={() => setOpenLogIn(false)} view="log_in" />
