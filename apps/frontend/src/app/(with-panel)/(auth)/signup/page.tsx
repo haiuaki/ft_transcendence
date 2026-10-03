@@ -1,16 +1,15 @@
 "use client"
 
-import { useAuth } from "@/src/context/AuthContext";
 import { themeColors } from "@/src/lib/themeColors";
 import userService from "@/src/services/userService";
-import { Check, Eye, EyeClosed, Loader2, MailCheck } from "lucide-react";
+import { Check, Loader2, MailCheck } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { ChangeEvent, useState } from "react";
 import { FaGithub } from "react-icons/fa6";
 import { FcGoogle } from "react-icons/fc";
 import { toast } from "sonner";
-import { InputField } from "../login/page";
+import InputField from "@/src/components/InputField";
 
 interface AuthFormData {
   email: string,
@@ -30,9 +29,9 @@ export default function SignUp() {
   ]
 
   const inputs = [
-    { title: "Email", placeholder: "", maxLength: undefined, isPassword: false, onChange: (e) => setAuthFormData({ ...authFormData, email: e.target.value }), value: authFormData.email },
-    { title: "Username", placeholder: "", maxLength: 20, isPassword: false, onChange: (e) => setAuthFormData({ ...authFormData, username: e.target.value }), value: authFormData.username },
-    { title: "Password", placeholder: "", maxLength: undefined, isPassword: true, onChange: (e) => setAuthFormData({ ...authFormData, password: e.target.value }), value: authFormData.password },
+    { title: "Email", placeholder: "", maxLength: undefined, isPassword: false, onChange: (e: ChangeEvent<HTMLInputElement>) => setAuthFormData({ ...authFormData, email: e.target.value }), value: authFormData.email },
+    { title: "Username", placeholder: "", maxLength: 20, isPassword: false, onChange: (e: ChangeEvent<HTMLInputElement>) => setAuthFormData({ ...authFormData, username: e.target.value }), value: authFormData.username },
+    { title: "Password", placeholder: "", maxLength: undefined, isPassword: true, onChange: (e: ChangeEvent<HTMLInputElement>) => setAuthFormData({ ...authFormData, password: e.target.value }), value: authFormData.password },
   ]
 
   const passwordConditions = [
