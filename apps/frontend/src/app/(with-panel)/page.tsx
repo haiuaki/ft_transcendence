@@ -1,7 +1,7 @@
 "use client"
 
 import ThreeScene from "../../components/3D/ThreeScene";
-import { Suspense, useState } from "react";
+import { Suspense } from "react";
 import { useAuth } from "../../context/AuthContext";
 import {
   CirclePlusIcon,
