@@ -65,11 +65,18 @@ func CreateRoom(dbPool *pgxpool.Pool) http.HandlerFunc {
 
 		// Enforce Physics: Stand the user up from any room they are currently sitting in
 		standUpSQL := `
-			UPDATE channel_members 
-			SET status = 'LEFT' 
-			WHERE user_id = (SELECT id FROM users WHERE email = $1) 
-			AND status = 'ACTIVE'
-			AND channel_id IN (SELECT id FROM channels WHERE type != 'DIRECT')
+			WITH updated_member AS (
+				UPDATE channel_members 
+				SET status = 'LEFT' 
+				WHERE user_id = (SELECT id FROM users WHERE email = $1) 
+				AND status = 'ACTIVE'
+				AND channel_id IN (SELECT id FROM channels WHERE type != 'DIRECT')
+				RETURNING user_id, joined_at
+			)
+			UPDATE users
+			SET cumulative_time_seconds = cumulative_time_seconds + EXTRACT(EPOCH FROM (NOW() - um.joined_at))::INTEGER
+			FROM updated_member um
+			WHERE users.id = um.user_id
 		`
 		dbPool.Exec(context.Background(), standUpSQL, email)
 
@@ -146,11 +153,18 @@ func JoinRoom(dbPool *pgxpool.Pool) http.HandlerFunc {
 
 		// Enforce Physics: Stand the user up from any room they are currently sitting in
 		standUpSQL := `
-			UPDATE channel_members 
-			SET status = 'LEFT' 
-			WHERE user_id = (SELECT id FROM users WHERE email = $1) 
-			AND status = 'ACTIVE'
-			AND channel_id IN (SELECT id FROM channels WHERE type != 'DIRECT')
+			WITH updated_member AS (
+				UPDATE channel_members 
+				SET status = 'LEFT' 
+				WHERE user_id = (SELECT id FROM users WHERE email = $1) 
+				AND status = 'ACTIVE'
+				AND channel_id IN (SELECT id FROM channels WHERE type != 'DIRECT')
+				RETURNING user_id, joined_at
+			)
+			UPDATE users
+			SET cumulative_time_seconds = cumulative_time_seconds + EXTRACT(EPOCH FROM (NOW() - um.joined_at))::INTEGER
+			FROM updated_member um
+			WHERE users.id = um.user_id
 		`
 		dbPool.Exec(context.Background(), standUpSQL, email)
 
@@ -252,11 +266,18 @@ func LeaveRoom(dbPool *pgxpool.Pool) http.HandlerFunc {
 		}
 
 		updateSQL := `
-			UPDATE channel_members
-			SET status = 'LEFT'
-			WHERE channel_id = $1
-				AND user_id = (SELECT id FROM users WHERE email = $2)
-				AND status = 'ACTIVE'
+			WITH updated_member AS (
+				UPDATE channel_members
+				SET status = 'LEFT'
+				WHERE channel_id = $1
+					AND user_id = (SELECT id FROM users WHERE email = $2)
+					AND status = 'ACTIVE'
+				RETURNING user_id, joined_at
+			)
+			UPDATE users
+			SET cumulative_time_seconds = cumulative_time_seconds + EXTRACT(EPOCH FROM (NOW() - um.joined_at))::INTEGER
+			FROM updated_member um
+			WHERE users.id = um.user_id
 		`
 
 		result, err := dbPool.Exec(context.Background(), updateSQL, req.ChannelID, email)

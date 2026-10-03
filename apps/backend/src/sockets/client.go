@@ -51,11 +51,18 @@ func (c *Client) readPump() {
 		// If the user's WiFi droppped, stand them up
 		if c.IsAuthenticated && c.Email != "" {
 			standUpSQL := `
-				UPDATE channel_members
-				SET status = 'LEFT'
-				WHERE user_id = (SELECT id FROM users WHERE email = $1)
-				AND status = 'ACTIVE'
-				AND channel_id IN (SELECT id FROM channels WHERE type != 'DIRECT')
+				WITH updated_member AS (
+					UPDATE channel_members
+					SET status = 'LEFT'
+					WHERE user_id = (SELECT id FROM users WHERE email = $1)
+					AND status = 'ACTIVE'
+					AND channel_id IN (SELECT id FROM channels WHERE type != 'DIRECT')
+					RETURNING user_id, joined_at
+				)
+				UPDATE users
+				SET cumulative_time_seconds = cumulative_time_seconds + EXTRACT(EPOCH FROM (NOW() - um.joined_at))::INTEGER
+				FROM updated_member um
+				WHERE users.id = um.user_id
 			`
 			// Use `context.Background()` for a quick background execution
 			_, err := c.dbPool.Exec(context.Background(), standUpSQL, c.Email)
@@ -179,18 +186,39 @@ func (c *Client) readPump() {
 				continue
 			}
 
-			// Save to `messages` table
+			// Save to `messages` table and update analytics
 			insertSQL := `
-				INSERT INTO messages (channel_id, sender_id, content)
-				VALUES ($1, (SELECT id FROM users WHERE email = $2), $3)
+				WITH new_message AS (
+					INSERT INTO messages (channel_id, sender_id, content)
+					VALUES ($1, (SELECT id FROM users WHERE email = $2), $3)
+					RETURNING id, sender_id, content, created_at
+				),
+				updated_user AS (
+					UPDATE users
+					SET total_messages_sent = total_messages_sent + 1
+					FROM new_message
+					WHERE users.id = new_message.sender_id
+					RETURNING users.username
+				)
+				SELECT nm.id, uu.username, nm.content, nm.created_at
+				FROM new_message nm, updated_user uu
 			`
 
-			_, err = c.dbPool.Exec(context.Background(), insertSQL, chatData.RoomID, c.Email, chatData.Message)
+			var outMsg OutboundChatMessage
+			outMsg.RoomID = chatData.RoomID
+			var createdAt time.Time
+
+			err = c.dbPool.QueryRow(context.Background(), insertSQL, chatData.RoomID, c.Email, chatData.Message).Scan(
+				&outMsg.ID, &outMsg.Username, &outMsg.Content, &createdAt,
+			)
 			if err != nil {
 				log.Println("Database error: Failed to save chat history:", err)
+				continue
 			}
 
-			safePayloadBytes, _ := json.Marshal(chatData)
+			outMsg.CreatedAt = createdAt.Format(time.RFC3339)
+
+			safePayloadBytes, _ := json.Marshal(outMsg)
 			safeEnvelope := WSMessage{
 				Type:    "chat",
 				Payload: safePayloadBytes,
