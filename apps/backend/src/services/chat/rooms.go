@@ -18,10 +18,12 @@ func GetRooms(dbPool *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		query := `
 			SELECT
-				c.id, c.name, c.type, c.owner_id, c.created_at,
+				c.id, c.name, c.type, c.model_type, c.max_capacity,
+				c.owner_id, c.created_at,
 				COUNT(cm.user_id)::INTEGER as active_members
 			FROM channels c
 			LEFT JOIN channel_members cm ON c.id = cm.channel_id AND cm.status = 'ACTIVE'
+			WHERE c.type != 'DIRECT'
 			GROUP BY c.id
 			ORDER BY c.created_at DESC
 		`
@@ -38,7 +40,10 @@ func GetRooms(dbPool *pgxpool.Pool) http.HandlerFunc {
 
 		for rows.Next() {
 			var room RoomResponse
-			if err := rows.Scan(&room.ID, &room.Name, &room.Type, &room.OwnerID, &room.CreatedAt, &room.ActiveMembers); err != nil {
+			if err := rows.Scan(
+				&room.ID, &room.Name, &room.Type, &room.ModelType, &room.MaxCapacity,
+				&room.OwnerID, &room.CreatedAt, &room.ActiveMembers,
+			); err != nil {
 				log.Println("Error scanning room row:", err)
 				continue
 			}
@@ -84,8 +89,13 @@ func CreateRoom(dbPool *pgxpool.Pool) http.HandlerFunc {
 			req.Type = "PUBLIC" // Default to public if garbage was sent
 		}
 
+		if req.Type == "PRIVATE" && req.Password == "" {
+			http.Error(w, "Private rooms require a password.", http.StatusBadRequest)
+			return
+		}
+
 		var passwordHash *string
-		if req.Type == "PRIVATE" && req.Password != "" {
+		if req.Type == "PRIVATE" {
 			hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), 14)
 			if err != nil {
 				http.Error(w, "Failed to secure room password.", http.StatusInternalServerError)
@@ -95,14 +105,20 @@ func CreateRoom(dbPool *pgxpool.Pool) http.HandlerFunc {
 			passwordHash = &hashStr
 		}
 
+		maxSeats, modelExists := ModelCapacities[req.Model]
+		if !modelExists {
+			req.Model = "CLUSTER"
+			maxSeats = 3
+		}
+
 		var newRoomID int
 		insertRoomSQL := `
-			INSERT INTO channels (name, type, password_hash, owner_id)
-			VALUES ($1, $2, $3, (SELECT id FROM users WHERE email = $4))
+			INSERT INTO channels (name, type, password_hash, model_type, max_capacity, owner_id)
+			VALUES ($1, $2, $3, $4, $5, (SELECT id FROM users WHERE email = $6))
 			RETURNING id
 		`
 
-		err := dbPool.QueryRow(context.Background(), insertRoomSQL, req.Name, req.Type, passwordHash, email).Scan(&newRoomID)
+		err := dbPool.QueryRow(context.Background(), insertRoomSQL, req.Name, req.Type, passwordHash, req.Model, maxSeats, email).Scan(&newRoomID)
 		if err != nil {
 			log.Println("Error creating a room:", err)
 			http.Error(w, "Failed to create room.", http.StatusInternalServerError)
@@ -119,8 +135,8 @@ func CreateRoom(dbPool *pgxpool.Pool) http.HandlerFunc {
 			log.Println("Error adding owner to room members:", err)
 		}
 
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("Room created successfully."))
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]int{"room_id": newRoomID})
 	}
 }
 
@@ -146,12 +162,25 @@ func JoinRoom(dbPool *pgxpool.Pool) http.HandlerFunc {
 
 		var roomType string
 		var passwordHash *string
-		roomQuery := `SELECT type, password_hash FROM channels WHERE id = $1`
+		var maxCapacity *int
+		roomQuery := `SELECT type, password_hash, max_capacity FROM channels WHERE id = $1`
 
-		err := dbPool.QueryRow(context.Background(), roomQuery, req.ChannelID).Scan(&roomType, &passwordHash)
+		err := dbPool.QueryRow(context.Background(), roomQuery, req.ChannelID).Scan(&roomType, &passwordHash, &maxCapacity)
 		if err != nil {
 			http.Error(w, "Room not found.", http.StatusNotFound)
 			return
+		}
+
+		// Enforce capacity limits if this isn't a direct message and capacity exists
+		if roomType != "DIRECT" && maxCapacity != nil {
+			var currentCount int
+			countSQL := `SELECT COUNT(*) FROM channel_members WHERE channel_id = $1 AND status = 'ACTIVE'`
+			dbPool.QueryRow(context.Background(), countSQL, req.ChannelID).Scan(&currentCount)
+
+			if currentCount >= *maxCapacity {
+				http.Error(w, "This room is currently full.", http.StatusForbidden)
+				return
+			}
 		}
 
 		var existingRole string

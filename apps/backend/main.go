@@ -104,6 +104,9 @@ func main() {
 	// GET: List all available 3D rooms
 	http.HandleFunc("/rooms", auth.RequireAuth(chat.GetRooms(dbPool)))
 
+	// GET: List all available 3D models for room creation
+	http.HandleFunc("/rooms/models", auth.RequireAuth(chat.GetAvailableModels()))
+
 	// POST: Create a new 3D Room
 	http.HandleFunc("/rooms/create", auth.RequireAuth(chat.CreateRoom(dbPool)))
 

@@ -5,8 +5,9 @@ import "time"
 // What the frontend sends when creating a room
 type CreateRoomRequest struct {
 	Name     string `json:"name"`
-	Type     string `json:"type"` // "PUBLIC" or "PRIVATE"
+	Type     string `json:"type"` // "PUBLIC", "PRIVATE" or "DIRECT"
 	Password string `json:"password,omitempty"`
+	Model    string `json:"model"` // "CLUSTER"
 }
 
 // What we send back to the frontend
@@ -14,6 +15,8 @@ type RoomResponse struct {
 	ID            int       `json:"id"`
 	Name          string    `json:"name"`
 	Type          string    `json:"type"`
+	ModelType     string    `json:"model_type"`
+	MaxCapacity   int       `json:"max_capacity"`
 	OwnerID       *string   `json:"owner_id,omitempty"`
 	ActiveMembers int       `json:"active_members"`
 	CreatedAt     time.Time `json:"created_at"`
