@@ -49,7 +49,7 @@ export default function CreateRoom() {
             if (!roomFormData.isPublic && !roomFormData.password.trim()) return setError("A password is required for a private room.");
             setIsLoading(true);
             await roomService.create(token || "", roomFormData.name, roomFormData.isPublic ? "PUBLIC" : "PRIVATE", roomFormData.password);
-            toast.success("okokokook");
+            toast.success(`Room "${roomFormData.name.trim()}" created successfully.`);
             setRoomFormData({ name: "", isPublic: false, password: "" });
           } catch (e) {
             setError(e instanceof Error ? e.message : "Failed to create room")
