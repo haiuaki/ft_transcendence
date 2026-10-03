@@ -58,11 +58,23 @@ func (c *Client) readPump() {
 					AND status = 'ACTIVE'
 					AND channel_id IN (SELECT id FROM channels WHERE type != 'DIRECT')
 					RETURNING user_id, joined_at
+				),
+				aggregated_time AS (
+					SELECT user_id, SUM(EXTRACT(EPOCH FROM (NOW() - joined_at))::INTEGER) as total_added_time
+					FROM updated_member
+					GROUP BY user_id
+				),
+				updated_user AS (
+					UPDATE users
+					SET cumulative_time_seconds = cumulative_time_seconds + at.total_added_time
+					FROM aggregated_time at
+					WHERE users.id = at.user_id
+					RETURNING users.id, at.total_added_time
 				)
-				UPDATE users
-				SET cumulative_time_seconds = cumulative_time_seconds + EXTRACT(EPOCH FROM (NOW() - um.joined_at))::INTEGER
-				FROM updated_member um
-				WHERE users.id = um.user_id
+				INSERT INTO daily_user_analytics (user_id, date, time_spent_seconds)
+				SELECT id, CURRENT_DATE, total_added_time FROM updated_user
+				ON CONFLICT (user_id, date)
+				DO UPDATE SET time_spent_seconds = daily_user_analytics.time_spent_seconds + EXCLUDED.time_spent_seconds
 			`
 			// Use `context.Background()` for a quick background execution
 			_, err := c.dbPool.Exec(context.Background(), standUpSQL, c.Email)
@@ -198,10 +210,19 @@ func (c *Client) readPump() {
 					SET total_messages_sent = total_messages_sent + 1
 					FROM new_message
 					WHERE users.id = new_message.sender_id
-					RETURNING users.username
+					RETURNING users.id, users.username
+				),
+				daily_update AS (
+					INSERT INTO daily_user_analytics (user_id, date, messages_sent)
+					SELECT id, CURRENT_DATE, 1 FROM updated_user
+					ON CONFLICT (user_id, date)
+					DO UPDATE SET messages_sent = daily_user_analytics.messages_sent + 1
+					RETURNING user_id
 				)
 				SELECT nm.id, uu.username, nm.content, nm.created_at
-				FROM new_message nm, updated_user uu
+				FROM new_message nm
+				JOIN updated_user uu ON uu.id = nm.sender_id
+				JOIN daily_update du ON du.user_id = uu.id
 			`
 
 			var outMsg OutboundChatMessage

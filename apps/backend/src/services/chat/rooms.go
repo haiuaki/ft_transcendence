@@ -72,11 +72,23 @@ func CreateRoom(dbPool *pgxpool.Pool) http.HandlerFunc {
 				AND status = 'ACTIVE'
 				AND channel_id IN (SELECT id FROM channels WHERE type != 'DIRECT')
 				RETURNING user_id, joined_at
+			),
+			aggregated_time AS (
+				SELECT user_id, SUM(EXTRACT(EPOCH FROM (NOW() - joined_at))::INTEGER) as total_added_time
+				FROM updated_member
+				GROUP BY user_id
+			),
+			updated_user AS (
+				UPDATE users
+				SET cumulative_time_seconds = cumulative_time_seconds + at.total_added_time
+				FROM aggregated_time at
+				WHERE users.id = at.user_id
+				RETURNING users.id, at.total_added_time
 			)
-			UPDATE users
-			SET cumulative_time_seconds = cumulative_time_seconds + EXTRACT(EPOCH FROM (NOW() - um.joined_at))::INTEGER
-			FROM updated_member um
-			WHERE users.id = um.user_id
+			INSERT INTO daily_user_analytics (user_id, date, time_spent_seconds)
+			SELECT id, CURRENT_DATE, total_added_time FROM updated_user
+			ON CONFLICT (user_id, date)
+			DO UPDATE SET time_spent_seconds = daily_user_analytics.time_spent_seconds + EXCLUDED.time_spent_seconds
 		`
 		dbPool.Exec(context.Background(), standUpSQL, email)
 
@@ -142,6 +154,7 @@ func CreateRoom(dbPool *pgxpool.Pool) http.HandlerFunc {
 			log.Println("Error adding owner to room members:", err)
 		}
 
+		w.WriteHeader(http.StatusOK)
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]int{"room_id": newRoomID})
 	}
@@ -160,11 +173,23 @@ func JoinRoom(dbPool *pgxpool.Pool) http.HandlerFunc {
 				AND status = 'ACTIVE'
 				AND channel_id IN (SELECT id FROM channels WHERE type != 'DIRECT')
 				RETURNING user_id, joined_at
+			),
+			aggregated_time AS (
+				SELECT user_id, SUM(EXTRACT(EPOCH FROM (NOW() - joined_at))::INTEGER) as total_added_time
+				FROM updated_member
+				GROUP BY user_id
+			),
+			updated_user AS (
+				UPDATE users
+				SET cumulative_time_seconds = cumulative_time_seconds + at.total_added_time
+				FROM aggregated_time at
+				WHERE users.id = at.user_id
+				RETURNING users.id, at.total_added_time
 			)
-			UPDATE users
-			SET cumulative_time_seconds = cumulative_time_seconds + EXTRACT(EPOCH FROM (NOW() - um.joined_at))::INTEGER
-			FROM updated_member um
-			WHERE users.id = um.user_id
+			INSERT INTO daily_user_analytics (user_id, date, time_spent_seconds)
+			SELECT id, CURRENT_DATE, total_added_time FROM updated_user
+			ON CONFLICT (user_id, date)
+			DO UPDATE SET time_spent_seconds = daily_user_analytics.time_spent_seconds + EXCLUDED.time_spent_seconds
 		`
 		dbPool.Exec(context.Background(), standUpSQL, email)
 
@@ -211,10 +236,10 @@ func JoinRoom(dbPool *pgxpool.Pool) http.HandlerFunc {
 				return
 			}
 
-			// They are not allowed in the room -> Update their status to 'ACTIVE'
+			// They previously left the room -> reactivate their seat
 			updateSQL := `
 				UPDATE channel_members
-				SET status = 'ACTIVE'
+				SET status = 'ACTIVE', joined_at = NOW()
 				WHERE channel_id = $1 AND user_id = (SELECT id FROM users WHERE email = $2)
 			`
 			dbPool.Exec(context.Background(), updateSQL, req.ChannelID, email)
@@ -265,6 +290,21 @@ func LeaveRoom(dbPool *pgxpool.Pool) http.HandlerFunc {
 			return
 		}
 
+		// Pre-flight: verify user is actually active in the room before running the analytics CTE
+		var isActive bool
+		checkSQL := `
+			SELECT EXISTS (
+				SELECT 1 FROM channel_members
+				WHERE channel_id = $1
+					AND user_id = (SELECT id FROM users WHERE email = $2)
+					AND status = 'ACTIVE'
+			)
+		`
+		if err := dbPool.QueryRow(context.Background(), checkSQL, req.ChannelID, email).Scan(&isActive); err != nil || !isActive {
+			http.Error(w, "You are not active in this room.", http.StatusNotFound)
+			return
+		}
+
 		updateSQL := `
 			WITH updated_member AS (
 				UPDATE channel_members
@@ -273,22 +313,29 @@ func LeaveRoom(dbPool *pgxpool.Pool) http.HandlerFunc {
 					AND user_id = (SELECT id FROM users WHERE email = $2)
 					AND status = 'ACTIVE'
 				RETURNING user_id, joined_at
+			),
+			aggregated_time AS (
+				SELECT user_id, SUM(EXTRACT(EPOCH FROM (NOW() - joined_at))::INTEGER) as total_added_time
+				FROM updated_member
+				GROUP BY user_id
+			),
+			updated_user AS (
+				UPDATE users
+				SET cumulative_time_seconds = cumulative_time_seconds + at.total_added_time
+				FROM aggregated_time at
+				WHERE users.id = at.user_id
+				RETURNING users.id, at.total_added_time
 			)
-			UPDATE users
-			SET cumulative_time_seconds = cumulative_time_seconds + EXTRACT(EPOCH FROM (NOW() - um.joined_at))::INTEGER
-			FROM updated_member um
-			WHERE users.id = um.user_id
+			INSERT INTO daily_user_analytics (user_id, date, time_spent_seconds)
+			SELECT id, CURRENT_DATE, total_added_time FROM updated_user
+			ON CONFLICT (user_id, date)
+			DO UPDATE SET time_spent_seconds = daily_user_analytics.time_spent_seconds + EXCLUDED.time_spent_seconds
 		`
 
-		result, err := dbPool.Exec(context.Background(), updateSQL, req.ChannelID, email)
+		_, err := dbPool.Exec(context.Background(), updateSQL, req.ChannelID, email)
 		if err != nil {
 			log.Println("Database error leaving room:", err)
 			http.Error(w, "Failed to leave room.", http.StatusInternalServerError)
-			return
-		}
-
-		if result.RowsAffected() == 0 {
-			http.Error(w, "You are not active in this room.", http.StatusNotFound)
 			return
 		}
 
