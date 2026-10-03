@@ -61,7 +61,7 @@ const RoomPasswordView = ({ roomId, onSuccess }: RoomPasswordViewProps) => {
                     className="w-full flex justify-center items-center gap-2 cursor-pointer rounded-md bg-black px-3 py-2 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-40"
                 >
                     {isSubmitting && <Loader2 size={16} className="animate-spin" />}
-                    <p>Join room</p>
+                    <p>{isSubmitting ? "Joining room" : "Join room"}</p>
                 </button>
 
             </form>
