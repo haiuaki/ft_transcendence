@@ -1,26 +1,25 @@
 "use client"
 
 import ThreeScene from "../../components/3D/ThreeScene";
-import { Suspense, useState } from "react";
+import { Suspense } from "react";
 import { useAuth } from "../../context/AuthContext";
 import {
   CirclePlusIcon,
-  DoorOpen,
   HomeIcon,
   LayoutGrid,
 } from "lucide-react";
 import { themeColors } from "../../lib/themeColors";
 import Link from "next/link";
+import Image from "next/image";
 
 export const HomePanel = () => {
-  const { isAuthenticated, user, logout } = useAuth();
+  const { isAuthenticated, user } = useAuth();
 
   const colors = themeColors;
 
   const rooms = [
     { icon: <LayoutGrid size={12} />, title: "Browse rooms", href: "/rooms" },
     { icon: <CirclePlusIcon size={12} />, title: "Create a room", href: "/rooms/create" },
-    { icon: <DoorOpen size={12} />, title: "Join a room", href: "/rooms/join" },
   ]
   return (
     <div className="flex flex- justify-between gap-5 h-full w-[300px] shrink-0 flex-col p-4 text-black">
@@ -46,7 +45,7 @@ export const HomePanel = () => {
       </div>
       {(isAuthenticated && user) ?
         <div className="cursor-pointer flex items-center gap-2 text-black py-2 px-3 rounded-md bg-[#dededc]">
-          <img className="rounded-full" width={28} height={28} src={user?.avatar_url || "/img/avatar.jpg"} />
+          <Image className="rounded-full" width={28} height={28} src={user.avatar_url || "/img/avatar.jpg"} alt={`${user.username}'s avatar`} unoptimized />
           <p className="font-semibold">{user?.username}</p>
         </div>
         : <div className="flex items-center gap-2">

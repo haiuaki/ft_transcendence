@@ -1,6 +1,4 @@
 import type { Metadata } from "next";
-import { Geist_Mono, Manrope } from "next/font/google";
-import { AuthProvider } from "../../context/AuthContext";
 import { Toaster } from "sonner";
 import { HomePanel } from "./page";
 

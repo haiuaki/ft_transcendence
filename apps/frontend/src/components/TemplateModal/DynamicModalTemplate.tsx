@@ -1,13 +1,11 @@
-import { createPortal } from "react-dom"
 import { motion } from "motion/react"
-import { CSSProperties, ReactNode, RefObject } from "react";
+import { CSSProperties, ReactNode, RefObject, useCallback, useEffect } from "react";
 import {
   autoUpdate,
   flip,
   FloatingPortal,
   offset,
   shift,
-  useClick,
   useDismiss,
   useFloating,
   useInteractions,
@@ -24,9 +22,11 @@ interface DynamicModalTemplateProps {
 }
 
 export default function DynamicModalTemplate({ onClose, children, className = "", style = undefined, ref, placement = "bottom-start" }: DynamicModalTemplateProps) {
-   const {refs, floatingStyles, context} = useFloating({
+   const {refs: floatingRefs, floatingStyles, context} = useFloating({
     open:true,
-    onOpenChange: (open) => open ? onClose() : null,
+    onOpenChange: (open) => {
+      if (!open) onClose();
+    },
     placement,
     strategy: "fixed",
     transform: false,
@@ -36,16 +36,22 @@ export default function DynamicModalTemplate({ onClose, children, className = ""
         shift({padding:8}),
     ],
     whileElementsMounted: autoUpdate,
-    elements: {
-        reference: ref.current,
-    }
    })
+
+   useEffect(() => {
+    floatingRefs.setReference(ref.current);
+   }, [ref, floatingRefs]);
+
+   const setFloating = useCallback((node: HTMLElement | null) => {
+    floatingRefs.setFloating(node);
+   }, [floatingRefs]);
+
    const dismiss = useDismiss(context);
    const { getFloatingProps } = useInteractions([dismiss]);
 
    return <FloatingPortal>
     <motion.div
-        ref={refs.setFloating}
+        ref={setFloating}
         {...getFloatingProps()}
         initial={{opacity:0, scale: 0.95}}
         animate={{opacity:1, scale: 1}}

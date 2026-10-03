@@ -1,59 +1,26 @@
 "use client"
 
 import { useAuth } from "@/src/context/AuthContext";
-import { themeColors } from "@/src/lib/themeColors";
-import userService from "@/src/services/userService";
-import { Check, Eye, EyeClosed, Loader2, MailCheck } from "lucide-react";
+import InputField from "@/src/components/InputField";
+import { Loader2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { ChangeEvent, useState } from "react";
 import { FaGithub } from "react-icons/fa6";
 import { FcGoogle } from "react-icons/fc";
-import { toast } from "sonner";
 
 interface AuthFormData {
   email: string,
   password: string,
 }
 
-interface InputFieldProp {
-  title: string,
-  placeholder?: string,
-  value: string,
-  onChange: any,
-  maxLength?: number | undefined,
-  type?: string,
-  disabled?: boolean, 
-}
-
-export const InputField = ({ title, placeholder = "", value, onChange, maxLength = undefined, type = "text", disabled = false }: InputFieldProp) => {
-  const colors = themeColors;
-  const [showPassword, setShowPassword] = useState(false)
-  return (
-    <div className="flex flex-col gap-2 w-full">
-      <div className="flex items-center justify-between">
-        <p className="text-sm font-semibold">{title}</p>
-        {maxLength != undefined && <p className={`text-xs ${colors.textSecondary}`}>{value.length}/{maxLength}</p>}
-      </div>
-      <div className={`flex items-center justify-between gap-2 w-full ring-1 ring-[#dedede] focus-within:ring-black/80 rounded-md ${disabled ? "pointer-events-none bg-black/5" : ""}`}>
-        <input placeholder={placeholder} maxLength={maxLength} onChange={onChange} value={value} type={(type === "password" && !showPassword) ? "password" : "text"} className="w-full pl-2 py-2 outline-none text-sm" />
-        {(type === "password" && !disabled) && <div className="pr-2" onClick={() => setShowPassword(!showPassword)}>
-          {showPassword ? <Eye size={12} /> : <EyeClosed size={12} />}
-        </div>
-        }
-      </div>
-    </div>
-  )
-
-}
-
 export default function LogIn() {
-  const [showPassword, setShowPassword] = useState(false)
   const [authFormData, setAuthFormData] = useState<AuthFormData>({ email: "", password: "" })
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
+  const router = useRouter();
   const [error, setError] = useState<string | null>(null);
-  const colors = themeColors;
 
   const oauth = [
     { icon: FcGoogle, text: "Continue with Google", href: "/api/oauth/google/login" },
@@ -62,8 +29,8 @@ export default function LogIn() {
   ]
 
   const inputs = [
-    { title: "Email", placeholder: "", maxLength: undefined, isPassword: false, onChange: (e) => setAuthFormData({ ...authFormData, email: e.target.value }), value: authFormData.email },
-    { title: "Password", placeholder: "", maxLength: undefined, isPassword: true, onChange: (e) => setAuthFormData({ ...authFormData, password: e.target.value }), value: authFormData.password },
+    { title: "Email", placeholder: "", maxLength: undefined, isPassword: false, onChange: (e: ChangeEvent<HTMLInputElement>) => setAuthFormData({ ...authFormData, email: e.target.value }), value: authFormData.email },
+    { title: "Password", placeholder: "", maxLength: undefined, isPassword: true, onChange: (e: ChangeEvent<HTMLInputElement>) => setAuthFormData({ ...authFormData, password: e.target.value }), value: authFormData.password },
   ]
 
 
@@ -94,7 +61,7 @@ export default function LogIn() {
           try {
             setIsLoading(true);
             await login(authFormData.email, authFormData.password)
-            window.location.href = "/"
+            router.push("/")
           } catch (e) {
             setError(e instanceof Error ? e.message : "Failed to log in user");
           } finally {
@@ -105,7 +72,7 @@ export default function LogIn() {
         {isLoading ? <Loader2 className="animate-spin" /> : null}
         <p className="font-medium text-md"> {isLoading ? "loging in" : "Log in"}</p>
       </button>
-      <p className="text-center text-sm">Haven't an account? <Link href={"/login"} className="cursor-pointer font-semibold">Sign up</Link></p>
+      <p className="text-center text-sm">Don&apos;t have an account? <Link href={"/signup"} className="cursor-pointer font-semibold">Sign up</Link></p>
     </div>
   </div>;
 }
