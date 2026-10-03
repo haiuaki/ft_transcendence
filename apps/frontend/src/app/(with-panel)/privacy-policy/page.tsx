@@ -1,6 +1,6 @@
 "use client"
 
-export default function CreateRoom() {
+export default function PrivacyPolicy() {
 
   return <div></div>;
 }

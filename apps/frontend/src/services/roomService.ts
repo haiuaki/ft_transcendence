@@ -5,10 +5,19 @@ export interface Room {
     id: number;
     name: string;
     type: "PUBLIC" | "PRIVATE";
+    model_type: string;
+    max_capacity: number;
     owner_id?: string;
     active_members: number;
     created_at: string;
 }
+
+export interface RoomModel {
+    id: string;
+    name: string;
+    max_capacity: number;
+}
+
 
 export class ApiError extends Error {
     constructor(message: string, public status: number) {
@@ -32,7 +41,16 @@ const roomService = {
         const data: Room[] = await response.json();
         return (data);
     },
-    create: async (token: string, name: string, type: "PUBLIC" | "PRIVATE", password: string | undefined) => {
+    models: async (token: string): Promise<RoomModel[]> => {
+        const response = await fetch(URL + "/rooms/models", {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!response.ok)
+            throw new ApiError(await response.text() || "Failed to fetch models", response.status)
+        return response.json();
+    },
+
+    create: async (token: string, name: string, type: "PUBLIC" | "PRIVATE", password: string | undefined, model: string) => {
         if (!token.trim())
             throw new Error("Token is required")
         if (!name.trim())
@@ -47,12 +65,13 @@ const roomService = {
                 name: name.trim(),
                 type: type,
                 password: type === "PRIVATE" ? password : undefined,
+                model: model,
             })
         });
-        const message = await response.text();
         if (!response.ok)
-            throw new Error(message || `Failed to create ${name}`)
-        return (message);
+            throw new ApiError(await response.text() || `Failed to create ${name}`, response.status)
+        const data: { room_id: number } = await response.json();
+        return (data.room_id);
     },
     join: async (token: string, channelId: string, password: string | undefined) => {
         if (!token.trim())

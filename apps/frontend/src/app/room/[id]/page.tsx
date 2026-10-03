@@ -40,7 +40,7 @@ const RoomContent = () => {
                 }
                 try {
                     await roomService.join(token || "", params.id, undefined);
-                    toast.success("Successfully joined the room.");
+                    toast.success("Successfully joined the room.", { id: "room-joined" });
                     setStep("success");
                 } catch (e) {
                     if (e instanceof ApiError && e.status === 401) {

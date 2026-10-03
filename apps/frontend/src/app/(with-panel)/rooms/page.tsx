@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { Loader2, Search } from "lucide-react"
-import roomService, { type Room } from "@/src/services/roomService"
+import roomService, { RoomModel, type Room } from "@/src/services/roomService"
 import { useAuth } from "@/src/context/AuthContext"
 import { toast } from "sonner"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
@@ -17,6 +17,7 @@ function RoomsContent() {
 
   const [query, setQuery] = useState<string>(initialQuery || "")
   const [rooms, setRooms] = useState<Room[]>([]);
+  const [models, setModels] = useState<RoomModel[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -28,10 +29,14 @@ function RoomsContent() {
 
     const fetchRooms = async () => {
       setIsLoading(true);
-
       try {
-        const fetchedRooms = await roomService.rooms(token);
+        const [fetchedRooms, fetchedModels] = await Promise.all([
+          roomService.rooms(token),
+          roomService.models(token),
+        ]);
+
         setRooms(fetchedRooms);
+        setModels(fetchedModels);
       } catch (error) {
         toast.error(error instanceof Error ? error.message : "Failed to fetch rooms");
       } finally {
@@ -66,6 +71,7 @@ function RoomsContent() {
     router.replace(url, { scroll: false });
   }
 
+  const getModelName = (id: string) => models.find((model) => model.id === id)?.name ?? id;
   return <div className="mt-7 flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-5 items-center w-full h-full p-5 text-black">
     <div className="flex flex-col gap-5 max-w-[550px] w-full">
       <h1 className="text-3xl font-semibold">Browse rooms</h1>
@@ -95,13 +101,13 @@ function RoomsContent() {
                     <div className="flex flex-col gap-2 min-w-0">
                       <h2 className="text-sm font-semibold truncate">{room.name}</h2>
                       <p className="text-xs text-black/50">
-                        {room.type === "PRIVATE" ? "Private" : "Public"} · {formatDate(room.created_at)}
+                        {getModelName(room.model_type)} · {room.type === "PRIVATE" ? "Private" : "Public"} · {formatDate(room.created_at)}
                       </p>
                     </div>
                   </div>
                   <div className="shrink-0 flex items-center gap-1.5 text-xs text-black/60">
                     <span className={`w-1.5 h-1.5 rounded-full ${room.active_members > 0 ? "bg-green-500" : "bg-black/20"}`} />
-                    <span>{room.active_members}/3 online</span>
+                    <span>{room.active_members}/{room.max_capacity} online</span>
                   </div>
                 </Link>
               )

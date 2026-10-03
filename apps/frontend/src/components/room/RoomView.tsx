@@ -7,9 +7,15 @@ const RoomView = ({ roomId }: { roomId: string }) => {
     const { token } = useAuth();
 
     useEffect(() => {
-        const handlePageHide = () => roomService.leave(token || "", roomId);
-        window.addEventListener("pagehide", handlePageHide);
-        return () => window.removeEventListener("pagehide", handlePageHide);
+        if (!token) return
+        const leave = () => { roomService.leave(token, roomId).catch(() => { }); };
+
+        window.addEventListener("pagehide", leave);
+        window.addEventListener("popstate", leave);
+        return () => {
+            window.removeEventListener("pagehide", leave);
+            window.removeEventListener("popstate", leave);
+        };
     }, [token, roomId]);
 
     return (
