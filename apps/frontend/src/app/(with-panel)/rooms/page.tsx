@@ -6,7 +6,6 @@ import roomService, { RoomModel, type Room } from "@/src/services/roomService"
 import { useAuth } from "@/src/context/AuthContext"
 import { toast } from "sonner"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import Link from "next/link";
 
 function RoomsContent() {
   const { token, isLoading: isAuthLoading } = useAuth();
@@ -91,10 +90,12 @@ function RoomsContent() {
               const formatDate = (date: string) =>
                 new Date(date).toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" });
               return (
-                <Link
+                <div
                   key={room.id}
-                  href={`/room/${room.id}`}
-                  target="_blank"
+                  onClick={() => {
+                    if (room.active_members >= room.max_capacity) return toast.error(`"${room.name}" is full (${room.max_capacity}/${room.max_capacity}).`);
+                    window.open(`/room/${room.id}`, "_blank", "noopener,noreferrer");
+                  }}
                   className=" flex items-center justify-between gap-4 px-3 py-3 rounded-md rounded-md hover:bg-black/5"
                 >
                   <div className="flex items-center gap-3 min-w-0">
@@ -109,7 +110,7 @@ function RoomsContent() {
                     <span className={`w-1.5 h-1.5 rounded-full ${room.active_members > 0 ? "bg-green-500" : "bg-black/20"}`} />
                     <span>{room.active_members}/{room.max_capacity} online</span>
                   </div>
-                </Link>
+                </div>
               )
             }
             )
