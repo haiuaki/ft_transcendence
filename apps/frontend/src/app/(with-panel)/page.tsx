@@ -1,7 +1,7 @@
 "use client"
 
 import ThreeScene from "../../components/3D/ThreeScene";
-import { Suspense } from "react";
+import { Suspense, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import {
   CirclePlusIcon,
@@ -13,8 +13,7 @@ import Link from "next/link";
 import Image from "next/image";
 
 export const HomePanel = () => {
-  const { isAuthenticated, user } = useAuth();
-
+  const { isAuthenticated, user, logout } = useAuth();
   const colors = themeColors;
 
   const rooms = [
@@ -44,9 +43,12 @@ export const HomePanel = () => {
         </div>
       </div>
       {(isAuthenticated && user) ?
-        <div className="cursor-pointer flex items-center gap-2 text-black py-2 px-3 rounded-md bg-[#dededc]">
+        <div className="cursor-pointer flex items-center justify-between gap-2 text-black">
+          <div className="flex items-center gap-2">
           <Image className="rounded-full" width={28} height={28} src={user.avatar_url || "/img/avatar.jpg"} alt={`${user.username}'s avatar`} unoptimized />
           <p className="font-semibold">{user?.username}</p>
+          </div>
+          <p onClick={async () => logout()} className="text-xs hover:underline">Logout</p>
         </div>
         : <div className="flex items-center gap-2">
           <Link href="/signup" className="cursor-pointer w-full flex items-center justify-center p-2 rounded-md font-semibold ring-[#dededc] ring-1">
