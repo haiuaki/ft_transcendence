@@ -1,7 +1,24 @@
+
 const URL = "/api"
 
+export interface Room {
+    id: number;
+    name: string;
+    type: "PUBLIC" | "PRIVATE";
+    owner_id?: string;
+    active_members: number;
+    created_at: string;
+}
+
+export class ApiError extends Error {
+    constructor(message: string, public status: number) {
+        super(message);
+    }
+}
+
+
 const roomService = {
-    rooms: async (token: string) => {
+    rooms: async (token: string): Promise<Room[]> => {
         if (!token.trim())
             throw new Error("Token is required")
         const response = await fetch(URL + "/rooms", {
@@ -12,7 +29,7 @@ const roomService = {
         });
         if (!response.ok)
             throw new Error(await response.text() || "Failed to fetch rooms")
-        const data = await response.json();
+        const data: Room[] = await response.json();
         return (data);
     },
     create: async (token: string, name: string, type: "PUBLIC" | "PRIVATE", password: string | undefined) => {
@@ -49,13 +66,13 @@ const roomService = {
                 Authorization: `Bearer ${token}`
             },
             body: JSON.stringify({
-                channel_id: channelId.trim(),
+                channel_id: Number(channelId.trim()),
                 password: password || undefined,
             })
         });
         const message = await response.text();
         if (!response.ok)
-            throw new Error(message || `Failed to join room : ${channelId}`)
+            throw new ApiError(message || `Failed to join room : ${channelId}`, response.status)
         return (message);
     },
     leave: async (token: string, channelId: string) => {
@@ -65,17 +82,19 @@ const roomService = {
             throw new Error("Channel ID is required")
         const response = await fetch(URL + "/rooms/leave", {
             method: "POST",
+            keepalive: true,
             headers: {
                 "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`
+                Authorization: `Bearer ${token}`,
+
             },
             body: JSON.stringify({
-                channel_id: channelId.trim(),
+                channel_id: Number(channelId.trim()),
             })
         });
         const message = await response.text();
         if (!response.ok)
-            throw new Error(message || `Failed to leave room : ${channelId}`)
+            throw new ApiError(message || `Failed to leave room : ${channelId}`, response.status)
         return (message);
     },
     delete: async (token: string, channelId: string) => {
@@ -90,12 +109,12 @@ const roomService = {
                 Authorization: `Bearer ${token}`
             },
             body: JSON.stringify({
-                channel_id: channelId.trim(),
+                channel_id: Number(channelId.trim()),
             })
         });
         const message = await response.text();
         if (!response.ok)
-            throw new Error(message || `Failed to leave room : ${channelId}`)
+            throw new Error(message || `Failed to delete room : ${channelId}`)
         return (message);
     },
 }

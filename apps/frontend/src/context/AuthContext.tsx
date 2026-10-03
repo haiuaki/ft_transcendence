@@ -48,7 +48,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
                 setToken(token);
                 setUser(connectedUser);
             } catch {
-                localStorage.removeItem("token");
                 setToken(null)
                 setUser(null)
             } finally {
