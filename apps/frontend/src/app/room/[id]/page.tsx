@@ -16,7 +16,6 @@ const RoomContent = () => {
     const params = useParams<{ id: string }>();
     const { token, isLoading } = useAuth();
     const router = useRouter();
-    const [room, setRoom] = useState<Room | null>(null);
     const [step, setStep] = useState<Step>("loading");
     const [error, setError] = useState<string | null>(null);
 
@@ -35,12 +34,10 @@ const RoomContent = () => {
                 const currentRoom = rooms.find((item) => item.id === roomId);
 
                 if (!currentRoom) {
-                    setRoom(null);
                     setStep("error");
                     setError("This room doesn't exist or is no longer available.")
                     return;
                 }
-                setRoom(currentRoom);
                 try {
                     await roomService.join(token || "", params.id, undefined);
                     toast.success("Successfully joined the room.");
@@ -59,7 +56,7 @@ const RoomContent = () => {
         };
 
         fetchRoom();
-    }, [isLoading, params.id, token]);
+    }, [isLoading, params.id, token, router]);
 
     return (
         <div className="h-screen w-screen overflow-hidden bg-white text-black">
