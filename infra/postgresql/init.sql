@@ -4,6 +4,7 @@ DROP TABLE IF EXISTS messages CASCADE;
 DROP TABLE IF EXISTS channel_members CASCADE;
 DROP TABLE IF EXISTS channels CASCADE;
 DROP TABLE IF EXISTS friendships CASCADE;
+DROP TABLE IF EXISTS daily_user_analytics CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
 
 CREATE TABLE users (
@@ -21,6 +22,9 @@ CREATE TABLE users (
     two_factor_secret VARCHAR(255),
     status VARCHAR(20) DEFAULT 'OFFLINE',
 
+    total_messages_sent INTEGER DEFAULT 0,
+    cumulative_time_seconds INTEGER DEFAULT 0,
+
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
 	updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
 	deleted_at TIMESTAMPTZ DEFAULT NULL
@@ -28,6 +32,15 @@ CREATE TABLE users (
 
 -- Prevents "USER" and "user" from existing at the same time
 CREATE UNIQUE INDEX unique_username_lower_idx ON users (LOWER(username));
+
+-- Analytics Table for Dashboard Graphs
+CREATE TABLE daily_user_analytics (
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    date DATE NOT NULL DEFAULT CURRENT_DATE,
+    time_spent_seconds INTEGER DEFAULT 0,
+    messages_sent INTEGER DEFAULT 0,
+    PRIMARY KEY (user_id, date)
+);
 
 CREATE TABLE friendships (
 	id SERIAL PRIMARY KEY,
@@ -72,7 +85,7 @@ CREATE TABLE channel_members (
 -- Room's chat history
 CREATE TABLE IF NOT EXISTS messages (
     id SERIAL PRIMARY KEY,
-    sender_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    sender_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     channel_id INTEGER REFERENCES channels(id) ON DELETE CASCADE,
     content TEXT NOT NULL,
     embedding vector(768),

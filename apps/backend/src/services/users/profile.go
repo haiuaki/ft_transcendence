@@ -19,7 +19,7 @@ func GetProfile(dbPool *pgxpool.Pool) http.HandlerFunc {
 
 		var profile UserProfile
 		query := `
-			SELECT username, email, avatar_url, status, created_at
+			SELECT username, email, avatar_url, status, total_messages_sent, cumulative_time_seconds, created_at
 			FROM users
 			WHERE email = $1
 		`
@@ -29,6 +29,8 @@ func GetProfile(dbPool *pgxpool.Pool) http.HandlerFunc {
 			&profile.Email,
 			&profile.AvatarURL,
 			&profile.Status,
+			&profile.TotalMessagesSent,
+			&profile.CumulativeTimeSeconds,
 			&profile.CreatedAt,
 		)
 
@@ -49,7 +51,7 @@ func GetPublicProfile(dbPool *pgxpool.Pool) http.HandlerFunc {
 		var profile UserProfile
 
 		query := `
-			SELECT username, avatar_url, status, created_at
+			SELECT username, avatar_url, status, total_messages_sent, cumulative_time_seconds, created_at
 			FROM users
 			WHERE LOWER(username) = LOWER($1) AND deleted_at IS NULL
 		`
@@ -58,6 +60,8 @@ func GetPublicProfile(dbPool *pgxpool.Pool) http.HandlerFunc {
 			&profile.Username,
 			&profile.AvatarURL,
 			&profile.Status,
+			&profile.TotalMessagesSent,
+			&profile.CumulativeTimeSeconds,
 			&profile.CreatedAt,
 		)
 
@@ -126,13 +130,27 @@ func DeleteProfile(dbPool *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		email := r.Context().Value(auth.UserEmailKey).(string)
 
+		// Cleanup Zombie Rooms: Since user deletion is a "soft delete",
+		// PostgreSQL's ON DELETE CASCADE won't fire for the rooms they own.
+		// We must manually delete them.
+		deleteRoomsSQL := `
+			DELETE FROM channels 
+			WHERE owner_id = (SELECT id FROM users WHERE email = $1)
+		`
+		_, err := dbPool.Exec(context.Background(), deleteRoomsSQL, email)
+		if err != nil {
+			log.Println("Database error cleaning up user rooms:", err)
+			http.Error(w, "Failed to clean up account data.", http.StatusInternalServerError)
+			return
+		}
+
 		softDeleteSQL := `
 			UPDATE users
 			SET deleted_at = CURRENT_TIMESTAMP
 			WHERE email = $1
 		`
 
-		_, err := dbPool.Exec(context.Background(), softDeleteSQL, email)
+		_, err = dbPool.Exec(context.Background(), softDeleteSQL, email)
 		if err != nil {
 			log.Println("Database error during profile deletion:", err)
 			http.Error(w, "Failed to delete account.", http.StatusInternalServerError)

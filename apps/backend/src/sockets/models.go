@@ -23,6 +23,15 @@ type ChatMessagePayload struct {
 	Message string `json:"message"`
 }
 
+// OutboundChatMessage is what the server broadcasts back to the room
+type OutboundChatMessage struct {
+	ID        int    `json:"id"`
+	RoomID    int    `json:"room_id"`
+	Username  string `json:"username"`
+	Content   string `json:"content"`
+	CreatedAt string `json:"created_at"` // using string for ISO8601 or time.Time
+}
+
 // BroadcastMessage is used internally to route payloads to specific target emails.
 type BroadcastMessage struct {
 	TargetEmails []string
