@@ -48,7 +48,12 @@ CREATE UNIQUE INDEX friendships_bidirectional_idx ON friendships (
 CREATE TABLE channels (
     id SERIAL PRIMARY KEY,
     name VARCHAR(30) NOT NULL,
-    type VARCHAR(20) NOT NULL DEFAULT 'PUBLIC',
+    type VARCHAR(20) NOT NULL DEFAULT 'PUBLIC', -- 'PUBLIC', 'PRIVATE', 'DIRECT'
+
+	-- Modular 3D fields
+	model_type VARCHAR(50) DEFAULT 'CLUSTER',
+	max_capacity INTEGER DEFAULT 3,
+
     password_hash VARCHAR(255),
     owner_id UUID REFERENCES users(id) ON DELETE SET NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP

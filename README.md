@@ -142,6 +142,9 @@ erDiagram
         SERIAL id PK
         VARCHAR name
         VARCHAR type
+        VARCHAR password_hash
+        VARCHAR model_type
+        INTEGER max_capacity
         UUID owner_id FK
     }
     CHANNEL_MEMBERS {
