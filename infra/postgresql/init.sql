@@ -21,6 +21,9 @@ CREATE TABLE users (
     two_factor_secret VARCHAR(255),
     status VARCHAR(20) DEFAULT 'OFFLINE',
 
+    total_messages_sent INTEGER DEFAULT 0,
+    cumulative_time_seconds INTEGER DEFAULT 0,
+
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
 	updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
 	deleted_at TIMESTAMPTZ DEFAULT NULL

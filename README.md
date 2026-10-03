@@ -131,6 +131,8 @@ erDiagram
         VARCHAR username UK
         BOOLEAN is_verified
         VARCHAR status
+        INTEGER total_messages_sent
+        INTEGER cumulative_time_seconds
     }
     FRIENDSHIPS {
         SERIAL id PK
