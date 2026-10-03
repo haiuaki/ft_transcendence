@@ -94,7 +94,8 @@ function RoomsContent() {
                   key={room.id}
                   onClick={() => {
                     if (room.active_members >= room.max_capacity) return toast.error(`"${room.name}" is full (${room.max_capacity}/${room.max_capacity}).`);
-                    window.open(`/room/${room.id}`, "_blank", "noopener,noreferrer");
+                    // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+                    window.location.href = `/room/${room.id}`;
                   }}
                   className="cursor-pointer flex items-center justify-between gap-4 px-3 py-3 rounded-md rounded-md hover:bg-black/5"
                 >

@@ -99,7 +99,8 @@ export default function CreateRoom() {
             if (!roomFormData.isPublic && !roomFormData.password.trim()) return setError("A password is required for a private room.");
             setIsLoading(true);
             const roomId = await roomService.create(token || "", roomFormData.name, roomFormData.isPublic ? "PUBLIC" : "PRIVATE", roomFormData.password, selectedModelId);
-            window.open(`/room/${roomId}`, "_blank", "noopener,noreferrer");
+            // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+            window.location.href = `/room/${roomId}`;
             setRoomFormData({ name: "", isPublic: false, password: "" });
           } catch (e) {
             setError(e instanceof Error ? e.message : "Failed to create room")
