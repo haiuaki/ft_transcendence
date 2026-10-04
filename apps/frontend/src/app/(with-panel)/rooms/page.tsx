@@ -120,7 +120,7 @@ function RoomsContent() {
         </div>
         : <div className="mt-20 flex flex-col items-center justify-center gap-2">
           <Search size={24} />
-          <p>No rooms match your search.</p>
+          <p>{rooms.length <= 0 ? "No rooms yet. Create one to get started!" : "No rooms match your search."}</p>
         </div>
       }
     </div>

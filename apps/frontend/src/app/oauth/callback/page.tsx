@@ -1,12 +1,11 @@
 "use client";
 
 import { Suspense, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { TbLoader2 } from "react-icons/tb";
 
 function OAuthCallbackContent() {
     const searchParams = useSearchParams();
-    const router = useRouter();
 
     useEffect(() => {
         // Grab the token from the URL (e.g. ?token=xxxxx)
@@ -18,8 +17,8 @@ function OAuthCallbackContent() {
             
         }
 
-        router.replace("/");
-    }, [router, searchParams]);
+        window.location.replace("/");
+    }, [searchParams]);
 
 	// Spinning wheel while loading token
     return (

@@ -38,7 +38,6 @@ const RoomPasswordView = ({ roomId, onSuccess }: RoomPasswordViewProps) => {
         }
     };
 
-
     return (
         <div className="h-full flex flex-col gap-2 items-center justify-center">
             <form onSubmit={handlePasswordSubmit} className="flex flex-col items-center justify-center gap-2 w-full max-w-[300px]">
@@ -63,7 +62,6 @@ const RoomPasswordView = ({ roomId, onSuccess }: RoomPasswordViewProps) => {
                     {isSubmitting && <Loader2 size={16} className="animate-spin" />}
                     <p>{isSubmitting ? "Joining room" : "Join room"}</p>
                 </button>
-
             </form>
         </div>
 
