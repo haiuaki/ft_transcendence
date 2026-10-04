@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect } from "react";
+import { Suspense, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { TbLoader2 } from "react-icons/tb";
 
-export default function OAuthCallbackPage() {
+function OAuthCallbackContent() {
     const searchParams = useSearchParams();
 
     useEffect(() => {
@@ -15,12 +15,9 @@ export default function OAuthCallbackPage() {
             // Save in localStorage
             localStorage.setItem("token", token);
             
-            // Force a full redirect to the homepage. 
-            window.location.href = "/";
-        } else {
-            // If something went wrong, just send them back
-            window.location.href = "/";
         }
+
+        window.location.replace("/");
     }, [searchParams]);
 
 	// Spinning wheel while loading token
@@ -28,5 +25,13 @@ export default function OAuthCallbackPage() {
         <div className="flex h-screen w-screen items-center justify-center">
             <TbLoader2 className="animate-spin text-4xl text-gray-500" />
         </div>
+    );
+}
+
+export default function OAuthCallbackPage() {
+    return (
+        <Suspense fallback={<div className="flex h-screen w-screen items-center justify-center"><TbLoader2 className="animate-spin text-4xl text-gray-500" /></div>}>
+            <OAuthCallbackContent />
+        </Suspense>
     );
 }

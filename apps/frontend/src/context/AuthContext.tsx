@@ -16,10 +16,11 @@ export interface User {
 }
 
 interface AuthContextProps {
-    login: (email:string, password:string) => Promise<void>,
+    login: (email: string, password: string) => Promise<void>,
     logout: () => void,
+    deleteProfile: (token: string) => Promise<void>,
     isAuthenticated: boolean,
-    profile: (token:string) => Promise<void>,
+    profile: (token: string) => Promise<void>,
     isLoading: boolean,
     token: string | null,
     user: User | null,
@@ -47,7 +48,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
                 setToken(token);
                 setUser(connectedUser);
             } catch {
-                localStorage.removeItem("token");
                 setToken(null)
                 setUser(null)
             } finally {
@@ -70,6 +70,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         setUser(data);
     }
 
+    const deleteProfile = async (token: string) => {
+        await userService.delete(token);
+        logout()
+    }
+
     const logout = async () => {
         localStorage.removeItem("token");
         setToken(null)
@@ -78,7 +83,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
     return (
         <AuthContext.Provider
-            value={{ token, login, logout, isAuthenticated, isLoading, profile, user }}
+            value={{ token, login, logout, isAuthenticated, isLoading, profile, user, deleteProfile }}
         >
             {children}
         </AuthContext.Provider>
