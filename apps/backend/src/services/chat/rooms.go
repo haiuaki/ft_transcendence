@@ -99,8 +99,8 @@ func CreateRoom(dbPool *pgxpool.Pool) http.HandlerFunc {
 		}
 
 		req.Name = strings.TrimSpace(req.Name)
-		if req.Name == "" {
-			http.Error(w, "Room name is required.", http.StatusBadRequest)
+		if len(req.Name) < 3 || len(req.Name) > 30 {
+			http.Error(w, "Room name must be between 3 and 30 characters.", http.StatusBadRequest)
 			return
 		}
 
@@ -157,6 +157,84 @@ func CreateRoom(dbPool *pgxpool.Pool) http.HandlerFunc {
 		w.WriteHeader(http.StatusOK)
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]int{"room_id": newRoomID})
+	}
+}
+
+func UpdateRoom(dbPool *pgxpool.Pool) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		email := r.Context().Value(auth.UserEmailKey).(string)
+
+		var req UpdateRoomRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, "Invalid JSON.", http.StatusBadRequest)
+			return
+		}
+
+		// Security Check: Ensure the user is the owner
+		var isOwner bool
+		ownerCheckSQL := `
+			SELECT EXISTS (
+				SELECT 1 FROM channels
+				WHERE id = $1 AND owner_id = (SELECT id FROM users WHERE email = $2)
+			)
+		`
+		if err := dbPool.QueryRow(context.Background(), ownerCheckSQL, req.ChannelID, email).Scan(&isOwner); err != nil || !isOwner {
+			http.Error(w, "Only the owner can edit this room.", http.StatusForbidden)
+			return
+		}
+
+		if req.Name != "" {
+			req.Name = strings.TrimSpace(req.Name)
+			if len(req.Name) < 3 || len(req.Name) > 30 {
+				http.Error(w, "Room name must be between 3 and 30 characters.", http.StatusBadRequest)
+				return
+			}
+		}
+
+		if req.Type != "" && req.Type != "PUBLIC" && req.Type != "PRIVATE" {
+			http.Error(w, "Invalid room type.", http.StatusBadRequest)
+			return
+		}
+
+		if req.Type == "PRIVATE" && req.Password == "" {
+			http.Error(w, "Private rooms require a password.", http.StatusBadRequest)
+			return
+		}
+
+		// Prepare dynamic update
+		var passwordHash *string
+		if req.Type == "PRIVATE" {
+			hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), 14)
+			if err != nil {
+				http.Error(w, "Failed to secure room password.", http.StatusInternalServerError)
+				return
+			}
+			hashStr := string(hash)
+			passwordHash = &hashStr
+		}
+
+		updateSQL := `
+			UPDATE channels
+			SET
+				name = COALESCE(NULLIF($1, ''), name),
+				type = COALESCE(NULLIF($2, ''), type),
+				password_hash = CASE 
+									WHEN $2 = 'PRIVATE' THEN $3 
+									WHEN $2 = 'PUBLIC' THEN NULL 
+									ELSE password_hash 
+								END
+			WHERE id = $4
+		`
+
+		_, err := dbPool.Exec(context.Background(), updateSQL, req.Name, req.Type, passwordHash, req.ChannelID)
+		if err != nil {
+			log.Println("Database error updating room:", err)
+			http.Error(w, "Failed to update room.", http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("Room updated successfully."))
 	}
 }
 

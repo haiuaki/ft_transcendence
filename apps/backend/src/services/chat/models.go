@@ -10,6 +10,14 @@ type CreateRoomRequest struct {
 	Model    string `json:"model"` // "CLUSTER"
 }
 
+// What the frontend sends when editing a room
+type UpdateRoomRequest struct {
+	ChannelID int    `json:"channel_id"`
+	Name      string `json:"name,omitempty"`
+	Type      string `json:"type,omitempty"` // "PUBLIC" or "PRIVATE"
+	Password  string `json:"password,omitempty"`
+}
+
 // What we send back to the frontend
 type RoomResponse struct {
 	ID            int       `json:"id"`
