@@ -1,5 +1,12 @@
 const URL = "/api"
 
+export interface Friend {
+    username: string
+    avatar_url: string | null
+    status: string
+}
+
+
 const friendService = {
     friends: async (token: string) => {
         if (!token.trim())
