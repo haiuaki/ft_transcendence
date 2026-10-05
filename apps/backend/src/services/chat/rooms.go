@@ -153,8 +153,8 @@ func CreateRoom(dbPool *pgxpool.Pool) http.HandlerFunc {
 			log.Println("Error adding owner to room members:", err)
 		}
 
-		w.WriteHeader(http.StatusOK)
 		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(map[string]int{"room_id": newRoomID})
 	}
 }
@@ -166,6 +166,11 @@ func UpdateRoom(dbPool *pgxpool.Pool) http.HandlerFunc {
 		var req UpdateRoomRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			http.Error(w, "Invalid JSON.", http.StatusBadRequest)
+			return
+		}
+
+		if req.ChannelID <= 0 {
+			http.Error(w, "A valid channel_id is required.", http.StatusBadRequest)
 			return
 		}
 
@@ -230,6 +235,45 @@ func UpdateRoom(dbPool *pgxpool.Pool) http.HandlerFunc {
 			log.Println("Database error updating room:", err)
 			http.Error(w, "Failed to update room.", http.StatusInternalServerError)
 			return
+		}
+
+		// Option B: Kick & Wipe (Credential Rotation)
+		// Fires when: converting PUBLIC->PRIVATE, or rotating the password on an already-PRIVATE room.
+		if req.Type == "PRIVATE" || (req.Type == "" && req.Password != "") {
+			// Step 1: Save analytics for anyone currently ACTIVE before kicking them
+			analyticsSQL := `
+				WITH updated_members AS (
+					UPDATE channel_members
+					SET status = 'LEFT'
+					WHERE channel_id = $1 AND role != 'OWNER' AND status = 'ACTIVE'
+					RETURNING user_id, joined_at
+				),
+				aggregated_time AS (
+					SELECT user_id, SUM(EXTRACT(EPOCH FROM (NOW() - joined_at))::INTEGER) as total_added_time
+					FROM updated_members
+					GROUP BY user_id
+				),
+				updated_users AS (
+					UPDATE users
+					SET cumulative_time_seconds = cumulative_time_seconds + at.total_added_time
+					FROM aggregated_time at
+					WHERE users.id = at.user_id
+					RETURNING users.id, at.total_added_time
+				)
+				INSERT INTO daily_user_analytics (user_id, date, time_spent_seconds)
+				SELECT id, CURRENT_DATE, total_added_time FROM updated_users
+				ON CONFLICT (user_id, date)
+				DO UPDATE SET time_spent_seconds = daily_user_analytics.time_spent_seconds + EXCLUDED.time_spent_seconds
+			`
+			if _, err := dbPool.Exec(context.Background(), analyticsSQL, req.ChannelID); err != nil {
+				log.Println("Database error saving analytics during privacy change:", err)
+			}
+
+			// Step 2: Unconditionally wipe ALL non-owner members (active or not) so they must re-authenticate
+			wipeSQL := `DELETE FROM channel_members WHERE channel_id = $1 AND role != 'OWNER'`
+			if _, err := dbPool.Exec(context.Background(), wipeSQL, req.ChannelID); err != nil {
+				log.Println("Database error wiping members during privacy change:", err)
+			}
 		}
 
 		w.WriteHeader(http.StatusOK)
