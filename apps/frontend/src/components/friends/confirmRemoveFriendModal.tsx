@@ -3,6 +3,7 @@ import CenterModalTemplate from "../TemplateModal/CenterModalTemplate"
 import friendService, { Friend } from "@/src/services/friendService";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
+import Image from "next/image";
 
 interface ConfirmRemoveFriendModalProps {
     user: Friend,
@@ -31,7 +32,7 @@ const ConfirmRemoveFriendModal = ({ onClose, user, token, onSuccess }: ConfirmRe
         <CenterModalTemplate onClose={onClose} className="flex flex-col gap-5 rounded-2xl text-black w-full max-w-[500px] bg-white p-7" overlay="bg-black/20">
             <h1 className="text-2xl font-semibold">Remove {user.username}</h1>
             <div className="flex items-center gap-2 w-full ring-1 ring-[#dedede] rounded-md p-2">
-                <img src={user.avatar_url || "/img/avatar.jpg"} alt={user.username} className="w-8 h-8 rounded-full object-cover shrink-0" />
+                <Image src={user.avatar_url || "/img/avatar.jpg"} alt={user.username} width={32} height={32} unoptimized className="w-8 h-8 rounded-full object-cover shrink-0" />
                 <p>{user.username}</p>
             </div>
             <div className="flex items-center justify-end gap-2">

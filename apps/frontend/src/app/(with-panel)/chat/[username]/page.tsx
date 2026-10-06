@@ -3,7 +3,8 @@
 import { useAuth } from "@/src/context/AuthContext";
 import decodeHtml from "@/src/lib/decodeHtml";
 import chatService, { Message } from "@/src/services/chatService";
-import { ArrowUp, CircleX, Loader2 } from "lucide-react";
+import { ArrowLeft, ArrowUp, CircleX, Loader2 } from "lucide-react";
+import Link from "next/link";
 import { useParams } from "next/navigation";
 import React, { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -16,7 +17,6 @@ export default function Chat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [channelId, setChannelId] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isConnected, setIsConnected] = useState<boolean>(false);
   const socketRef = useRef<WebSocket | null>(null);
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -64,7 +64,6 @@ export default function Chat() {
     let closedByCleanup = false;
     socket.onopen = () => {
       socket.send(JSON.stringify({ type: "auth", payload: { token } }));
-      setIsConnected(true);
       setError(null);
     };
     socket.onmessage = (event) => {
@@ -73,7 +72,6 @@ export default function Chat() {
       setMessages((prev) => [...prev, data.payload]);
     };
     socket.onclose = () => {
-      setIsConnected(false)
       if (!closedByCleanup) setError("Connection to chat lost. Refresh the page.");
     };
     return () => {
@@ -95,15 +93,20 @@ export default function Chat() {
     setContent("");
   }
 
-  return <div className="flex-1 min-h-0 flex flex-col items-center w-full p-5 pt-12 text-black">
+  return <div className="flex-1 min-h-0 flex flex-col items-center w-full p-5 pt-5 text-black">
     <div className="flex-1 min-h-0 flex flex-col gap-5 max-w-[550px] w-full">
-      <h1 className="shrink-0 text-3xl font-semibold">{username}</h1>
-      {isLoading && <div className="flex-1 flex flex-col items-center justify-center ">
-        <Loader2 className="animate-spin" size={18}/>
+      <div className="flex items-center gap-2">
+        <Link href={"/friends"} className="flex items-center justify-center gap-2 p-1 rounded-md hover:bg-black/5">
+        <ArrowLeft size={16}/>
+        </Link>
+      <h1 className="shrink-0 text-2xl font-semibold">{username}</h1>
+      </div>
+      {isLoading && <div className="flex-1 flex flex-col gap-4 items-center justify-center ">
+        <Loader2 className="animate-spin" size={28}/>
         <p>loading...</p>
         </div>}
-      {!isLoading && error && <div className="flex-1 flex flex-col items-center justify-center ">
-        <CircleX size={18}/>
+      {!isLoading && error && <div className="flex-1 flex flex-col gap-4 items-center justify-center ">
+        <CircleX size={28}/>
         <p>{error}</p>
         </div>}
       {!isLoading && !error &&

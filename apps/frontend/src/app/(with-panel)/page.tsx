@@ -12,7 +12,6 @@ import {
 import { themeColors } from "../../lib/themeColors";
 import Link from "next/link";
 import Image from "next/image";
-import { TbFriends } from "react-icons/tb";
 
 export const HomePanel = () => {
   const { isAuthenticated, user, logout } = useAuth();

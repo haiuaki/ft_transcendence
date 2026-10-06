@@ -5,12 +5,13 @@ import ConfirmRemoveFriendModal from "@/src/components/friends/confirmRemoveFrie
 import { useAuth } from "@/src/context/AuthContext";
 import friendService, { Friend } from "@/src/services/friendService"
 import { Loader2, Plus, Search, Trash } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react"
+import { Suspense, useEffect, useState } from "react"
 import { toast } from "sonner";
 
-export default function Friends() {
+function FriendsContent() {
   const { token } = useAuth();
   const [friends, setFriends] = useState<Friend[]>([]);
   const [requests, setRequests] = useState<Friend[]>([]);
@@ -23,27 +24,27 @@ export default function Friends() {
   const router = useRouter();
   const [query, setQuery] = useState<string>(initialQuery || "");
 
-useEffect(() => {
-  if (!token) return;
+  useEffect(() => {
+    if (!token) return;
 
-  const fetchData = async () => {
-    try {
-      setIsLoading(true);
-      const [friendsData, requestsData] = await Promise.all([
-        friendService.friends(token),
-        friendService.requests(token),
-      ]);
-      setFriends(friendsData);
-      setRequests(requestsData);
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to load friends");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    const fetchData = async () => {
+      try {
+        setIsLoading(true);
+        const [friendsData, requestsData] = await Promise.all([
+          friendService.friends(token),
+          friendService.requests(token),
+        ]);
+        setFriends(friendsData);
+        setRequests(requestsData);
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "Failed to load friends");
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  fetchData();
-}, [token])
+    fetchData();
+  }, [token])
 
   const acceptRequest = async (friendUsername: string) => {
     try {
@@ -111,7 +112,7 @@ useEffect(() => {
       {!isLoading && requests.length > 0 && requests.map((item, idx) => {
         return <div key={idx} className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <img src={item.avatar_url || "/img/avatar.jpg"} alt={item.username} className="w-10 h-10 rounded-full object-cover shrink-0" />
+            <Image src={item.avatar_url || "/img/avatar.jpg"} alt={item.username} width={40} height={40} unoptimized className="w-10 h-10 rounded-full object-cover shrink-0" />
             <p>{item.username}</p>
           </div>
           <div className="flex items-center gap-2">
@@ -128,7 +129,7 @@ useEffect(() => {
       {!isLoading && friends.length > 0 && friends.map((item, idx) => {
         return <div key={idx} className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <img src={item.avatar_url || "/img/avatar.jpg"} alt={item.username} className="w-8 h-8 rounded-full object-cover shrink-0" />
+            <Image src={item.avatar_url || "/img/avatar.jpg"} alt={item.username} width={32} height={32} unoptimized className="w-8 h-8 rounded-full object-cover shrink-0" />
             <p>{item.username}</p>
           </div>
           <div className="flex items-center gap-2">
@@ -136,7 +137,7 @@ useEffect(() => {
               <p>Chat</p>
             </Link>
             <div className="cursor-pointer flex items-center gap-2  p-2 text-sm rounded-md font-semibold" onClick={() => setFriendToRemove(item)}>
-              <Trash size={16} color="black"/>
+              <Trash size={16} color="black" />
             </div>
 
           </div>
@@ -151,4 +152,12 @@ useEffect(() => {
       onSuccess={() => setFriends((prev) => prev.filter((f) => f.username !== friendToRemove.username))}
     />}
   </div>
+}
+
+export default function Friends() {
+  return (
+    <Suspense fallback={<Loader2 className="m-auto animate-spin" />}>
+      <FriendsContent />
+    </Suspense>
+  );
 }
