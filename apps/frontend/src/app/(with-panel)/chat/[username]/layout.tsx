@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Friends",
+  title: "Chat",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/chat/[username]">) {

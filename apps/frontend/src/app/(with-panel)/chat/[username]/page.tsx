@@ -5,12 +5,13 @@ import decodeHtml from "@/src/lib/decodeHtml";
 import chatService, { Message } from "@/src/services/chatService";
 import { ArrowLeft, ArrowUp, CircleX, Loader2 } from "lucide-react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import React, { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 export default function Chat() {
-  const { token, user } = useAuth();
+  const { token, user, isLoading: isAuthLoading } = useAuth();
+  const router = useRouter();
   const params = useParams<{ username: string }>();
   const username = decodeURIComponent(params.username);
   const [content, setContent] = useState<string>("");
@@ -37,7 +38,12 @@ export default function Chat() {
   }
 
   useEffect(() => {
-    if (!token) return
+    if (isAuthLoading) return;
+    if (!token) {
+      router.replace("/login");
+      return;
+    }
+
     const initMessage = async () => {
       try {
         setIsLoading(true);
@@ -53,7 +59,7 @@ export default function Chat() {
       }
     }
     initMessage();
-  }, [token, username])
+  }, [token, username, isAuthLoading, router])
 
   useEffect(() => {
     if (!token || !channelId) return;

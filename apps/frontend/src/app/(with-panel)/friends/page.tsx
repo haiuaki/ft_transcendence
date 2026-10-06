@@ -12,7 +12,7 @@ import { Suspense, useEffect, useState } from "react"
 import { toast } from "sonner";
 
 function FriendsContent() {
-  const { token } = useAuth();
+  const { token, isLoading: isAuthLoading } = useAuth();
   const [friends, setFriends] = useState<Friend[]>([]);
   const [requests, setRequests] = useState<Friend[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -25,7 +25,11 @@ function FriendsContent() {
   const [query, setQuery] = useState<string>(initialQuery || "");
 
   useEffect(() => {
-    if (!token) return;
+    if (isAuthLoading) return;
+    if (!token) {
+      router.replace("/login");
+      return;
+    }
 
     const fetchData = async () => {
       try {
@@ -44,7 +48,7 @@ function FriendsContent() {
     };
 
     fetchData();
-  }, [token])
+  }, [token, isAuthLoading, router])
 
   const acceptRequest = async (friendUsername: string) => {
     try {
@@ -85,6 +89,10 @@ function FriendsContent() {
     router.replace(url, { scroll: false });
   }
 
+  const filteredFriends = friends.filter((f) =>
+    f.username.toLowerCase().includes(query.trim().toLowerCase())
+  );
+
   return <div className="mt-7 flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-5 items-center w-full h-full p-5 text-black">
     <div className="flex flex-col gap-5 max-w-[550px] w-full">
       <div className="flex items-center justify-between">
@@ -105,9 +113,9 @@ function FriendsContent() {
         <Loader2 className="animate-spin" size={24} />
         <p>Loading...</p>
       </div>}
-      {!isLoading && friends.length == 0 && requests.length == 0 && <div className="mt-20 flex flex-col items-center gap-2">
+      {!isLoading && filteredFriends.length == 0 && requests.length == 0 && <div className="mt-20 flex flex-col items-center gap-2">
         <Search size={24} />
-        <p>No friends yet</p>
+        <p>{friends.length == 0 ? "No friends yet" : "No rooms match your search."}</p>
       </div>}
       {!isLoading && requests.length > 0 && requests.map((item, idx) => {
         return <div key={idx} className="flex items-center justify-between">
@@ -126,10 +134,15 @@ function FriendsContent() {
           </div>
         </div>
       })}
-      {!isLoading && friends.length > 0 && friends.map((item, idx) => {
+      {!isLoading && filteredFriends.length > 0 && filteredFriends.map((item, idx) => {
         return <div key={idx} className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Image src={item.avatar_url || "/img/avatar.jpg"} alt={item.username} width={32} height={32} unoptimized className="w-8 h-8 rounded-full object-cover shrink-0" />
+            <div className="relative">
+              <Image src={item.avatar_url || "/img/avatar.jpg"} alt={item.username} width={32} height={32} unoptimized className="w-8 h-8 rounded-full object-cover shrink-0" />
+              <div className={`flex items-center justify-center w-2.5 h-2.5 rounded-full ${item.status === "ONLINE" ? "bg-[#45a367]" : "bg-gray-300"} border border-gray-300 absolute bottom-0 right-0`}>
+                {item.status != "ONLINE" && <div className="w-1 h-1 rounded-full bg-white" />}
+              </div>
+            </div>
             <p>{item.username}</p>
           </div>
           <div className="flex items-center gap-2">

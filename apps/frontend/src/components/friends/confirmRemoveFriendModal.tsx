@@ -39,7 +39,7 @@ const ConfirmRemoveFriendModal = ({ onClose, user, token, onSuccess }: ConfirmRe
                 <div className="cursor-pointer flex items-center gap-2 ring-1 ring-[#dedede] p-2 text-sm rounded-md font-semibold" onClick={onClose}>
                     <p>Cancel</p>
                 </div>
-                <button className="cursor-pointer flex items-center gap-2 text-white bg-black p-2 text-sm rounded-md font-semibold" onClick={handleRemoveFriend}>
+                <button disabled={isLoading} className="cursor-pointer flex items-center gap-2 text-white bg-black disabled:bg-black/80 p-2 text-sm rounded-md font-semibold" onClick={handleRemoveFriend}>
                     {isLoading && <Loader2 className="animate-spin" size={16} />}
                     <p>Remove</p>
                 </button>
