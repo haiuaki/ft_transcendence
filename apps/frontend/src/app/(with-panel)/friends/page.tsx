@@ -5,6 +5,7 @@ import ConfirmRemoveFriendModal from "@/src/components/friends/confirmRemoveFrie
 import { useAuth } from "@/src/context/AuthContext";
 import friendService, { Friend } from "@/src/services/friendService"
 import { Loader2, Plus, Search, Trash } from "lucide-react";
+import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react"
 import { toast } from "sonner";
@@ -131,9 +132,9 @@ useEffect(() => {
             <p>{item.username}</p>
           </div>
           <div className="flex items-center gap-2">
-            <div className="cursor-pointer flex items-center gap-2 ring-1 ring-[#dedede] p-2 text-sm rounded-md font-semibold" >
+            <Link className="cursor-pointer flex items-center gap-2 ring-1 ring-[#dedede] p-2 text-sm rounded-md font-semibold" href={`/chat/${item.username}`}>
               <p>Chat</p>
-            </div>
+            </Link>
             <div className="cursor-pointer flex items-center gap-2  p-2 text-sm rounded-md font-semibold" onClick={() => setFriendToRemove(item)}>
               <Trash size={16} color="black"/>
             </div>
