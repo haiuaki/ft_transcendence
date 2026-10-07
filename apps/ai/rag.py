@@ -3,10 +3,11 @@ import asyncpg
 from google import genai
 
 def generate_embedding(client: genai.Client, text: str) -> list[float]:
-    """Generates a 768-dimension semantic vector using Google text-embedding-004."""
+    """Generates a 768-dimension semantic vector using Google gemini-embedding-001."""
     result = client.models.embed_content(
-        model="text-embedding-004",
+        model="gemini-embedding-001",
         contents=text,
+        config={"output_dimensionality": 768},
     )
     if not result.embeddings or not result.embeddings[0].values:
         raise ValueError("Failed to retrieve embeddings from Gemini API")
