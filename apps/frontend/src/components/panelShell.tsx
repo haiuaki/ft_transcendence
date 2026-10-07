@@ -1,0 +1,102 @@
+"use client"
+
+import { useState } from "react";
+import { Menu, X } from "lucide-react";
+import {
+  CirclePlusIcon,
+  HomeIcon,
+  LayoutGrid,
+  Users,
+} from "lucide-react";
+import Link from "next/link";
+import Image from "next/image";
+import { useAuth } from "../context/AuthContext";
+import { themeColors } from "../lib/themeColors";
+
+export const HomePanel = ({className = ""}) => {
+  const { isAuthenticated, user, logout } = useAuth();
+  const colors = themeColors;
+
+  const rooms = [
+    { icon: <LayoutGrid size={12} />, title: "Browse rooms", href: "/rooms" },
+    { icon: <CirclePlusIcon size={12} />, title: "Create a room", href: "/rooms/create" },
+  ]
+  return (
+    <div className={`flex justify-between bg-[#ececeb] gap-5 h-full w-[300px] shrink-0 flex-col p-4 text-black ${className}`}>
+      <div className="flex flex-col gap-5">
+        <Link className="w-fit text-2xl font-bold" href={"/"}>FT_Cluster</Link>
+        <div className="flex flex-col gap-1">
+          <Link href={"/"} className="cursor-pointer flex items-center gap-2 p-2 rounded-md hover:bg-[#dededc] ">
+            <HomeIcon size={12} />
+            <p>Home</p>
+          </Link>
+          <Link href={"/friends"} className="cursor-pointer flex items-center gap-2 p-2 rounded-md hover:bg-[#dededc] ">
+            <Users size={12}/>
+            <p>Friends</p>
+          </Link>
+        </div>
+        <div className="flex flex-col gap-2">
+          <p className={`text-sm font-semibold ${colors.textSecondary}`}>Rooms</p>
+          <div className="flex flex-col gap-1">
+            {rooms.map((item, idx) => {
+              return (
+                <Link key={idx} href={item.href} className="cursor-pointer flex items-center gap-2 p-2 rounded-md hover:bg-[#dededc] ">
+                  {item.icon}
+                  <p>{item.title}</p>
+                </Link>
+              )
+            })}
+          </div>
+        </div>
+
+      </div>
+      {(isAuthenticated && user) ?
+        <div className="cursor-pointer flex items-center justify-between gap-2 text-black">
+          <div className="flex items-center gap-2">
+            <Image className="rounded-full" width={28} height={28} src={user.avatar_url || "/img/avatar.jpg"} alt={`${user.username}'s avatar`} unoptimized />
+            <p className="font-semibold">{user?.username}</p>
+          </div>
+          <p onClick={async () => logout()} className="text-xs hover:underline">Logout</p>
+        </div>
+        : <div className="flex items-center gap-2">
+          <Link href="/signup" className="cursor-pointer w-full flex items-center justify-center p-2 rounded-md font-semibold ring-[#dededc] ring-1">
+            <p>Sign up</p>
+          </Link>
+          <Link href="/login" className="cursor-pointer w-full flex items-center justify-center p-2 rounded-md font-semibold bg-black hover:bg-black/90 text-white">
+            <p>Log in</p>
+          </Link>
+        </div>
+      }
+    </div>
+  )
+}
+
+
+export const PanelShell = ({ children }: { children: React.ReactNode }) => {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <>
+      <div
+        onClick={() => setOpen(false)}
+        className={`fixed inset-0 z-40 bg-black/20 transition-opacity md:hidden ${open ? "opacity-100" : "pointer-events-none opacity-0"}`}
+      />
+      <div
+        onClick={(e) => { if ((e.target as HTMLElement).closest("a")) setOpen(false); }}
+        className={`fixed inset-y-0 left-0 z-50 transition-transform duration-200 
+          md:static md:translate-x-0 ${open ? "translate-x-0" : "-translate-x-full"}`}
+      >
+        <HomePanel />
+      </div>
+      <div className="flex flex-col min-w-0 flex-1 overflow-hidden bg-white shadow-sm">
+        <div className="flex items-center gap-3 p-3 border-b border-black/10 md:hidden">
+          <button onClick={() => setOpen(o => !o)} aria-label="Toggle menu" aria-expanded={open}>
+            {open ? <X size={20} /> : <Menu size={20} />}
+          </button>
+          <span className="font-bold">FT_Cluster</span>
+        </div>
+        {children}
+      </div>
+    </>
+  );
+};
