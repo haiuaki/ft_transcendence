@@ -1,6 +1,7 @@
 "use client"
 
 import { useAuth } from "@/src/context/AuthContext";
+import { useSocket } from "@/src/context/SocketContext";
 import decodeHtml from "@/src/lib/decodeHtml";
 import chatService, { Message } from "@/src/services/chatService";
 import { ArrowLeft, ArrowUp, CircleX, Loader2 } from "lucide-react";
@@ -11,6 +12,7 @@ import { toast } from "sonner";
 
 export default function Chat() {
   const { token, user, isLoading: isAuthLoading } = useAuth();
+  const { send, subscribe } = useSocket();
   const router = useRouter();
   const params = useParams<{ username: string }>();
   const username = decodeURIComponent(params.username);
@@ -18,7 +20,6 @@ export default function Chat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [channelId, setChannelId] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const socketRef = useRef<WebSocket | null>(null);
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -62,29 +63,12 @@ export default function Chat() {
   }, [token, username, isAuthLoading, router])
 
   useEffect(() => {
-    if (!token || !channelId) return;
-    const protocol = window.location.protocol === "https:" ? "wss" : "ws";
-    const socket = new WebSocket(`${protocol}://${window.location.host}/api/ws`)
-    socketRef.current = socket;
-
-    let closedByCleanup = false;
-    socket.onopen = () => {
-      socket.send(JSON.stringify({ type: "auth", payload: { token } }));
-      setError(null);
-    };
-    socket.onmessage = (event) => {
-      const data = JSON.parse(event.data);
+    if (!channelId) return;
+    return subscribe((data) => {
       if (data.type !== "chat" || data.payload.room_id !== channelId) return;
       setMessages((prev) => [...prev, data.payload]);
-    };
-    socket.onclose = () => {
-      if (!closedByCleanup) setError("Connection to chat lost. Refresh the page.");
-    };
-    return () => {
-      closedByCleanup = true;
-      socket.close()
-    };
-  }, [token, channelId])
+    });
+  }, [channelId, subscribe])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -93,9 +77,8 @@ export default function Chat() {
   const sendMessage = () => {
     const text = content.trim();
     if (!text || !channelId) return;
-    if (socketRef.current?.readyState !== WebSocket.OPEN)
+    if (!send({ type: "chat", payload: { room_id: channelId, message: text } }))
       return toast.error("Not connected to chat");
-    socketRef.current.send(JSON.stringify({ type: "chat", payload: { room_id: channelId, message: text } }));
     setContent("");
   }
 
