@@ -19,18 +19,16 @@ const GREETINGS = [
 export default function KewanWindow({ onClose }: KewanProps) {
     const dragControls = useDragControls();
     const windowRef = useRef<HTMLDivElement>(null);
-    const [message, setMessage] = useState('');
+    const [message, setMessage] = useState(() => {
+        if (typeof window !== 'undefined') {
+            return sessionStorage.getItem('kewan_ai_draft') || '';
+        }
+        return '';
+    });
     const [isPinned, setIsPinned] = useState(false);
     const [greeting] = useState(() => {
         return GREETINGS[Math.floor(Math.random() * GREETINGS.length)];
     });
-
-    useEffect(() => {
-        const savedDraft = sessionStorage.getItem('kewan_ai_draft');
-        if (savedDraft) {
-            setMessage(savedDraft);
-        }
-    }, []);
 
     const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         const val = e.target.value;
@@ -61,7 +59,10 @@ export default function KewanWindow({ onClose }: KewanProps) {
             dragListener={false}
             dragControls={dragControls}
             dragMomentum={false}
-            className="fixed top-5 left-5 z-[9999] w-[420px] rounded-2xl bg-white p-8 shadow-2xl ring-1 ring-black/10"
+            initial={{ opacity: 0, x: 100 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.35, ease: 'easeOut' }}
+            className="fixed bottom-20 right-4 z-[9999] w-[420px] rounded-2xl bg-white p-8 shadow-2xl ring-1 ring-black/10"
         >
             <div className="flex flex-col gap-6">
                 <div
