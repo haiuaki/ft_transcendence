@@ -11,6 +11,8 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react"
 import { toast } from "sonner";
 
+const FRIENDS_POLL_INTERVAL_MS = 20000;
+
 function FriendsContent() {
   const { token, isLoading: isAuthLoading } = useAuth();
   const [friends, setFriends] = useState<Friend[]>([]);
@@ -49,6 +51,19 @@ function FriendsContent() {
 
     fetchData();
   }, [token, isAuthLoading, router])
+
+  // Refresh friends in the background so online status stays current
+  useEffect(() => {
+    if (!token) return;
+    const interval = setInterval(async () => {
+      try {
+        setFriends(await friendService.friends(token));
+      } catch {
+        // Keep the current list, the next poll will retry
+      }
+    }, FRIENDS_POLL_INTERVAL_MS);
+    return () => clearInterval(interval);
+  }, [token])
 
   const acceptRequest = async (friendUsername: string) => {
     try {
