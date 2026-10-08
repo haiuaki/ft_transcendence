@@ -199,6 +199,7 @@ func (c *Client) readPump() {
 			}
 
 			// Save to `messages` table and update analytics
+			// Only room messages count towards the stats, DMs are saved but not counted
 			insertSQL := `
 				WITH new_message AS (
 					INSERT INTO messages (channel_id, sender_id, content)
@@ -210,19 +211,18 @@ func (c *Client) readPump() {
 					SET total_messages_sent = total_messages_sent + 1
 					FROM new_message
 					WHERE users.id = new_message.sender_id
-					RETURNING users.id, users.username
+					AND EXISTS (SELECT 1 FROM channels WHERE id = $1 AND type != 'DIRECT')
+					RETURNING users.id
 				),
 				daily_update AS (
 					INSERT INTO daily_user_analytics (user_id, date, messages_sent)
 					SELECT id, CURRENT_DATE, 1 FROM updated_user
 					ON CONFLICT (user_id, date)
 					DO UPDATE SET messages_sent = daily_user_analytics.messages_sent + 1
-					RETURNING user_id
 				)
-				SELECT nm.id, uu.username, nm.content, nm.created_at
+				SELECT nm.id, u.username, nm.content, nm.created_at
 				FROM new_message nm
-				JOIN updated_user uu ON uu.id = nm.sender_id
-				JOIN daily_update du ON du.user_id = uu.id
+				JOIN users u ON u.id = nm.sender_id
 			`
 
 			var outMsg OutboundChatMessage
