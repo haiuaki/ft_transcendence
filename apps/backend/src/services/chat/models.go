@@ -54,6 +54,14 @@ type MessageResponse struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
+// What we send back when the frontend fetches the users seated in a room
+type RoomMemberResponse struct {
+	Username  string    `json:"username"`
+	AvatarURL *string   `json:"avatar_url"`
+	Role      string    `json:"role"`
+	JoinedAt  time.Time `json:"joined_at"`
+}
+
 // What the frontend sends to start a DM
 type StartDMRequest struct {
 	TargetUsername string `json:"target_username"`

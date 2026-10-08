@@ -125,6 +125,9 @@ func main() {
 	// GET: Fetch chat history for a room
 	http.HandleFunc("/rooms/messages", auth.RequireAuth(chat.GetRoomMessages(dbPool)))
 
+	// GET: List the users currently seated in a room
+	http.HandleFunc("/rooms/members", auth.RequireAuth(chat.GetRoomMembers(dbPool)))
+
 	// --- WEBSOCKET CENTRAL HUB -------------------------------------------- //
 	hub := sockets.NewHub(dbPool)
 	go hub.Run() // Run the hub in a background Goroutine
