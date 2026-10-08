@@ -39,3 +39,5 @@ pnpm-debug.log*
 
 # Vercel
 .vercel/
+
+dataset.json
