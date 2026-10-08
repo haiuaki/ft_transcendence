@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/crypto/bcrypt"
@@ -193,5 +194,70 @@ func LeaveRoom(dbPool *pgxpool.Pool) http.HandlerFunc {
 
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("Successfully left the room."))
+	}
+}
+
+func GetRoomMembers(dbPool *pgxpool.Pool) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "Method not allowed.", http.StatusMethodNotAllowed)
+			return
+		}
+
+		// Extract room_id from the query parameters
+		roomID, err := strconv.Atoi(r.URL.Query().Get("room_id"))
+		if err != nil {
+			http.Error(w, "Invalid Room ID.", http.StatusBadRequest)
+			return
+		}
+
+		// Enforce spatial consistency: only users seated in the room can see who else is there
+		userEmail := r.Context().Value(auth.UserEmailKey).(string)
+		var isActive bool
+		checkSQL := `
+			SELECT EXISTS (
+				SELECT 1 FROM channel_members cm
+				JOIN users u ON cm.user_id = u.id
+				JOIN channels c ON cm.channel_id = c.id
+				WHERE cm.channel_id = $1 AND u.email = $2 AND cm.status = 'ACTIVE'
+				AND c.type != 'DIRECT'
+			)
+		`
+		if err := dbPool.QueryRow(r.Context(), checkSQL, roomID, userEmail).Scan(&isActive); err != nil || !isActive {
+			http.Error(w, "Forbidden: You must join the room to view its members.", http.StatusForbidden)
+			return
+		}
+
+		// Everyone currently seated in the room, in the order they sat down
+		membersSQL := `
+			SELECT u.username, u.avatar_url, cm.role, cm.joined_at
+			FROM channel_members cm
+			JOIN users u ON cm.user_id = u.id
+			WHERE cm.channel_id = $1 AND cm.status = 'ACTIVE' AND cm.role != 'BANNED'
+			ORDER BY cm.joined_at ASC
+		`
+
+		rows, err := dbPool.Query(r.Context(), membersSQL, roomID)
+		if err != nil {
+			http.Error(w, "Failed to retrieve room members.", http.StatusInternalServerError)
+			return
+		}
+		defer rows.Close()
+
+		var members []RoomMemberResponse
+		for rows.Next() {
+			var member RoomMemberResponse
+			if err := rows.Scan(&member.Username, &member.AvatarURL, &member.Role, &member.JoinedAt); err == nil {
+				members = append(members, member)
+			}
+		}
+
+		// Prevent returning 'null' in JSON if the room is empty
+		if members == nil {
+			members = []RoomMemberResponse{}
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(members)
 	}
 }
