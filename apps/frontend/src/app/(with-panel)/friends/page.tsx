@@ -109,7 +109,7 @@ function FriendsContent() {
   );
 
   return <div className="mt-7 flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-5 items-center w-full h-full p-5 text-black">
-    <div className="flex flex-col gap-5 max-w-[550px] w-full">
+    <div className="flex flex-col gap-5 min-w-0 max-w-[550px] w-full">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-semibold">Friends</h1>
         <div className="cursor-pointer flex items-center gap-2 text-white bg-black p-2 text-sm rounded-md font-semibold" onClick={() => setIsOpenAddModal(true)}>

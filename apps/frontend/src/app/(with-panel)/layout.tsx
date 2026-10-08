@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Toaster } from "sonner";
-import { HomePanel } from "./page";
+import { PanelShell } from "@/src/components/panelShell";
 
 export const metadata: Metadata = {
   title: "Home",
@@ -8,11 +8,10 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <main className="flex h-screen w-full overflow-hidden bg-[#ececeb]">
-      <HomePanel />
-      <div className="flex flex-col m-4 min-w-0 flex-1 overflow-hidden rounded-2xl bg-white shadow-sm">
+    <main className="flex h-screen w-full overflow-hidden bg-[#ececeb] text-black">
+      <PanelShell >
         {children}
-      </div>
+      </PanelShell>
       <Toaster
         position="bottom-right"
         richColors
