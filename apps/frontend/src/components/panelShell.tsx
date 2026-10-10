@@ -16,7 +16,6 @@ import { themeColors } from "../lib/themeColors";
 export const HomePanel = ({className = ""}) => {
   const { isAuthenticated, user, logout } = useAuth();
   const colors = themeColors;
-
   const rooms = [
     { icon: <LayoutGrid size={12} />, title: "Browse rooms", href: "/rooms" },
     { icon: <CirclePlusIcon size={12} />, title: "Create a room", href: "/rooms/create" },
@@ -52,10 +51,10 @@ export const HomePanel = ({className = ""}) => {
       </div>
       {(isAuthenticated && user) ?
         <div className="cursor-pointer flex items-center justify-between gap-2 text-black">
-          <div className="flex items-center gap-2">
+          <Link className="flex items-center gap-2" href={"/profile"}>
             <Image className="rounded-full" width={28} height={28} src={user.avatar_url || "/img/avatar.jpg"} alt={`${user.username}'s avatar`} unoptimized />
             <p className="font-semibold">{user?.username}</p>
-          </div>
+          </Link>
           <p onClick={async () => logout()} className="text-xs hover:underline">Logout</p>
         </div>
         : <div className="flex items-center gap-2">

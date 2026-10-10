@@ -43,7 +43,21 @@ function RoomsContent() {
       }
     };
 
+    // Keep the online counters current without flashing the loader
+    const refreshRooms = () => {
+      if (document.visibilityState !== "visible") return;
+      roomService.rooms(token).then(setRooms).catch(() => { });
+    };
+
     fetchRooms();
+    const interval = setInterval(refreshRooms, 5000);
+    document.addEventListener("visibilitychange", refreshRooms);
+    window.addEventListener("focus", refreshRooms);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", refreshRooms);
+      window.removeEventListener("focus", refreshRooms);
+    };
   }, [isAuthLoading, token, router]);
 
   const filteredRooms = useMemo(() => {
@@ -94,8 +108,7 @@ function RoomsContent() {
                   key={room.id}
                   onClick={() => {
                     if (room.active_members >= room.max_capacity) return toast.error(`"${room.name}" is full (${room.max_capacity}/${room.max_capacity}).`);
-                    // eslint-disable-next-line @next/next/no-location-assign-relative-destination
-                    window.location.href = `/room/${room.id}`;
+                    router.push(`/room/${room.id}`);
                   }}
                   className="cursor-pointer flex items-center justify-between gap-4 px-3 py-3 rounded-md rounded-md hover:bg-black/5"
                 >

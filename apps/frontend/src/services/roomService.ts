@@ -94,6 +94,20 @@ const roomService = {
             throw new ApiError(message || `Failed to join room : ${channelId}`, response.status)
         return (message);
     },
+    // The members endpoint is only allowed for users currently seated in the room
+    isSeated: async (token: string, channelId: string): Promise<boolean> => {
+        const response = await fetch(URL + "/rooms/members?room_id=" + encodeURIComponent(channelId), {
+            method: "GET",
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        });
+        if (response.status === 403)
+            return false;
+        if (!response.ok)
+            throw new ApiError(await response.text() || "Failed to check room presence", response.status)
+        return true;
+    },
     leave: async (token: string, channelId: string) => {
         if (!token.trim())
             throw new Error("Token is required")

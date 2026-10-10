@@ -18,6 +18,28 @@ const RoomView = ({ roomId }: { roomId: string }) => {
         };
     }, [token, roomId]);
 
+    // The backend stands the user up from every room whenever ANY of their sockets closes
+    // (e.g. reloading another tab). Sit back down if that happens, unless another tab took another room.
+    useEffect(() => {
+        if (!token) return
+        let supersededByOtherTab = false;
+        const channel = new BroadcastChannel("room-presence");
+        channel.onmessage = (event) => { if (event.data !== roomId) supersededByOtherTab = true; };
+        channel.postMessage(roomId);
+
+        const interval = setInterval(async () => {
+            if (supersededByOtherTab) return;
+            try {
+                if (!(await roomService.isSeated(token, roomId)))
+                    await roomService.join(token, roomId, undefined);
+            } catch { }
+        }, 3000);
+        return () => {
+            clearInterval(interval);
+            channel.close();
+        };
+    }, [token, roomId]);
+
     return (
         <div className="w-full h-full relative">
             <ThreeScene />
