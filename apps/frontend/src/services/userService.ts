@@ -1,5 +1,10 @@
 const URL = "/api"
 
+export interface UpdateProfilePayload {
+    username?: string;
+    avatar_url?: string;
+}
+
 const userService = {
     login: async (email: string, password: string) => {
         const response = await fetch(URL + "/login", {
@@ -60,6 +65,25 @@ const userService = {
         if (!response.ok)
             throw new Error("Failed to get user")
         return response.json();
+    },
+    edit: async (token: string, updates: UpdateProfilePayload) => {
+        if (!token.trim())
+            throw new Error("Token is required")
+
+        const response = await fetch(URL + "/profile/edit", {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`
+            },
+            body: JSON.stringify(updates)
+        })
+
+        const message = await response.text();
+        if (!response.ok)
+            throw new Error(message || "Failed to update profile")
+
+        return message;
     },
     delete: async (token: string) => {
         if (!token.trim())

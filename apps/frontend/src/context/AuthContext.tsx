@@ -8,11 +8,13 @@ interface AuthProviderProps {
 }
 
 export interface User {
-    username: string;
-    email: string;
-    avatar_url: string | null;
-    status: string;
-    created_at: string;
+  username: string;
+  email: string;
+  avatar_url: string | null;
+  status: string;
+  created_at: string;
+  total_messages_sent: number;
+  cumulative_time_seconds: number;
 }
 
 interface AuthContextProps {
