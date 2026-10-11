@@ -5,8 +5,8 @@ import InputField from "@/src/components/InputField";
 import { Loader2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { ChangeEvent, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { ChangeEvent, Suspense, useState } from "react";
 import { FaGithub } from "react-icons/fa6";
 import { FcGoogle } from "react-icons/fc";
 
@@ -15,10 +15,14 @@ interface AuthFormData {
   password: string,
 }
 
-export default function LogIn() {
+function LogInContent() {
   const [authFormData, setAuthFormData] = useState<AuthFormData>({ email: "", password: "" })
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, completeTwoFactor } = useAuth();
+  const searchParams = useSearchParams();
+  const [tempToken, setTempToken] = useState<string | null>(searchParams.get("two_factor_token"));
+  const [twoFactorCode, setTwoFactorCode] = useState<string>("");
+
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
 
@@ -33,6 +37,47 @@ export default function LogIn() {
     { title: "Password", placeholder: "", maxLength: undefined, isPassword: true, onChange: (e: ChangeEvent<HTMLInputElement>) => setAuthFormData({ ...authFormData, password: e.target.value }), value: authFormData.password },
   ]
 
+  const submitTwoFactor = async () => {
+    if (!tempToken || isLoading) return;
+    try {
+      setIsLoading(true);
+      setError(null);
+      await completeTwoFactor(tempToken, twoFactorCode);
+      router.push("/");
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "Invalid 2FA code.";
+      setError(message);
+      if (/expired|too many/i.test(message)) {
+        setTempToken(null);
+        setTwoFactorCode("");
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  if (tempToken) return (
+    <div className="mt-7 flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-5 items-center w-full h-full p-5 text-black">
+      <h1 className="text-3xl font-semibold">Two-factor authentication</h1>
+      <div className="flex flex-col gap-5 max-w-[400px] w-full">
+        <p className="text-sm text-black/60 text-center">Enter the 6-digit code from your authenticator app.</p>
+        <InputField title="Authentication code" placeholder="123456" maxLength={6} value={twoFactorCode}
+          onChange={(e) => setTwoFactorCode(e.target.value.replace(/\D/g, ""))} />
+        {error && <p className="text-sm text-red-500 font-semibold">{error}</p>}
+        <button
+          disabled={isLoading || twoFactorCode.length !== 6}
+          className="select-none w-full flex items-center gap-2 justify-center p-2 rounded-md cursor-pointer bg-black hover:bg-black/85 disabled:bg-black/80 disabled:cursor-not-allowed text-white"
+          onClick={submitTwoFactor}
+        >
+          {isLoading ? <Loader2 className="animate-spin" /> : null}
+          <p className="font-medium text-md">Verify</p>
+        </button>
+        <button className="text-center text-sm cursor-pointer font-semibold" onClick={() => { setTempToken(null); setTwoFactorCode(""); setError(null); }}>
+          Back to log in
+        </button>
+      </div>
+    </div>
+  );
 
   return <div className="mt-7 flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-5 items-center w-full h-full p-5 text-black">
     <h1 className="text-3xl font-semibold">Log in</h1>
@@ -60,7 +105,12 @@ export default function LogIn() {
         onClick={async () => {
           try {
             setIsLoading(true);
-            await login(authFormData.email, authFormData.password)
+            setError(null);
+            const result = await login(authFormData.email, authFormData.password)
+            if (result.twoFactorRequired) {
+              setTempToken(result.tempToken);
+              return;
+            }
             router.push("/")
           } catch (e) {
             setError(e instanceof Error ? e.message : "Failed to log in user");
@@ -75,4 +125,12 @@ export default function LogIn() {
       <p className="text-center text-sm">Don&apos;t have an account? <Link href={"/signup"} className="cursor-pointer font-semibold">Sign up</Link></p>
     </div>
   </div>;
+}
+
+export default function LogIn() {
+  return (
+    <Suspense fallback={<Loader2 className="m-auto animate-spin" />}>
+      <LogInContent />
+    </Suspense>
+  );
 }

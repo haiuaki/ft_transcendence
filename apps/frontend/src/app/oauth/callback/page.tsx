@@ -10,6 +10,12 @@ function OAuthCallbackContent() {
     useEffect(() => {
         // Grab the token from the URL (e.g. ?token=xxxxx)
         const token = searchParams.get("token");
+        const twoFactorToken = searchParams.get("two_factor_token");
+
+        if (twoFactorToken) {
+            window.location.replace("/login?two_factor_token=" + encodeURIComponent(twoFactorToken));
+            return;
+        }
 
         if (token) {
             // Save in localStorage

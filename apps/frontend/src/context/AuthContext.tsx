@@ -2,25 +2,33 @@
 
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
 import userService from "../services/userService";
+import twoFactorService, { TwoFactorSetupResponse } from "../services/twoFactorService";
 
 interface AuthProviderProps {
     children: ReactNode
 }
 
 export interface User {
-  username: string;
-  email: string;
-  avatar_url: string | null;
-  status: string;
-  created_at: string;
-  total_messages_sent: number;
-  cumulative_time_seconds: number;
+    username: string;
+    email: string;
+    avatar_url: string | null;
+    status: string;
+    created_at: string;
+    total_messages_sent: number;
+    cumulative_time_seconds: number;
+    is_2fa_enabled?: boolean
 }
 
+export type LoginResult = { twoFactorRequired: false } | { twoFactorRequired: true, tempToken: string };
+
 interface AuthContextProps {
-    login: (email: string, password: string) => Promise<void>,
+    login: (email: string, password: string) => Promise<LoginResult>,
+    completeTwoFactor: (tempToken: string, code: string) => Promise<void>,
     logout: () => void,
     deleteProfile: (token: string) => Promise<void>,
+    setupTwoFactor: () => Promise<TwoFactorSetupResponse>,
+    enableTwoFactor: (code: string) => Promise<void>,
+    disableTwoFactor: (code: string) => Promise<void>,
     isAuthenticated: boolean,
     profile: (token: string) => Promise<void>,
     isLoading: boolean,
@@ -59,14 +67,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         restoreSession();
     }, [])
 
-    const login = async (email: string, password: string) => {
-        const { token: newToken } = await userService.login(email, password);
-        const connectedUser = await userService.profile(newToken);
-        localStorage.setItem("token", newToken);
-        setToken(newToken);
-        setUser(connectedUser)
-    }
-
     const profile = async (token: string) => {
         const data = await userService.profile(token);
         setUser(data);
@@ -77,6 +77,42 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         logout()
     }
 
+    const setupTwoFactor = async () => {
+        if (!token) throw new Error("Not authenticated");
+        return twoFactorService.setup(token);
+    }
+    const startSession = async (newToken: string) => {
+        const connectedUser = await userService.profile(newToken);
+        localStorage.setItem("token", newToken);
+        setToken(newToken);
+        setUser(connectedUser);
+    }
+
+    const login = async (email: string, password: string): Promise<LoginResult> => {
+        const data = await userService.login(email, password);
+        if (data.two_factor_required)
+            return { twoFactorRequired: true, tempToken: data.temp_token };
+        await startSession(data.token);
+        return { twoFactorRequired: false };
+    }
+
+    const completeTwoFactor = async (tempToken: string, code: string) => {
+        const { token: newToken } = await twoFactorService.verify(tempToken, code);
+        await startSession(newToken);
+    }
+
+    const enableTwoFactor = async (code: string) => {
+        if (!token) throw new Error("Not authenticated");
+        await twoFactorService.enable(token, code);
+        await profile(token);
+    }
+
+    const disableTwoFactor = async (code: string) => {
+        if (!token) throw new Error("Not authenticated");
+        await twoFactorService.disable(token, code);
+        await profile(token);
+    }
+
     const logout = async () => {
         localStorage.removeItem("token");
         setToken(null)
@@ -85,7 +121,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
     return (
         <AuthContext.Provider
-            value={{ token, login, logout, isAuthenticated, isLoading, profile, user, deleteProfile }}
+            value={{ token, login, completeTwoFactor, logout, isAuthenticated, isLoading, profile, user, deleteProfile, enableTwoFactor, setupTwoFactor, disableTwoFactor }}
         >
             {children}
         </AuthContext.Provider>
