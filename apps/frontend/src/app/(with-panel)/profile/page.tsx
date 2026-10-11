@@ -8,7 +8,6 @@ import { Loader2, Pen, XCircle } from "lucide-react";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react"
-import { toast } from "sonner";
 
 
 function ProfileContent() {
@@ -17,10 +16,9 @@ function ProfileContent() {
   const { token, isLoading: isAuthLoading, user, logout } = useAuth();
   const [openEditProfileModal, setOpenEditProfileModal] = useState<boolean>(false);
   const [twoFactorMode, setTwoFactorMode] = useState<"enable" | "disable" | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string>("");
-  const [userProfile, setUserProfile] = useState<User | null>(null);
+  const [fetched, setFetched] = useState<{ username: string, user: User | null, error: string } | null>(null);
   const router = useRouter();
+  const isOwnProfile = !username || username.toLowerCase() === user?.username.toLowerCase();
 
   useEffect(() => {
     if (isAuthLoading) return;
@@ -28,28 +26,22 @@ function ProfileContent() {
       router.replace("/login");
       return;
     }
-
-    if (!username || username === user?.username) {
-      setError("");
-      setUserProfile(user);
-      setIsLoading(false);
-      return;
-    }
+    if (isOwnProfile || !username) return;
 
     const fetchUser = async () => {
       try {
-        setIsLoading(true)
-        setError("");
         const data = await userService.getUser(token, username);
-        setUserProfile(data);
+        setFetched({ username, user: data, error: "" });
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Failed to fetch user");
-      } finally {
-        setIsLoading(false);
+        setFetched({ username, user: null, error: e instanceof Error ? e.message : "Failed to fetch user" });
       }
     };
     fetchUser();
-  }, [token, isAuthLoading, router, username, user])
+  }, [token, isAuthLoading, router, username, isOwnProfile])
+
+  const isLoading = !isOwnProfile && fetched?.username !== username;
+  const error = isOwnProfile ? "" : fetched?.error ?? "";
+  const userProfile = isOwnProfile ? user : fetched?.user ?? null;
 
   const formatDuration = (seconds: number = 0) => {
     const hours = Math.floor(seconds / 3600);
@@ -77,7 +69,7 @@ function ProfileContent() {
             <h1 className="text-sm text-black/80 font-semibold">{userProfile?.email}</h1>
           </div>
         </div>
-        {(!username || username == user?.username) && <div className="cursor-pointer flex items-center gap-2 text-white bg-black p-2 text-sm rounded-md font-semibold" onClick={() => setOpenEditProfileModal(true)}>
+        {isOwnProfile && <div className="cursor-pointer flex items-center gap-2 text-white bg-black p-2 text-sm rounded-md font-semibold" onClick={() => setOpenEditProfileModal(true)}>
           <Pen size={16} />
           <p>Edit</p>
         </div>}
@@ -96,7 +88,8 @@ function ProfileContent() {
           </div>
         </div>
       </div>
-      <div className="flex flex-col gap-2">
+
+      {isOwnProfile && <div className="flex flex-col gap-2">
 
         <div className="flex flex-col gap-4">
           <p className="text-sm font-semibold">Settings</p>
@@ -121,6 +114,7 @@ function ProfileContent() {
           </div>
         </div>
       </div>
+      }
     </div>
     {openEditProfileModal && <EditProfileModal onClose={() => setOpenEditProfileModal(false)} />}
     {twoFactorMode && <TwoFactorModal mode={twoFactorMode} onClose={() => setTwoFactorMode(null)} />}

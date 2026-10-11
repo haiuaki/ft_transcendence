@@ -33,6 +33,7 @@ const TwoFactorModal = ({ mode, onClose }: TwoFactorModalProps) => {
             }
         };
         startSetup();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [mode]);
 
     const confirm = async () => {

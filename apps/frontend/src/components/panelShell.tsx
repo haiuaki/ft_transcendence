@@ -14,7 +14,7 @@ import { useAuth } from "../context/AuthContext";
 import { themeColors } from "../lib/themeColors";
 
 export const HomePanel = ({className = ""}) => {
-  const { isAuthenticated, user, logout } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const colors = themeColors;
   const rooms = [
     { icon: <LayoutGrid size={12} />, title: "Browse rooms", href: "/rooms" },

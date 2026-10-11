@@ -8,14 +8,13 @@ import CenterModalTemplate from "../TemplateModal/CenterModalTemplate";
 import Image from "next/image";
 
 interface EditProfileModalProps {
-    onClose: any,
+    onClose: () => void,
 }
 
 const DEFAULT_AVATAR = "/img/avatar.jpg";
 const AVATAR_SIZE = 256;
-const USERNAME_REGEX = /^[a-zA-Z0-9_]{3,20}$/;
+const USERNAME_REGEX = /^[a-zA-Z0-9_]{3,30}$/;
 
-// Backend has no upload endpoint and only stores a URL: crop to a square, shrink and encode as a data URL.
 const fileToAvatarDataUrl = (file: File): Promise<string> =>
     new Promise((resolve, reject) => {
         const objectUrl = URL.createObjectURL(file);
