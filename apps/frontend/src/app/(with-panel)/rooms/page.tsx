@@ -43,7 +43,6 @@ function RoomsContent() {
       }
     };
 
-    // Keep the online counters current without flashing the loader
     const refreshRooms = () => {
       if (document.visibilityState !== "visible") return;
       roomService.rooms(token).then(setRooms).catch(() => { });
