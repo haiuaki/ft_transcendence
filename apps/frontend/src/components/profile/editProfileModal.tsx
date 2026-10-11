@@ -58,7 +58,8 @@ const EditProfileModal = ({ onClose }: EditProfileModalProps) => {
             return toast.error("Username must be 3-20 characters: letters, numbers and underscores only.");
         try {
             setIsLoading(true);
-            await userService.edit(token, { ...(usernameChanged && { username: trimmedUsername }), ...(avatarChanged && { avatar_url: avatarSrc }),
+            await userService.edit(token, {
+                ...(usernameChanged && { username: trimmedUsername }), ...(avatarChanged && { avatar_url: avatarSrc }),
             });
             await profile(token);
             toast.success("Profile updated successfully.");
@@ -115,7 +116,8 @@ const EditProfileModal = ({ onClose }: EditProfileModalProps) => {
                             type="file"
                             accept="image/png,image/jpeg,image/webp"
                             className="sr-only"
-                            onChange={onAvatarSelected}                        />
+                            onChange={onAvatarSelected}
+                        />
 
                         <button
                             type="button"

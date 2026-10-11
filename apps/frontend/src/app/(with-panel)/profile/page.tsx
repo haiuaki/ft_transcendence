@@ -13,7 +13,7 @@ import { toast } from "sonner";
 function ProfileContent() {
   const params = useSearchParams();
   const username = params.get("username");
-  const { token, isLoading: isAuthLoading, user } = useAuth();
+  const { token, isLoading: isAuthLoading, user, logout } = useAuth();
   const [openEditProfileModal, setOpenEditProfileModal] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
@@ -80,7 +80,6 @@ function ProfileContent() {
         </div>}
       </div>
       <div className="flex flex-col gap-4">
-
         <p className="text-sm font-semibold">Dashboard</p>
         <div className="h-[0.5px] w-full bg-[#dedede]" />
         <div className="flex items-center gap-4 w-full">
@@ -91,6 +90,31 @@ function ProfileContent() {
           <div className="flex-1 flex flex-col gap-5 bg-black/5 rounded-xl p-5">
             <p className="text-xs font-semibold text-black/80">Total time spent (seconds)</p>
             <p className="text-4xl">{formatDuration(userProfile?.cumulative_time_seconds)}</p>
+          </div>
+        </div>
+      </div>
+      <div className="flex flex-col gap-2">
+
+        <div className="flex flex-col gap-4">
+          <p className="text-sm font-semibold">Settings</p>
+          <div className="h-[0.5px] w-full bg-[#dedede]" />
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex flex-col">
+              <p className="text-sm font-semibold">Two-factor authentication</p>
+              <p className="text-xs text-black/60">Add an extra layer of security to your account at sign-in.</p>
+            </div>
+            <button className="cursor-pointer text-sm p-2 rounded-md ring ring-[#dedede] hover:bg-black/5 shrink-0">
+              <p>Enable</p>
+            </button>
+          </div>
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex flex-col">
+              <p className="text-sm font-semibold">Sign out</p>
+              <p className="text-xs text-black/60">End your current session on this device.</p>
+            </div>
+            <button className="cursor-pointer text-sm p-2 rounded-md ring ring-[#dedede] hover:bg-black/5 shrink-0" onClick={() => logout()}>
+              <p>Sign out</p>
+            </button>
           </div>
         </div>
       </div>
