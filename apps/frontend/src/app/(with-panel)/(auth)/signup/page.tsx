@@ -30,7 +30,7 @@ export default function SignUp() {
 
   const inputs = [
     { title: "Email", placeholder: "", maxLength: undefined, isPassword: false, onChange: (e: ChangeEvent<HTMLInputElement>) => setAuthFormData({ ...authFormData, email: e.target.value }), value: authFormData.email },
-    { title: "Username", placeholder: "", maxLength: 20, isPassword: false, onChange: (e: ChangeEvent<HTMLInputElement>) => setAuthFormData({ ...authFormData, username: e.target.value }), value: authFormData.username },
+    { title: "Username", placeholder: "", maxLength: 30, isPassword: false, onChange: (e: ChangeEvent<HTMLInputElement>) => setAuthFormData({ ...authFormData, username: e.target.value }), value: authFormData.username },
     { title: "Password", placeholder: "", maxLength: undefined, isPassword: true, onChange: (e: ChangeEvent<HTMLInputElement>) => setAuthFormData({ ...authFormData, password: e.target.value }), value: authFormData.password },
   ]
 

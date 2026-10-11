@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"net/mail"
 	"os"
-	"regexp"
 	"strings"
 	"time"
 
@@ -19,10 +18,6 @@ import (
 	"github.com/resend/resend-go/v4"
 	"golang.org/x/crypto/bcrypt"
 )
-
-// UsernameRegex ensures usernames are 3-20 characters long and strictly alphanumeric or underscores
-// The `$` ensures the string stricly ends after valid characters, blocking trailing emojis.
-var UsernameRegex = regexp.MustCompile(`^[a-zA-Z0-9_]{3,20}$`)
 
 func Signup(dbPool *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -40,7 +35,7 @@ func Signup(dbPool *pgxpool.Pool) http.HandlerFunc {
 		creds.Username = strings.TrimSpace(creds.Username)
 
 		if !UsernameRegex.MatchString(creds.Username) {
-			http.Error(w, "Username must be 3-20 characters and contain only letters, numbers, and underscores.", http.StatusBadRequest)
+			http.Error(w, UsernameRuleMessage, http.StatusBadRequest)
 			return
 		}
 

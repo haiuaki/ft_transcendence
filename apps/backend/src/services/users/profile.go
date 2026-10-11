@@ -87,7 +87,7 @@ func UpdateProfile(dbPool *pgxpool.Pool) http.HandlerFunc {
 
 		if req.Username != nil {
 			if !auth.UsernameRegex.MatchString(*req.Username) {
-				http.Error(w, "Username must be 3-20 characters and contain only letters, numbers, and underscores.", http.StatusBadRequest)
+				http.Error(w, auth.UsernameRuleMessage, http.StatusBadRequest)
 				return
 			}
 		}
