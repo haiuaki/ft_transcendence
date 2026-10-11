@@ -60,6 +60,19 @@ func main() {
 	// GET: Handle the callback from the provider
 	http.HandleFunc("/oauth/{provider}/callback", auth.OAuthCallback(dbPool))
 
+	// --- TWO-FACTOR AUTHENTICATION --------------------------------------- //
+	// POST: Generate a 2FA secret and QR code (2FA stays off until enabled)
+	http.HandleFunc("/2fa/setup", auth.RequireAuth(auth.TwoFactorSetup(dbPool)))
+
+	// POST: Turn 2FA on by confirming a code from the authenticator app
+	http.HandleFunc("/2fa/enable", auth.RequireAuth(auth.TwoFactorEnable(dbPool)))
+
+	// POST: Turn 2FA off, requires a current code
+	http.HandleFunc("/2fa/disable", auth.RequireAuth(auth.TwoFactorDisable(dbPool)))
+
+	// POST: Finish a 2FA login with the pending token and a code
+	http.HandleFunc("/2fa/verify", auth.TwoFactorVerify(dbPool))
+
 	// --- PROFILE --------------------------------------------------------- //
 	// GET: View user profile
 	http.HandleFunc("/profile", auth.RequireAuth(users.GetProfile(dbPool)))

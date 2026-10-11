@@ -11,9 +11,7 @@ import (
 	"net/mail"
 	"os"
 	"strings"
-	"time"
 
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/resend/resend-go/v4"
 	"golang.org/x/crypto/bcrypt"
@@ -185,17 +183,18 @@ func Login(dbPool *pgxpool.Pool) http.HandlerFunc {
 		var savedHash string
 		var savedEmail string
 		var isVerified bool
+		var is2FAEnabled bool
 
 		// We explicitly SELECT the email so we can inject it into the JWT token later,
 		// ensuring the token always contains the real email even if they logged in with a username.
 		searchUserSQL := `
-			SELECT email, password_hash, is_verified
+			SELECT email, password_hash, is_verified, is_2fa_enabled
 			FROM users
 			WHERE (email = $1 OR LOWER(username) = LOWER($1)) AND deleted_at IS NULL
 		`
 
 		// QueryRow runs the SQL, .Scan() copies the result into `savedEmail` and `savedHash`
-		err = dbPool.QueryRow(context.Background(), searchUserSQL, identifier).Scan(&savedEmail, &savedHash, &isVerified)
+		err = dbPool.QueryRow(context.Background(), searchUserSQL, identifier).Scan(&savedEmail, &savedHash, &isVerified, &is2FAEnabled)
 		if err != nil {
 			// .Scan() fails if the email doesn't exist in the database
 			// Don't say "Email not found" for more protection against hackers
@@ -216,17 +215,22 @@ func Login(dbPool *pgxpool.Pool) http.HandlerFunc {
 			return
 		}
 
-		// Retrieve the JWT Secret Key
-		secretKey := os.Getenv("JWT_SECRET")
+		// Password is correct, but 2FA users still need to send a code to /2fa/verify
+		if is2FAEnabled {
+			pendingToken, err := pendingTwoFactorToken(savedEmail)
+			if err != nil {
+				http.Error(w, "Failed to create token.", http.StatusInternalServerError)
+				return
+			}
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(map[string]any{
+				"two_factor_required": true,
+				"temp_token":          pendingToken,
+			})
+			return
+		}
 
-		// Create the pass, attach the email and expiration date
-		token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-			"email": savedEmail,
-			"exp":   time.Now().Add(time.Hour * 24).Unix(),
-		})
-
-		// Sign the pass with the secret key to protect from hackers
-		tokenString, err := token.SignedString([]byte(secretKey))
+		tokenString, err := sessionToken(savedEmail)
 		if err != nil {
 			http.Error(w, "Failed to create token.", http.StatusInternalServerError)
 			return
