@@ -10,7 +10,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/oauth2"
@@ -262,14 +261,24 @@ func OAuthCallback(dbPool *pgxpool.Pool) http.HandlerFunc {
 			}
 		}
 
-		// Generate JWT Token
-		secretKey := os.Getenv("JWT_SECRET")
-		jwtToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-			"email": email,
-			"exp":   time.Now().Add(time.Hour * 24).Unix(),
-		})
+		// 2FA users finish the login on the frontend's code page with a pending token
+		var is2FAEnabled bool
+		err = dbPool.QueryRow(r.Context(), `SELECT is_2fa_enabled FROM users WHERE email = $1`, email).Scan(&is2FAEnabled)
+		if err != nil {
+			failAndRedirect()
+			return
+		}
+		if is2FAEnabled {
+			pendingToken, err := pendingTwoFactorToken(email)
+			if err != nil {
+				failAndRedirect()
+				return
+			}
+			http.Redirect(w, r, os.Getenv("FRONTEND_URL")+"/oauth/callback?two_factor_token="+pendingToken, http.StatusTemporaryRedirect)
+			return
+		}
 
-		tokenString, err := jwtToken.SignedString([]byte(secretKey))
+		tokenString, err := sessionToken(email)
 		if err != nil {
 			failAndRedirect()
 			return

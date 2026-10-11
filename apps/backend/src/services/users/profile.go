@@ -19,7 +19,7 @@ func GetProfile(dbPool *pgxpool.Pool) http.HandlerFunc {
 
 		var profile UserProfile
 		query := `
-			SELECT username, email, avatar_url, status, total_messages_sent, cumulative_time_seconds, created_at
+			SELECT username, email, avatar_url, status, total_messages_sent, cumulative_time_seconds, created_at, is_2fa_enabled
 			FROM users
 			WHERE email = $1
 		`
@@ -32,6 +32,7 @@ func GetProfile(dbPool *pgxpool.Pool) http.HandlerFunc {
 			&profile.TotalMessagesSent,
 			&profile.CumulativeTimeSeconds,
 			&profile.CreatedAt,
+			&profile.TwoFactorEnabled,
 		)
 
 		if err != nil {
