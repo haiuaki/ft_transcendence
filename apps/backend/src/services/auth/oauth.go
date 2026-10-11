@@ -4,12 +4,14 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
+	"errors"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/oauth2"
 )
@@ -39,7 +41,10 @@ var oauthProviders = map[string]ProviderConfig{
 			if val, ok := rawData["email"].(string); ok {
 				email = val
 			}
-			if val, ok := rawData["name"].(string); ok {
+			// Google has no handle, the email's local part is closer to one than the full name
+			if local, _, found := strings.Cut(email, "@"); found {
+				username = local
+			} else if val, ok := rawData["name"].(string); ok {
 				username = val
 			}
 			if val, ok := rawData["picture"].(string); ok {
@@ -222,31 +227,36 @@ func OAuthCallback(dbPool *pgxpool.Pool) http.HandlerFunc {
 		if err != nil {
 			// Email doesn't exist, brand new user
 
-			// USERNAME RESOLVER: ensure username is unique before insert
-			uniqueUsername := username
-			counter := 1
-			for {
-				var existingID string
-				usernameCheck := `SELECT id FROM users WHERE LOWER(username) = LOWER($1)`
-				err := dbPool.QueryRow(r.Context(), usernameCheck, uniqueUsername).Scan(&existingID)
-				if err != nil {
-					// No row found: Username is available, break the loop
-					break
-				}
-
-				// It is taken, append a number (e.g., johndoe1, johndoe2..) and loop
-				uniqueUsername = fmt.Sprintf("%s%d", username, counter)
-				counter++
+			// Providers allow characters and lengths we don't, so normalize first
+			baseUsername := SanitizeUsername(username)
+			if len(baseUsername) < MinUsernameLen {
+				baseUsername = "user_" + randomHex(4)
 			}
 
-			// Safely insert the `uniqueUsername`
+			// USERNAME RESOLVER: try johndoe, johndoe1, johndoe2.. until the insert succeeds.
+			// Inserting directly (instead of checking first) stays correct when two sign-ups race for a name
 			insertQuery := `
 				INSERT INTO users (email, username, avatar_url, is_verified)
 				VALUES ($1, $2, $3, true)
 				RETURNING id
 			`
-			err = dbPool.QueryRow(r.Context(), insertQuery, email, uniqueUsername, avatarURL).Scan(&userID)
-			if err != nil {
+			inserted := false
+			for attempt := 0; attempt < maxUsernameAttempts; attempt++ {
+				candidate := usernameCandidate(baseUsername, attempt)
+				err = dbPool.QueryRow(r.Context(), insertQuery, email, candidate, avatarURL).Scan(&userID)
+				if err == nil {
+					inserted = true
+					break
+				}
+
+				// Username taken: try the next suffix. Any other error (including email taken) is fatal
+				var pgErr *pgconn.PgError
+				if errors.As(err, &pgErr) && pgErr.Code == "23505" && pgErr.ConstraintName != "users_email_key" {
+					continue
+				}
+				break
+			}
+			if !inserted {
 				failAndRedirect()
 				return
 			}
