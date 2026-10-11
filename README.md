@@ -30,6 +30,10 @@ _This project has been created as part of the 42 curriculum by juljin, ksilvest,
   - *Justification:* Chosen to provide frictionless onboarding for new users.
   - *Implementation:* Built a dynamic, state-protected OAuth pipeline for 42 Intra, Google, and GitHub.
   - *Team:* juljin
+- **[Minor - 1pt] Two-Factor Authentication (2FA)**
+  - *Justification:* Protects accounts even when a password or an OAuth provider account is compromised.
+  - *Implementation:* TOTP (RFC 6238) codes from any authenticator app, enforced on both password and OAuth logins, with short-lived pending tokens and per-login attempt limits.
+  - *Team:* juljin
 
 ### Artificial Intelligence
 - **[Major - 2pts] LLM Interface**
@@ -49,6 +53,7 @@ _This project has been created as part of the 42 curriculum by juljin, ksilvest,
 
 ## Features List
 * **Authentication:** Secure JWT-based session management, Resend Email Verification, and robust Multi-Provider OAuth 2.0 (Google, GitHub, 42 Intra) featuring a smart auto-incrementing username resolver for collision prevention. *(By juljin, nlienard)*
+* **Two-Factor Authentication:** Optional TOTP 2FA with QR code setup for any authenticator app (Google Authenticator, Authy, 1Password...). Once enabled, every login (password or OAuth) requires a 6-digit code; pending login tokens expire after 5 minutes and lock after 5 wrong codes. *(By juljin)*
 * **Real-Time Presence & Chat:** Gorilla WebSocket architecture with Ping/Pong heartbeats, real-time presence tracking (ONLINE/OFFLINE), Ghost-Avatar auto-cleanup, and spatial anti-cheat DB validation. *(By juljin, nlienard)*
 * **Direct Messaging:** Private, omnipresent 1-on-1 chats elegantly architected on top of the existing spatial channel infrastructure. *(By juljin, nlienard)*
 * **User Management:** Full CRUD operations for user profiles, settings, and avatars. *(By juljin, nlienard)*
@@ -79,6 +84,7 @@ Before running the project, ensure you have the following software installed:
    * **AI Chatbot:** Provide a `GOOGLE_API_KEY` for the Gemini SDK.
    * **Email Verification:** Provide a `RESEND_API_KEY`.
    * **OAuth Providers (If testing remote login):** Provide Client IDs and Secrets for Google, GitHub, and 42 Intra.
+   * **Two-Factor Authentication:** No configuration needed. Codes are computed locally by the authenticator app, so 2FA works on `localhost` without any external service.
 
 ### Execution
 1. Boot the entire infrastructure:
@@ -101,6 +107,7 @@ Before running the project, ensure you have the following software installed:
 * **Database:** PostgreSQL 18, pgx/v5 driver
   * *Justification:* PostgreSQL was chosen for its unmatched ACID compliance and advanced relational indexing. Because our app relies on a complex Bidirectional Friendship system and strict spatial anti-cheat validations, we required a rigid, schema-enforced relational database rather than a NoSQL document store.
 * **Third-Party APIs:** Resend Go SDK, Google Gemini API
+* **Security Libraries:** golang-jwt (session tokens), bcrypt (password hashing), pquerna/otp (TOTP generation, validation and QR codes)
 * **Infrastructure:** Docker, Docker Compose, NGINX (HTTPS Reverse Proxy)
 * **Testing:** Pytest & HTTPX (Unit testing for AI service)
 * **CI/CD:** GitHub Actions (Automated Go formatting and builds)
@@ -108,7 +115,7 @@ Before running the project, ensure you have the following software installed:
 ## Database Schema
 Our database utilizes a Domain-Driven Design approach with strict constraints to ensure data integrity.
 
-* **Users Table:** Stores user profiles and authentication data. Primary key is a `UUID`. Key fields include `username` (VARCHAR, Unique), `email` (VARCHAR, Unique), and `status` (VARCHAR).
+* **Users Table:** Stores user profiles and authentication data. Primary key is a `UUID`. Key fields include `username` (VARCHAR, Unique), `email` (VARCHAR, Unique), `status` (VARCHAR), and the 2FA state `is_2fa_enabled` (BOOLEAN) with its `two_factor_secret` (VARCHAR).
 * **Friendships Table:** Manages the social network. Uses a custom Bidirectional Unique Index (`LEAST/GREATEST`) on `user_id` and `friend_id` (both UUID Foreign Keys) to elegantly handle overlapping friend requests and race conditions.
 * **Channels Table:** Represents the 3D Coworking spaces. Primary key is a `SERIAL id`. Key fields include `name` (VARCHAR) and `owner_id` (UUID Foreign Key).
 * **Channel_Members Table:** A junction table tracking who is currently sitting in a 3D room. Uses a composite primary key (`channel_id`, `user_id`) and tracks permissions via the `role` field.
@@ -130,6 +137,8 @@ erDiagram
         VARCHAR password_hash
         VARCHAR username UK
         BOOLEAN is_verified
+        BOOLEAN is_2fa_enabled
+        VARCHAR two_factor_secret
         VARCHAR status
         INTEGER total_messages_sent
         INTEGER cumulative_time_seconds
@@ -211,3 +220,5 @@ No core logic was blindly copy-pasted; all AI-assisted code was thoroughly peer-
 * [Google OAuth 2.0 Documentation](https://developers.google.com/identity/protocols/oauth2)
 * [GitHub OAuth Apps Documentation](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps)
 * [42 Intra API Documentation](https://api.intra.42.fr/apidoc)
+* [RFC 6238: TOTP Time-Based One-Time Password Algorithm](https://datatracker.ietf.org/doc/html/rfc6238)
+* [pquerna/otp Go Library](https://github.com/pquerna/otp)
