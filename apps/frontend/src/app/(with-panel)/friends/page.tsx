@@ -136,7 +136,7 @@ function FriendsContent() {
         return <div key={idx} className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Image src={item.avatar_url || "/img/avatar.jpg"} alt={item.username} width={40} height={40} unoptimized className="w-10 h-10 rounded-full object-cover shrink-0" />
-            <p>{item.username}</p>
+            <Link className="hover:underline" href={`/users/${item.username}`}>{item.username}</Link>
           </div>
           <div className="flex items-center gap-2">
             <div className="cursor-pointer flex items-center gap-2 ring-1 ring-[#dedede] p-2 text-sm rounded-md font-semibold" onClick={() => denyRequest(item.username)}>
@@ -158,7 +158,7 @@ function FriendsContent() {
                 {item.status != "ONLINE" && <div className="w-1 h-1 rounded-full bg-white" />}
               </div>
             </div>
-            <p>{item.username}</p>
+            <Link className="hover:underline" href={`/users/${item.username}`}>{item.username}</Link>
           </div>
           <div className="flex items-center gap-2">
             <Link className="cursor-pointer flex items-center gap-2 ring-1 ring-[#dedede] p-2 text-sm rounded-md font-semibold" href={`/chat/${item.username}`}>

@@ -88,7 +88,7 @@ export default function Chat() {
         <Link href={"/friends"} className="flex items-center justify-center gap-2 p-1 rounded-md hover:bg-black/5">
         <ArrowLeft size={16}/>
         </Link>
-      <h1 className="shrink-0 text-2xl font-semibold">{username}</h1>
+      <h1 className="shrink-0 text-2xl font-semibold"><Link href={`/users/${username}`} className="hover:underline">{username}</Link></h1>
       </div>
       {isLoading && <div className="flex-1 flex flex-col gap-4 items-center justify-center ">
         <Loader2 className="animate-spin" size={28}/>
