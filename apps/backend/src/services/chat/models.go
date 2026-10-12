@@ -26,6 +26,7 @@ type RoomResponse struct {
 	ModelType     string    `json:"model_type"`
 	MaxCapacity   int       `json:"max_capacity"`
 	OwnerID       *string   `json:"owner_id,omitempty"`
+	IsOwner       bool      `json:"is_owner"` // Whether the requesting user owns the room
 	ActiveMembers int       `json:"active_members"`
 	CreatedAt     time.Time `json:"created_at"`
 }

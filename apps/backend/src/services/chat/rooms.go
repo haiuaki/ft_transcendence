@@ -15,11 +15,16 @@ import (
 
 func GetRooms(dbPool *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		email := r.Context().Value(auth.UserEmailKey).(string)
+
+		// is_owner lets the frontend show owner-only actions (edit, delete)
+		// without having to know the user's ID
 		query := `
 			SELECT
 				c.id, c.name, c.type, c.model_type, c.max_capacity,
 				c.owner_id, c.created_at,
-				COUNT(cm.user_id)::INTEGER as active_members
+				COUNT(cm.user_id)::INTEGER as active_members,
+				COALESCE(c.owner_id = (SELECT id FROM users WHERE email = $1), false) as is_owner
 			FROM channels c
 			LEFT JOIN channel_members cm ON c.id = cm.channel_id AND cm.status = 'ACTIVE'
 			WHERE c.type != 'DIRECT'
@@ -27,7 +32,7 @@ func GetRooms(dbPool *pgxpool.Pool) http.HandlerFunc {
 			ORDER BY c.created_at DESC
 		`
 
-		rows, err := dbPool.Query(context.Background(), query)
+		rows, err := dbPool.Query(context.Background(), query, email)
 		if err != nil {
 			log.Println("Database error fetching rooms.", err)
 			http.Error(w, "Failed to fetch rooms.", http.StatusInternalServerError)
@@ -41,7 +46,7 @@ func GetRooms(dbPool *pgxpool.Pool) http.HandlerFunc {
 			var room RoomResponse
 			if err := rows.Scan(
 				&room.ID, &room.Name, &room.Type, &room.ModelType, &room.MaxCapacity,
-				&room.OwnerID, &room.CreatedAt, &room.ActiveMembers,
+				&room.OwnerID, &room.CreatedAt, &room.ActiveMembers, &room.IsOwner,
 			); err != nil {
 				log.Println("Error scanning room row:", err)
 				continue
