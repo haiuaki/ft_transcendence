@@ -3,6 +3,7 @@
 import AddFriendModal from "@/src/components/friends/addFriendModal";
 import ConfirmRemoveFriendModal from "@/src/components/friends/confirmRemoveFriendModal";
 import { useAuth } from "@/src/context/AuthContext";
+import { useSocket } from "@/src/context/SocketContext";
 import friendService, { Friend } from "@/src/services/friendService"
 import { Loader2, Plus, Search, Trash } from "lucide-react";
 import Image from "next/image";
@@ -15,6 +16,7 @@ const FRIENDS_POLL_INTERVAL_MS = 20000;
 
 function FriendsContent() {
   const { token, isLoading: isAuthLoading } = useAuth();
+  const { subscribe } = useSocket();
   const [friends, setFriends] = useState<Friend[]>([]);
   const [requests, setRequests] = useState<Friend[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -64,6 +66,25 @@ function FriendsContent() {
     }, FRIENDS_POLL_INTERVAL_MS);
     return () => clearInterval(interval);
   }, [token])
+
+  // Keep requests and friends in sync live, without a page refresh
+  useEffect(() => {
+    return subscribe((message) => {
+      const other = message.payload as Friend;
+      if (message.type === "friend_request")
+        setRequests((prev) => prev.some((r) => r.username === other.username) ? prev : [...prev, other]);
+      else if (message.type === "friend_accepted")
+        setFriends((prev) => prev.some((f) => f.username === other.username) ? prev : [...prev, other]);
+      else if (message.type === "friend_removed")
+        setFriends((prev) => prev.filter((f) => f.username !== other.username));
+      else if (message.type === "status_changed")
+        setFriends((prev) => prev.map((f) => f.username === other.username ? { ...f, status: other.status } : f));
+      else if (message.type === "user_updated") {
+        const { old_username, username, avatar_url } = message.payload;
+        setFriends((prev) => prev.map((f) => f.username === old_username ? { ...f, username, avatar_url } : f));
+      }
+    });
+  }, [subscribe])
 
   const acceptRequest = async (friendUsername: string) => {
     try {
@@ -136,7 +157,7 @@ function FriendsContent() {
         return <div key={idx} className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Image src={item.avatar_url || "/img/avatar.jpg"} alt={item.username} width={40} height={40} unoptimized className="w-10 h-10 rounded-full object-cover shrink-0" />
-            <p>{item.username}</p>
+            <Link className="hover:underline" href={`/users/${item.username}?from=friends`}>{item.username}</Link>
           </div>
           <div className="flex items-center gap-2">
             <div className="cursor-pointer flex items-center gap-2 ring-1 ring-[#dedede] p-2 text-sm rounded-md font-semibold" onClick={() => denyRequest(item.username)}>
@@ -158,7 +179,7 @@ function FriendsContent() {
                 {item.status != "ONLINE" && <div className="w-1 h-1 rounded-full bg-white" />}
               </div>
             </div>
-            <p>{item.username}</p>
+            <Link className="hover:underline" href={`/users/${item.username}?from=friends`}>{item.username}</Link>
           </div>
           <div className="flex items-center gap-2">
             <Link className="cursor-pointer flex items-center gap-2 ring-1 ring-[#dedede] p-2 text-sm rounded-md font-semibold" href={`/chat/${item.username}`}>

@@ -10,10 +10,18 @@ type UserProfile struct {
 	TotalMessagesSent     int       `json:"total_messages_sent"`
 	CumulativeTimeSeconds int       `json:"cumulative_time_seconds"`
 	CreatedAt             time.Time `json:"created_at"`
-	TwoFactorEnabled      *bool     `json:"is_2fa_enabled,omitempty"` // Only set on the user's own profile
+	TwoFactorEnabled      *bool     `json:"is_2fa_enabled,omitempty"`    // Only set on the user's own profile
+	FriendshipStatus      *string   `json:"friendship_status,omitempty"` // Only set on another user's profile
 }
 
 type UpdateProfileRequest struct {
 	Username  *string `json:"username"`
 	AvatarURL *string `json:"avatar_url"`
+}
+
+// UserUpdatedEvent is pushed to friends and the user's other tabs after a profile edit
+type UserUpdatedEvent struct {
+	OldUsername string  `json:"old_username"`
+	Username    string  `json:"username"`
+	AvatarURL   *string `json:"avatar_url"`
 }

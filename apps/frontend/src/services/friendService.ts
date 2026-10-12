@@ -1,5 +1,7 @@
 const URL = "/api"
 
+export type FriendshipStatus = "friends" | "pending_sent" | "pending_received" | "none"
+
 export interface Friend {
     username: string
     avatar_url: string | null

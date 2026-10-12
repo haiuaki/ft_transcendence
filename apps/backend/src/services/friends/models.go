@@ -1,5 +1,10 @@
 package friends
 
+// Notifier pushes live events to connected users (implemented by sockets.Hub)
+type Notifier interface {
+	SendTo(targetEmails []string, msgType string, payload any)
+}
+
 type FriendRequest struct {
 	FriendUsername string `json:"friend_username"`
 }

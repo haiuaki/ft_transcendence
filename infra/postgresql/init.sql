@@ -13,7 +13,7 @@ CREATE TABLE users (
 	password_hash VARCHAR(255),
 
     username VARCHAR(30) UNIQUE NOT NULL,
-    avatar_url VARCHAR(255),
+    avatar_url TEXT,
 
 	is_verified BOOLEAN DEFAULT FALSE,
 	verification_token VARCHAR(255),

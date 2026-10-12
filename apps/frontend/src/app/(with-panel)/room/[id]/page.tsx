@@ -59,7 +59,7 @@ const RoomContent = () => {
     }, [isLoading, params.id, token, router]);
 
     return (
-        <div className="h-screen w-screen overflow-hidden bg-white text-black">
+        <div className="scene-page">
             {step === "loading" && <InfoView icon={<Loader2 size={38} className="animate-spin" />} text="Connecting to the room..." />}
             {step === "error" && <InfoView icon={<CircleX size={38} />} text={error} />}
             {step === "password_required" && <RoomPasswordView roomId={params.id} onSuccess={() => setStep("success")} />}
