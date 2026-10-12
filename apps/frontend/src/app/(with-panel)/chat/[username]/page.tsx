@@ -72,6 +72,14 @@ function ChatContent() {
     });
   }, [channelId, subscribe])
 
+  // Follow the other user to their new URL if they rename themselves
+  useEffect(() => {
+    return subscribe((data) => {
+      if (data.type === "user_updated" && data.payload.old_username.toLowerCase() === username.toLowerCase())
+        router.replace(`/chat/${data.payload.username}${window.location.search}`);
+    });
+  }, [username, router, subscribe])
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages])

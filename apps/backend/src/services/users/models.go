@@ -18,3 +18,10 @@ type UpdateProfileRequest struct {
 	Username  *string `json:"username"`
 	AvatarURL *string `json:"avatar_url"`
 }
+
+// UserUpdatedEvent is pushed to friends and the user's other tabs after a profile edit
+type UserUpdatedEvent struct {
+	OldUsername string  `json:"old_username"`
+	Username    string  `json:"username"`
+	AvatarURL   *string `json:"avatar_url"`
+}

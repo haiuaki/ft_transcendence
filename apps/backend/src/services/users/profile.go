@@ -12,6 +12,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/haiuaki/ft_transcendence/src/services/auth"
+	"github.com/haiuaki/ft_transcendence/src/services/friends"
 )
 
 // MaxAvatarLen caps the stored avatar string (base64 data URL or remote URL).
@@ -110,7 +111,7 @@ func GetPublicProfile(dbPool *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-func UpdateProfile(dbPool *pgxpool.Pool) http.HandlerFunc {
+func UpdateProfile(dbPool *pgxpool.Pool, notifier friends.Notifier) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		email := r.Context().Value(auth.UserEmailKey).(string)
 
@@ -145,16 +146,26 @@ func UpdateProfile(dbPool *pgxpool.Pool) http.HandlerFunc {
 			}
 		}
 
+		// Also returns the previous username, so clients can find
+		// the renamed user in what they currently display
 		updateSQL := `
+			WITH old AS (
+				SELECT id, username FROM users WHERE email = $3
+			)
 			UPDATE users
 			SET
-				username = COALESCE($1, username),
-				avatar_url = COALESCE($2, avatar_url),
+				username = COALESCE($1, users.username),
+				avatar_url = COALESCE($2, users.avatar_url),
 				updated_at = CURRENT_TIMESTAMP
-			WHERE email = $3
+			FROM old
+			WHERE users.id = old.id
+			RETURNING old.username, users.username, users.avatar_url
 		`
 
-		_, err := dbPool.Exec(context.Background(), updateSQL, req.Username, req.AvatarURL, email)
+		var event UserUpdatedEvent
+		err := dbPool.QueryRow(context.Background(), updateSQL, req.Username, req.AvatarURL, email).Scan(
+			&event.OldUsername, &event.Username, &event.AvatarURL,
+		)
 		if err != nil {
 			// Taken username check
 			if strings.Contains(err.Error(), "duplicate key value") {
@@ -166,6 +177,13 @@ func UpdateProfile(dbPool *pgxpool.Pool) http.HandlerFunc {
 			http.Error(w, "Failed to update profile.", http.StatusInternalServerError)
 			return
 		}
+
+		// Push the change to friends and to the user's other open tabs
+		targets, err := friends.FriendEmails(context.Background(), dbPool, email)
+		if err != nil {
+			log.Println("Error fetching friends for profile update event:", err)
+		}
+		notifier.SendTo(append(targets, email), "user_updated", event)
 
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("Profile updated successfully."))

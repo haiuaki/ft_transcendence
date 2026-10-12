@@ -73,6 +73,10 @@ func main() {
 	// POST: Finish a 2FA login with the pending token and a code
 	http.HandleFunc("/2fa/verify", auth.TwoFactorVerify(dbPool))
 
+	// Created before the routes so HTTP handlers can push live events
+	hub := sockets.NewHub(dbPool)
+	go hub.Run() // Run the hub in a background Goroutine
+
 	// --- PROFILE --------------------------------------------------------- //
 	// GET: View user profile
 	http.HandleFunc("/profile", auth.RequireAuth(users.GetProfile(dbPool)))
@@ -81,14 +85,10 @@ func main() {
 	http.HandleFunc("/users/{username}", auth.RequireAuth(users.GetPublicProfile(dbPool)))
 
 	// PUT: Edit user informations
-	http.HandleFunc("/profile/edit", auth.RequireAuth(users.UpdateProfile(dbPool)))
+	http.HandleFunc("/profile/edit", auth.RequireAuth(users.UpdateProfile(dbPool, hub)))
 
 	// DELETE: Delete account
 	http.HandleFunc("/profile/delete", auth.RequireAuth(users.DeleteProfile(dbPool)))
-
-	// Created before the routes so HTTP handlers can push live events
-	hub := sockets.NewHub(dbPool)
-	go hub.Run() // Run the hub in a background Goroutine
 
 	// --- FRIENDS --------------------------------------------------------- //
 	// GET: View my accepted friends

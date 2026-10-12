@@ -61,13 +61,19 @@ const ProfileView = ({ username, backHref }: ProfileViewProps) => {
     if (!username) return;
     return subscribe((message) => {
       const { payload } = message;
+      if (message.type === "user_updated") {
+        // Follow a rename to the new URL, which refetches the profile
+        if (payload.old_username.toLowerCase() === username.toLowerCase())
+          router.replace(`/users/${payload.username}${window.location.search}`);
+        return;
+      }
       if (payload?.username?.toLowerCase() !== username.toLowerCase()) return;
       if (message.type === "friend_request") setFriendshipStatus("pending_received");
       else if (message.type === "friend_accepted") setFriendshipStatus("friends");
       else if (message.type === "friend_removed") setFriendshipStatus("none");
       else if (message.type === "status_changed") patchFetchedUser({ status: payload.status });
     });
-  }, [subscribe, username, setFriendshipStatus, patchFetchedUser])
+  }, [subscribe, username, router, setFriendshipStatus, patchFetchedUser])
 
   const runFriendAction = async (name: "add" | "accept" | "deny", action: () => Promise<string>, nextStatus: FriendshipStatus) => {
     try {

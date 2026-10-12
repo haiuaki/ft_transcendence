@@ -24,7 +24,7 @@ const SocketContext = createContext<SocketContextProps | undefined>(undefined);
 // One WebSocket per logged-in tab, so the backend marks the user ONLINE
 // for as long as the app is open, not only while a chat page is open
 export const SocketProvider = ({ children }: SocketProviderProps) => {
-    const { token } = useAuth();
+    const { token, user, profile } = useAuth();
     const socketRef = useRef<WebSocket | null>(null);
     const listenersRef = useRef<Set<SocketListener>>(new Set());
     const [isConnected, setIsConnected] = useState<boolean>(false);
@@ -83,6 +83,15 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
             listenersRef.current.delete(listener);
         };
     }, [])
+
+    // Refresh our own profile when it was edited from another tab
+    useEffect(() => {
+        if (!token || !user) return;
+        return subscribe((message) => {
+            if (message.type === "user_updated" && message.payload.old_username === user.username)
+                profile(token).catch(() => {});
+        });
+    }, [subscribe, token, user, profile])
 
     return (
         <SocketContext.Provider value={{ isConnected, send, subscribe }}>

@@ -79,6 +79,10 @@ function FriendsContent() {
         setFriends((prev) => prev.filter((f) => f.username !== other.username));
       else if (message.type === "status_changed")
         setFriends((prev) => prev.map((f) => f.username === other.username ? { ...f, status: other.status } : f));
+      else if (message.type === "user_updated") {
+        const { old_username, username, avatar_url } = message.payload;
+        setFriends((prev) => prev.map((f) => f.username === old_username ? { ...f, username, avatar_url } : f));
+      }
     });
   }, [subscribe])
 
