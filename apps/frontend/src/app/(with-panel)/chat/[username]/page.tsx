@@ -6,16 +6,18 @@ import decodeHtml from "@/src/lib/decodeHtml";
 import chatService, { Message } from "@/src/services/chatService";
 import { ArrowLeft, ArrowUp, CircleX, Loader2 } from "lucide-react";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
-import React, { useEffect, useRef, useState } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+import React, { Suspense, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
-export default function Chat() {
+function ChatContent() {
   const { token, user, isLoading: isAuthLoading } = useAuth();
   const { send, subscribe } = useSocket();
   const router = useRouter();
   const params = useParams<{ username: string }>();
   const username = decodeURIComponent(params.username);
+  // Back goes to the profile when the chat was opened from it
+  const backHref = useSearchParams().get("from") === "profile" ? `/users/${username}` : "/friends";
   const [content, setContent] = useState<string>("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [channelId, setChannelId] = useState<number | null>(null);
@@ -85,10 +87,10 @@ export default function Chat() {
   return <div className="flex-1 min-h-0 flex flex-col items-center w-full p-5 pt-5 text-black">
     <div className="flex-1 min-h-0 flex flex-col gap-5 max-w-[550px] w-full">
       <div className="flex items-center gap-2">
-        <Link href={"/friends"} className="flex items-center justify-center gap-2 p-1 rounded-md hover:bg-black/5">
+        <Link href={backHref} className="flex items-center justify-center gap-2 p-1 rounded-md hover:bg-black/5">
         <ArrowLeft size={16}/>
         </Link>
-      <h1 className="shrink-0 text-2xl font-semibold"><Link href={`/users/${username}`} className="hover:underline">{username}</Link></h1>
+      <h1 className="shrink-0 text-2xl font-semibold"><Link href={`/users/${username}?from=chat`} className="hover:underline">{username}</Link></h1>
       </div>
       {isLoading && <div className="flex-1 flex flex-col gap-4 items-center justify-center ">
         <Loader2 className="animate-spin" size={28}/>
@@ -139,4 +141,12 @@ export default function Chat() {
       }
     </div>
   </div>
+}
+
+export default function Chat() {
+  return (
+    <Suspense fallback={<Loader2 className="m-auto animate-spin" />}>
+      <ChatContent />
+    </Suspense>
+  );
 }

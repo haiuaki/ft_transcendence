@@ -6,7 +6,7 @@ import { useAuth, User } from "@/src/context/AuthContext";
 import { useSocket } from "@/src/context/SocketContext";
 import friendService, { FriendshipStatus } from "@/src/services/friendService";
 import userService from "@/src/services/userService";
-import { Check, Clock, Loader2, MessageCircle, Pen, UserPlus, X, XCircle } from "lucide-react";
+import { ArrowLeft, Check, Clock, Loader2, MessageCircle, Pen, UserPlus, X, XCircle } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -15,9 +15,10 @@ import { toast } from "sonner";
 
 interface ProfileViewProps {
   username?: string,
+  backHref?: string,
 }
 
-const ProfileView = ({ username }: ProfileViewProps) => {
+const ProfileView = ({ username, backHref }: ProfileViewProps) => {
   const { token, isLoading: isAuthLoading, user, logout } = useAuth();
   const { subscribe } = useSocket();
   const [friendAction, setFriendAction] = useState<"add" | "accept" | "deny" | null>(null);
@@ -99,6 +100,9 @@ const ProfileView = ({ username }: ProfileViewProps) => {
 
   return <div className="mt-7 flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-10 items-center w-full h-full p-5 text-black">
     <div className="flex flex-col gap-10 min-w-0 max-w-[550px] w-full">
+      {!isOwnProfile && backHref && <Link href={backHref} className="-mb-6 self-start flex items-center justify-center p-1 rounded-md hover:bg-black/5">
+        <ArrowLeft size={16} />
+      </Link>}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Image src={userProfile?.avatar_url || "/img/avatar.jpg"} alt="img profile" width={1000} height={1000} unoptimized className="w-30 h-30 rounded-full" />
@@ -112,7 +116,7 @@ const ProfileView = ({ username }: ProfileViewProps) => {
           <p>Edit</p>
         </div>}
         {!isOwnProfile && token && userProfile && <>
-          {userProfile.friendship_status === "friends" && <Link className="flex items-center gap-2 text-white bg-black p-2 text-sm rounded-md font-semibold" href={`/chat/${userProfile.username}`}>
+          {userProfile.friendship_status === "friends" && <Link className="flex items-center gap-2 text-white bg-black p-2 text-sm rounded-md font-semibold" href={`/chat/${userProfile.username}?from=profile`}>
             <MessageCircle size={16} />
             <p>Chat</p>
           </Link>}
