@@ -3,6 +3,7 @@ package users
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 	"net/url"
@@ -12,6 +13,22 @@ import (
 
 	"github.com/haiuaki/ft_transcendence/src/services/auth"
 )
+
+// MaxAvatarLen caps the stored avatar string (base64 data URL or remote URL).
+const MaxAvatarLen = 200 * 1024
+
+const defaultAvatarPath = "/img/avatar.jpg"
+
+func isValidAvatar(avatar string) bool {
+	if avatar == defaultAvatarPath {
+		return true
+	}
+	if strings.HasPrefix(avatar, "data:image/jpeg;base64,") || strings.HasPrefix(avatar, "data:image/png;base64,") {
+		return true
+	}
+	parsed, err := url.ParseRequestURI(avatar)
+	return err == nil && parsed.Scheme == "https"
+}
 
 func GetProfile(dbPool *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -80,8 +97,15 @@ func UpdateProfile(dbPool *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		email := r.Context().Value(auth.UserEmailKey).(string)
 
+		r.Body = http.MaxBytesReader(w, r.Body, MaxAvatarLen+4096)
+
 		var req UpdateProfileRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			var maxBytesErr *http.MaxBytesError
+			if errors.As(err, &maxBytesErr) {
+				http.Error(w, "Avatar is too large.", http.StatusRequestEntityTooLarge)
+				return
+			}
 			http.Error(w, "Invalid JSON.", http.StatusBadRequest)
 			return
 		}
@@ -94,7 +118,11 @@ func UpdateProfile(dbPool *pgxpool.Pool) http.HandlerFunc {
 		}
 
 		if req.AvatarURL != nil {
-			if _, err := url.ParseRequestURI(*req.AvatarURL); err != nil {
+			if len(*req.AvatarURL) > MaxAvatarLen {
+				http.Error(w, "Avatar is too large.", http.StatusRequestEntityTooLarge)
+				return
+			}
+			if !isValidAvatar(*req.AvatarURL) {
 				http.Error(w, "Invalid Avatar URL format.", http.StatusBadRequest)
 				return
 			}

@@ -13,6 +13,7 @@ interface EditProfileModalProps {
 
 const DEFAULT_AVATAR = "/img/avatar.jpg";
 const AVATAR_SIZE = 256;
+const MAX_AVATAR_LENGTH = 200 * 1024;
 const USERNAME_REGEX = /^[a-zA-Z0-9_]{3,30}$/;
 
 const fileToAvatarDataUrl = (file: File): Promise<string> =>
@@ -77,7 +78,9 @@ const EditProfileModal = ({ onClose }: EditProfileModalProps) => {
         if (!file.type.startsWith("image/")) return toast.error("Please select a valid image file.");
         if (file.size > 5 * 1024 * 1024) return toast.error("The image must be smaller than 5 MB.");
         try {
-            setNewAvatar(await fileToAvatarDataUrl(file));
+            const dataUrl = await fileToAvatarDataUrl(file);
+            if (dataUrl.length > MAX_AVATAR_LENGTH) return toast.error("This image is too large, please choose another one.");
+            setNewAvatar(dataUrl);
             setAvatarRemoved(false);
         } catch (error) {
             toast.error(error instanceof Error ? error.message : "Unable to read this image.");
