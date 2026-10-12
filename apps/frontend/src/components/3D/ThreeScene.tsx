@@ -4,11 +4,127 @@ import { useEffect, useRef, useState } from "react";
 import { createScene } from "./scene/createScene";
 import type { SwitchMode, TextureMode } from "./scene/types";
 import SceneLoading from "./ui/SceneLoading";
-import SceneModeButton from "./ui/SceneModeButton";
 import SceneWindows from "./ui/SceneWindows";
+import { ArrowUp, MessageCircle, X } from "lucide-react";
+import { useSocket } from "@/src/context/SocketContext";
+import chatService, { Message } from "@/src/services/chatService";
+import { toast } from "sonner";
+import decodeHtml from "@/src/lib/decodeHtml";
+import { useAuth } from "@/src/context/AuthContext";
+import Link from "next/link";
 
-export default function ThreeScene({ roomId }: { roomId?: string })
-{
+
+const RoomChat = ({ roomId }: { roomId?: string }) => {
+	const [open, setOpen] = useState(false);
+	const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+	const [content, setContent] = useState<string>("");
+	const { send, subscribe } = useSocket();
+	const { user, token } = useAuth();
+	const [messages, setMessages] = useState<Message[]>([]);
+
+	const bottomRef = useRef<HTMLDivElement | null>(null);
+
+	useEffect(() => {
+		if (!token || !roomId) return;
+		chatService.messages(token, Number(roomId))
+			.then(setMessages)
+			.catch(() => toast.error("Failed to load messages"));
+	}, [token, roomId]);
+
+	useEffect(() => {
+		bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+	}, [messages, open]);
+
+	useEffect(() => {
+		const el = textareaRef.current;
+		if (!el) return;
+		el.style.height = "auto";
+		el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
+	}, [content]);
+
+	useEffect(() => {
+		return subscribe((data) => {
+			if (data.type !== "chat" || data.payload.room_id !== Number(roomId)) return;
+			setMessages((prev) => [...prev, data.payload]);
+		});
+	}, [roomId, subscribe]);
+
+	const sendMessage = () => {
+		if (!send({ type: "chat", payload: { room_id: Number(roomId), message: content } })) return toast.error("Not connected to chat");
+		setContent("");
+	};
+
+	const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+		if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+			e.preventDefault();
+			sendMessage();
+		}
+	}
+	console.log(messages)
+	return (
+		<div
+			onClick={() => !open && setOpen(true)}
+			className={`fixed ring-1 ring-[#dedede] shadow-md z-10 bg-white overflow-hidden transition-all duration-300 ease-in-out ${open ? "bottom-5 right-5 w-[400px] h-[550px] rounded-xl" : "bottom-5 right-5 w-9 h-9 rounded-md cursor-pointer hover:bg-black/5"}`} >
+			{!open ? (
+				<div className="w-full h-full flex items-center justify-center">
+					<MessageCircle size={16} />
+				</div>
+			) : (
+				<div className="p-4 h-full flex flex-col justify-between">
+					<div className="flex-1 min-h-0 flex flex-col gap-2">
+						<button className="cursor-pointer w-fit p-1 rounded-md hover:bg-black/5" onClick={() => setOpen(false)}><X size={16} /></button>
+						<div className="h-[0.5px] w-full bg-[#dedede]" />
+						<div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar-none flex flex-col gap-1 pr-1">
+							{messages.map((msg, idx) => {
+								const prev = messages[idx - 1];
+								const next = messages[idx + 1];
+								const date = new Date(msg.created_at);
+								const isMine = msg.username === user?.username;
+								const sameAsNext = next && next.username === msg.username;
+
+								return (
+									<div key={msg.id} className={`flex flex-col max-w-[75%] ${isMine ? "self-end items-end" : "self-start items-start"}`}>
+										{!isMine && prev?.username !== msg.username && (
+											<Link href={`/profile?username=${msg.username}`} target="_blank" className="ml-1 mb-0.5 text-xs text-black/40 hover:underline">{msg.username}</Link>
+										)}
+										<p className={`px-3 py-2 text-sm whitespace-pre-wrap [overflow-wrap:anywhere] rounded-2xl ${isMine ? "bg-black text-white rounded-br-md" : "bg-[#efefef] rounded-bl-md"}`}>
+											{decodeHtml(msg.content)}
+										</p>
+										{!sameAsNext && (
+											<p className="mt-1 mb-2 text-[10px] text-black/40">
+												{date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+											</p>
+										)}
+									</div>
+								);
+							})}
+							<div ref={bottomRef} />
+						</div>
+					</div>
+					<div className="shrink-0 flex items-end gap-2 ring ring-[#dedede] p-2 pl-4 rounded-3xl">
+						<textarea
+							className="flex-1 w-full resize-none outline-none text-sm py-1.5 overflow-y-auto custom-scrollbar-none"
+							rows={1}
+							ref={textareaRef}
+							placeholder="Write a message…"
+							value={content}
+							maxLength={500}
+							onChange={(e) => setContent(e.target.value)}
+							onKeyDown={handleKeyDown}
+						/>
+						<div onClick={sendMessage} className="shrink-0 flex items-center justify-center cursor-pointer rounded-full h-8 w-8 bg-black hover:bg-black/80 text-white">
+							<ArrowUp size={16} />
+						</div>
+					</div>
+
+				</div>
+			)}
+		</div>
+
+
+	)
+}
+export default function ThreeScene({ roomId = null }: { roomId?: string | null }) {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const switchModeRef = useRef<SwitchMode | null>(null);
 	const [textureMode, setTextureMode] = useState<TextureMode>("day");
@@ -19,11 +135,9 @@ export default function ThreeScene({ roomId }: { roomId?: string })
 
 	const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
 
-	useEffect(() =>
-	{
+	useEffect(() => {
 		const container = containerRef.current;
-		if (!container)
-		{
+		if (!container) {
 			return;
 		}
 
@@ -37,29 +151,24 @@ export default function ThreeScene({ roomId }: { roomId?: string })
 		});
 		switchModeRef.current = scene.switchMode;
 
-		return () =>
-		{
+		return () => {
 			switchModeRef.current = null;
 			scene.dispose();
 		};
 	}, []);
 
-	function closeWindow(): void
-	{
+	function closeWindow(): void {
 		setSelectedGroup(null);
 	}
 
-	function handleModeClick(): void
-	{
+	function handleModeClick(): void {
 		const changeMode = switchModeRef.current;
-		if (!changeMode)
-		{
+		if (!changeMode) {
 			return;
 		}
 
 		let nextMode: TextureMode = "day";
-		if (textureMode === "day")
-		{
+		if (textureMode === "day") {
 			nextMode = "night";
 		}
 
@@ -77,7 +186,7 @@ export default function ThreeScene({ roomId }: { roomId?: string })
 				{texturesLoading && <SceneLoading />}
 			</div>
 
-			{!texturesLoading && (
+			{/* {!texturesLoading && (
 				<SceneModeButton
 					textureMode={textureMode}
 					texturesReady={texturesReady}
@@ -86,6 +195,8 @@ export default function ThreeScene({ roomId }: { roomId?: string })
 					onClick={handleModeClick}
 				/>
 			)}
+ */}
+			{!texturesLoading && roomId && <RoomChat roomId={roomId} />}
 
 			<SceneWindows roomId={roomId} selectedGroup={selectedGroup} onClose={closeWindow} />
 		</>

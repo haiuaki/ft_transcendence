@@ -20,7 +20,7 @@ const RoomView = ({ roomId }: { roomId: string }) => {
 
     return (
         <div className="w-full h-full relative">
-            <ThreeScene roomId={roomId} />
+            <ThreeScene roomId={roomId || null}/>
         </div>
     )
 }
