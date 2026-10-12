@@ -3,11 +3,15 @@
 import EditProfileModal from "./editProfileModal";
 import TwoFactorModal from "./TwoFactorModal";
 import { useAuth, User } from "@/src/context/AuthContext";
+import { useSocket } from "@/src/context/SocketContext";
+import friendService, { FriendshipStatus } from "@/src/services/friendService";
 import userService from "@/src/services/userService";
-import { Loader2, Pen, XCircle } from "lucide-react";
+import { Check, Clock, Loader2, MessageCircle, Pen, UserPlus, X, XCircle } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
+import { toast } from "sonner";
 
 interface ProfileViewProps {
   username?: string,
@@ -15,6 +19,8 @@ interface ProfileViewProps {
 
 const ProfileView = ({ username }: ProfileViewProps) => {
   const { token, isLoading: isAuthLoading, user, logout } = useAuth();
+  const { subscribe } = useSocket();
+  const [friendAction, setFriendAction] = useState<"add" | "accept" | "deny" | null>(null);
   const [openEditProfileModal, setOpenEditProfileModal] = useState<boolean>(false);
   const [twoFactorMode, setTwoFactorMode] = useState<"enable" | "disable" | null>(null);
   const [fetched, setFetched] = useState<{ username: string, user: User | null, error: string } | null>(null);
@@ -43,6 +49,33 @@ const ProfileView = ({ username }: ProfileViewProps) => {
     };
     fetchUser();
   }, [token, isAuthLoading, router, username, isOwnProfile])
+
+  const setFriendshipStatus = useCallback((status: FriendshipStatus) => {
+    setFetched((prev) => prev?.user ? { ...prev, user: { ...prev.user, friendship_status: status } } : prev);
+  }, [])
+
+  // Keep the friend button in sync when the other user acts on the friendship
+  useEffect(() => {
+    if (!username) return;
+    return subscribe((message) => {
+      if (message.payload?.username?.toLowerCase() !== username.toLowerCase()) return;
+      if (message.type === "friend_request") setFriendshipStatus("pending_received");
+      else if (message.type === "friend_accepted") setFriendshipStatus("friends");
+      else if (message.type === "friend_removed") setFriendshipStatus("none");
+    });
+  }, [subscribe, username, setFriendshipStatus])
+
+  const runFriendAction = async (name: "add" | "accept" | "deny", action: () => Promise<string>, nextStatus: FriendshipStatus) => {
+    try {
+      setFriendAction(name);
+      toast.success(await action());
+      setFriendshipStatus(nextStatus);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Something went wrong.");
+    } finally {
+      setFriendAction(null);
+    }
+  }
 
   const isLoading = !isOwnProfile && fetched?.username !== username;
   const error = isOwnProfile ? "" : fetched?.error ?? "";
@@ -78,6 +111,30 @@ const ProfileView = ({ username }: ProfileViewProps) => {
           <Pen size={16} />
           <p>Edit</p>
         </div>}
+        {!isOwnProfile && token && userProfile && <>
+          {userProfile.friendship_status === "friends" && <Link className="flex items-center gap-2 text-white bg-black p-2 text-sm rounded-md font-semibold" href={`/chat/${userProfile.username}`}>
+            <MessageCircle size={16} />
+            <p>Chat</p>
+          </Link>}
+          {userProfile.friendship_status === "none" && <button disabled={friendAction !== null} className="cursor-pointer flex items-center gap-2 text-white bg-black disabled:bg-black/80 p-2 text-sm rounded-md font-semibold" onClick={() => runFriendAction("add", () => friendService.add(token, userProfile.username), "pending_sent")}>
+            {friendAction === "add" ? <Loader2 size={16} className="animate-spin" /> : <UserPlus size={16} />}
+            <p>Add friend</p>
+          </button>}
+          {userProfile.friendship_status === "pending_received" && <div className="flex items-center gap-2">
+            <button disabled={friendAction !== null} className="cursor-pointer flex items-center gap-2 ring-1 ring-[#dedede] hover:bg-black/5 disabled:opacity-60 p-2 text-sm rounded-md font-semibold" onClick={() => runFriendAction("deny", () => friendService.deny(token, userProfile.username), "none")}>
+              {friendAction === "deny" ? <Loader2 size={16} className="animate-spin" /> : <X size={16} />}
+              <p>Deny</p>
+            </button>
+            <button disabled={friendAction !== null} className="cursor-pointer flex items-center gap-2 text-white bg-black disabled:bg-black/80 p-2 text-sm rounded-md font-semibold" onClick={() => runFriendAction("accept", () => friendService.accept(token, userProfile.username), "friends")}>
+              {friendAction === "accept" ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
+              <p>Accept</p>
+            </button>
+          </div>}
+          {userProfile.friendship_status === "pending_sent" && <div className="flex items-center gap-2 ring-1 ring-[#dedede] text-black/60 p-2 text-sm rounded-md font-semibold">
+            <Clock size={16} />
+            <p>Request sent</p>
+          </div>}
+        </>}
       </div>
       <div className="flex flex-col gap-4">
         <p className="text-sm font-semibold">Dashboard</p>

@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
 import userService from "../services/userService";
 import twoFactorService, { TwoFactorSetupResponse } from "../services/twoFactorService";
+import { FriendshipStatus } from "../services/friendService";
 
 interface AuthProviderProps {
     children: ReactNode
@@ -17,6 +18,7 @@ export interface User {
     total_messages_sent: number;
     cumulative_time_seconds: number;
     is_2fa_enabled?: boolean
+    friendship_status?: FriendshipStatus
 }
 
 export type LoginResult = { twoFactorRequired: false } | { twoFactorRequired: true, tempToken: string };

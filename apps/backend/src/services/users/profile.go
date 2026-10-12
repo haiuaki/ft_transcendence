@@ -64,23 +64,40 @@ func GetProfile(dbPool *pgxpool.Pool) http.HandlerFunc {
 
 func GetPublicProfile(dbPool *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		myEmail := r.Context().Value(auth.UserEmailKey).(string)
 		targetUsername := r.PathValue("username")
 
 		var profile UserProfile
 
+		// friendship_status is seen from the viewer's side:
+		// friends, pending_sent, pending_received or none
 		query := `
-			SELECT username, avatar_url, status, total_messages_sent, cumulative_time_seconds, created_at
-			FROM users
-			WHERE LOWER(username) = LOWER($1) AND deleted_at IS NULL
+			SELECT u.username, u.avatar_url, u.status, u.total_messages_sent, u.cumulative_time_seconds, u.created_at,
+				COALESCE((
+					SELECT CASE
+						WHEN f.status = 'ACCEPTED' THEN 'friends'
+						WHEN f.user_id = me.id THEN 'pending_sent'
+						ELSE 'pending_received'
+					END
+					FROM friendships f
+					WHERE (f.user_id = me.id AND f.friend_id = u.id)
+						OR (f.user_id = u.id AND f.friend_id = me.id)
+					ORDER BY f.status = 'ACCEPTED' DESC
+					LIMIT 1
+				), 'none')
+			FROM users u
+			CROSS JOIN (SELECT id FROM users WHERE email = $2) me
+			WHERE LOWER(u.username) = LOWER($1) AND u.deleted_at IS NULL
 		`
 
-		err := dbPool.QueryRow(context.Background(), query, targetUsername).Scan(
+		err := dbPool.QueryRow(context.Background(), query, targetUsername, myEmail).Scan(
 			&profile.Username,
 			&profile.AvatarURL,
 			&profile.Status,
 			&profile.TotalMessagesSent,
 			&profile.CumulativeTimeSeconds,
 			&profile.CreatedAt,
+			&profile.FriendshipStatus,
 		)
 
 		if err != nil {
