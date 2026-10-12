@@ -3,10 +3,12 @@ package friends
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 	"strings"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/haiuaki/ft_transcendence/src/services/auth"
@@ -56,7 +58,7 @@ func GetFriends(dbPool *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-func AddFriend(dbPool *pgxpool.Pool) http.HandlerFunc {
+func AddFriend(dbPool *pgxpool.Pool, notifier Notifier) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		email := r.Context().Value(auth.UserEmailKey).(string)
 
@@ -71,15 +73,28 @@ func AddFriend(dbPool *pgxpool.Pool) http.HandlerFunc {
 			return
 		}
 
+		// Also returns the recipient's email and the sender's details,
+		// so the recipient can be notified live without another query
 		insertSQL := `
-			INSERT INTO friendships (user_id, friend_id)
-			VALUES (
-				(SELECT id from users WHERE email = $1),
-				(SELECT id from users WHERE username = $2)
+			WITH inserted AS (
+				INSERT INTO friendships (user_id, friend_id)
+				VALUES (
+					(SELECT id from users WHERE email = $1),
+					(SELECT id from users WHERE username = $2)
+				)
+				RETURNING user_id, friend_id
 			)
+			SELECT recipient.email, sender.username, sender.avatar_url, sender.status
+			FROM inserted
+			JOIN users recipient ON recipient.id = inserted.friend_id
+			JOIN users sender ON sender.id = inserted.user_id
 		`
 
-		_, err := dbPool.Exec(context.Background(), insertSQL, email, req.FriendUsername)
+		var recipientEmail string
+		var sender FriendResponse
+		err := dbPool.QueryRow(context.Background(), insertSQL, email, req.FriendUsername).Scan(
+			&recipientEmail, &sender.Username, &sender.AvatarURL, &sender.Status,
+		)
 		if err != nil {
 			if strings.Contains(err.Error(), "duplicate key value") {
 				http.Error(w, "You are already friends, or a request is already pending.", http.StatusConflict)
@@ -95,12 +110,14 @@ func AddFriend(dbPool *pgxpool.Pool) http.HandlerFunc {
 			return
 		}
 
+		notifier.SendTo([]string{recipientEmail}, "friend_request", sender)
+
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("Friend request sent."))
 	}
 }
 
-func RemoveFriend(dbPool *pgxpool.Pool) http.HandlerFunc {
+func RemoveFriend(dbPool *pgxpool.Pool, notifier Notifier) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		myEmail := r.Context().Value(auth.UserEmailKey).(string)
 
@@ -115,32 +132,43 @@ func RemoveFriend(dbPool *pgxpool.Pool) http.HandlerFunc {
 			return
 		}
 
+		// Also returns the other user's email and my username,
+		// so the removed friend can be notified live
 		removeSQL := `
-			DELETE FROM friendships
-			WHERE STATUS = 'ACCEPTED'
-			AND (
-				(
-					user_id = (SELECT id FROM users WHERE email = $1)
-					AND friend_id = (SELECT id FROM users WHERE username = $2)
+			WITH deleted AS (
+				DELETE FROM friendships
+				WHERE STATUS = 'ACCEPTED'
+				AND (
+					(
+						user_id = (SELECT id FROM users WHERE email = $1)
+						AND friend_id = (SELECT id FROM users WHERE username = $2)
+					)
+					OR (
+						user_id = (SELECT id FROM users WHERE username = $2)
+						AND friend_id = (SELECT id FROM users WHERE email = $1)
+					)
 				)
-				OR (
-					user_id = (SELECT id FROM users WHERE username = $2)
-					AND friend_id = (SELECT id FROM users WHERE email = $1)
-				)
+				RETURNING user_id, friend_id
 			)
+			SELECT DISTINCT other.email, me.username
+			FROM deleted
+			JOIN users me ON me.email = $1
+			JOIN users other ON other.id IN (deleted.user_id, deleted.friend_id) AND other.id <> me.id
 		`
 
-		result, err := dbPool.Exec(context.Background(), removeSQL, myEmail, req.FriendUsername)
+		var otherEmail, myUsername string
+		err := dbPool.QueryRow(context.Background(), removeSQL, myEmail, req.FriendUsername).Scan(&otherEmail, &myUsername)
+		if errors.Is(err, pgx.ErrNoRows) {
+			http.Error(w, "You are not friends with this user.", http.StatusNotFound)
+			return
+		}
 		if err != nil {
 			log.Println("Database error during friend removal:", err)
 			http.Error(w, "Failed to remove friend.", http.StatusInternalServerError)
 			return
 		}
 
-		if result.RowsAffected() == 0 {
-			http.Error(w, "You are not friends with this user.", http.StatusNotFound)
-			return
-		}
+		notifier.SendTo([]string{otherEmail}, "friend_removed", FriendResponse{Username: myUsername})
 
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("Friend removed."))

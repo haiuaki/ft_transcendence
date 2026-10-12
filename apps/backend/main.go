@@ -86,22 +86,26 @@ func main() {
 	// DELETE: Delete account
 	http.HandleFunc("/profile/delete", auth.RequireAuth(users.DeleteProfile(dbPool)))
 
+	// Created before the routes so HTTP handlers can push live events
+	hub := sockets.NewHub(dbPool)
+	go hub.Run() // Run the hub in a background Goroutine
+
 	// --- FRIENDS --------------------------------------------------------- //
 	// GET: View my accepted friends
 	http.HandleFunc("/friends", auth.RequireAuth(friends.GetFriends(dbPool)))
 
 	// POST: Send a friend request
-	http.HandleFunc("/friends/add", auth.RequireAuth(friends.AddFriend(dbPool)))
+	http.HandleFunc("/friends/add", auth.RequireAuth(friends.AddFriend(dbPool, hub)))
 
 	// DELETE: Remove a friend
-	http.HandleFunc("/friends/remove", auth.RequireAuth(friends.RemoveFriend(dbPool)))
+	http.HandleFunc("/friends/remove", auth.RequireAuth(friends.RemoveFriend(dbPool, hub)))
 
 	// --- FRIEND REQUESTS ------------------------------------------------- //
 	// GET: View pending friend requests
 	http.HandleFunc("/friends/requests", auth.RequireAuth(friends.GetFriendRequests(dbPool)))
 
 	// PUT: Accept a pending request
-	http.HandleFunc("/friends/requests/accept", auth.RequireAuth(friends.AcceptFriend(dbPool)))
+	http.HandleFunc("/friends/requests/accept", auth.RequireAuth(friends.AcceptFriend(dbPool, hub)))
 
 	// DELETE: Reject a pending request
 	http.HandleFunc("/friends/requests/deny", auth.RequireAuth(friends.DenyFriend(dbPool)))
@@ -142,8 +146,6 @@ func main() {
 	http.HandleFunc("/rooms/members", auth.RequireAuth(chat.GetRoomMembers(dbPool)))
 
 	// --- WEBSOCKET CENTRAL HUB -------------------------------------------- //
-	hub := sockets.NewHub(dbPool)
-	go hub.Run() // Run the hub in a background Goroutine
 	http.HandleFunc("/ws", sockets.ServeWs(hub, dbPool))
 
 	port := os.Getenv("PORT")

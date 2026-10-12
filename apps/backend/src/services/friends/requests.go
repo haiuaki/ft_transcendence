@@ -3,9 +3,11 @@ package friends
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/haiuaki/ft_transcendence/src/services/auth"
@@ -47,7 +49,7 @@ func GetFriendRequests(dbPool *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-func AcceptFriend(dbPool *pgxpool.Pool) http.HandlerFunc {
+func AcceptFriend(dbPool *pgxpool.Pool, notifier Notifier) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		myEmail := r.Context().Value(auth.UserEmailKey).(string)
 
@@ -62,24 +64,38 @@ func AcceptFriend(dbPool *pgxpool.Pool) http.HandlerFunc {
 			return
 		}
 
+		// Also returns the requester's email and my details,
+		// so the requester sees the new friend live
 		acceptSQL := `
-			UPDATE friendships
-			SET status = 'ACCEPTED'
-			WHERE user_id = (SELECT id FROM users WHERE username = $1)
-				AND friend_id = (SELECT id FROM users WHERE email = $2)
-				AND status = 'PENDING'
+			WITH updated AS (
+				UPDATE friendships
+				SET status = 'ACCEPTED'
+				WHERE user_id = (SELECT id FROM users WHERE username = $1)
+					AND friend_id = (SELECT id FROM users WHERE email = $2)
+					AND status = 'PENDING'
+				RETURNING user_id, friend_id
+			)
+			SELECT requester.email, accepter.username, accepter.avatar_url, accepter.status
+			FROM updated
+			JOIN users requester ON requester.id = updated.user_id
+			JOIN users accepter ON accepter.id = updated.friend_id
 		`
 
-		result, err := dbPool.Exec(context.Background(), acceptSQL, req.FriendUsername, myEmail)
+		var requesterEmail string
+		var accepter FriendResponse
+		err := dbPool.QueryRow(context.Background(), acceptSQL, req.FriendUsername, myEmail).Scan(
+			&requesterEmail, &accepter.Username, &accepter.AvatarURL, &accepter.Status,
+		)
+		if errors.Is(err, pgx.ErrNoRows) {
+			http.Error(w, "No pending friend request found from this user.", http.StatusNotFound)
+			return
+		}
 		if err != nil {
 			http.Error(w, "Database error.", http.StatusInternalServerError)
 			return
 		}
 
-		if result.RowsAffected() == 0 {
-			http.Error(w, "No pending friend request found from this user.", http.StatusNotFound)
-			return
-		}
+		notifier.SendTo([]string{requesterEmail}, "friend_accepted", accepter)
 
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("Friend request accepted."))

@@ -3,6 +3,7 @@
 import AddFriendModal from "@/src/components/friends/addFriendModal";
 import ConfirmRemoveFriendModal from "@/src/components/friends/confirmRemoveFriendModal";
 import { useAuth } from "@/src/context/AuthContext";
+import { useSocket } from "@/src/context/SocketContext";
 import friendService, { Friend } from "@/src/services/friendService"
 import { Loader2, Plus, Search, Trash } from "lucide-react";
 import Image from "next/image";
@@ -15,6 +16,7 @@ const FRIENDS_POLL_INTERVAL_MS = 20000;
 
 function FriendsContent() {
   const { token, isLoading: isAuthLoading } = useAuth();
+  const { subscribe } = useSocket();
   const [friends, setFriends] = useState<Friend[]>([]);
   const [requests, setRequests] = useState<Friend[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -64,6 +66,19 @@ function FriendsContent() {
     }, FRIENDS_POLL_INTERVAL_MS);
     return () => clearInterval(interval);
   }, [token])
+
+  // Keep requests and friends in sync live, without a page refresh
+  useEffect(() => {
+    return subscribe((message) => {
+      const other = message.payload as Friend;
+      if (message.type === "friend_request")
+        setRequests((prev) => prev.some((r) => r.username === other.username) ? prev : [...prev, other]);
+      else if (message.type === "friend_accepted")
+        setFriends((prev) => prev.some((f) => f.username === other.username) ? prev : [...prev, other]);
+      else if (message.type === "friend_removed")
+        setFriends((prev) => prev.filter((f) => f.username !== other.username));
+    });
+  }, [subscribe])
 
   const acceptRequest = async (friendUsername: string) => {
     try {

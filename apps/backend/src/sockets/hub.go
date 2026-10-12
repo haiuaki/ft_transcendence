@@ -2,6 +2,7 @@ package sockets
 
 import (
 	"context"
+	"encoding/json"
 	"log"
 	"slices"
 	"time"
@@ -71,6 +72,22 @@ func resetOnlineStatuses(dbPool *pgxpool.Pool) {
 	_, err := dbPool.Exec(ctx, `UPDATE users SET status = 'OFFLINE' WHERE status = 'ONLINE'`)
 	if err != nil {
 		log.Println("Error resetting online statuses:", err)
+	}
+}
+
+// SendTo wraps the payload in a WSMessage envelope and pushes it to every
+// connected tab of the target users, so HTTP handlers can notify them live
+func (h *Hub) SendTo(targetEmails []string, msgType string, payload any) {
+	payloadBytes, err := json.Marshal(payload)
+	if err != nil {
+		log.Printf("Error marshalling %s payload: %v\n", msgType, err)
+		return
+	}
+	envelope, _ := json.Marshal(WSMessage{Type: msgType, Payload: payloadBytes})
+
+	h.broadcast <- BroadcastMessage{
+		TargetEmails: targetEmails,
+		Payload:      envelope,
 	}
 }
 
