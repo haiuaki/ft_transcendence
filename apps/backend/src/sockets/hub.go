@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/haiuaki/ft_transcendence/src/services/friends"
 )
 
 // Time allowed for a single status write, so a slow DB can't stall the Hub
@@ -78,17 +80,69 @@ func resetOnlineStatuses(dbPool *pgxpool.Pool) {
 // SendTo wraps the payload in a WSMessage envelope and pushes it to every
 // connected tab of the target users, so HTTP handlers can notify them live
 func (h *Hub) SendTo(targetEmails []string, msgType string, payload any) {
-	payloadBytes, err := json.Marshal(payload)
+	envelope, err := newEnvelope(msgType, payload)
 	if err != nil {
 		log.Printf("Error marshalling %s payload: %v\n", msgType, err)
 		return
 	}
-	envelope, _ := json.Marshal(WSMessage{Type: msgType, Payload: payloadBytes})
 
 	h.broadcast <- BroadcastMessage{
 		TargetEmails: targetEmails,
 		Payload:      envelope,
 	}
+}
+
+// newEnvelope wraps a payload in the standard WSMessage JSON envelope
+func newEnvelope(msgType string, payload any) ([]byte, error) {
+	payloadBytes, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(WSMessage{Type: msgType, Payload: payloadBytes})
+}
+
+// deliver pushes a message to every connected tab of its target users.
+// Only called from inside the Hub loop
+func (h *Hub) deliver(message BroadcastMessage) {
+	for client := range h.clients {
+		if slices.Contains(message.TargetEmails, client.Email) {
+			select {
+			case client.send <- message.Payload:
+			default:
+				// Client is too slow, drop it like a disconnect
+				h.removeClient(client)
+			}
+		}
+	}
+}
+
+// notifyStatusChange tells the user's friends they went ONLINE or OFFLINE.
+// It runs inside the Hub loop, so a quick reconnect can't reach friends out of order
+func (h *Hub) notifyStatusChange(email string, status string) {
+	ctx, cancel := context.WithTimeout(context.Background(), statusWriteTimeout)
+	defer cancel()
+
+	var payload StatusChangedPayload
+	payload.Status = status
+	if err := h.dbPool.QueryRow(ctx, `SELECT username FROM users WHERE email = $1`, email).Scan(&payload.Username); err != nil {
+		log.Printf("Error fetching username for %s: %v\n", email, err)
+		return
+	}
+
+	targets, err := friends.FriendEmails(ctx, h.dbPool, email)
+	if err != nil {
+		log.Printf("Error fetching friends of %s: %v\n", email, err)
+		return
+	}
+	if len(targets) == 0 {
+		return
+	}
+
+	envelope, err := newEnvelope("status_changed", payload)
+	if err != nil {
+		return
+	}
+	h.deliver(BroadcastMessage{TargetEmails: targets, Payload: envelope})
 }
 
 // removeClient drops a client from the Hub and marks its user OFFLINE
@@ -106,6 +160,7 @@ func (h *Hub) removeClient(client *Client) {
 		if h.activeUsers[client.Email] <= 0 {
 			delete(h.activeUsers, client.Email)
 			setOnlineStatus(h.dbPool, client.Email, "OFFLINE")
+			h.notifyStatusChange(client.Email, "OFFLINE")
 		}
 	}
 }
@@ -125,22 +180,14 @@ func (h *Hub) Run() {
 			h.activeUsers[client.Email]++
 			if h.activeUsers[client.Email] == 1 {
 				setOnlineStatus(h.dbPool, client.Email, "ONLINE")
+				h.notifyStatusChange(client.Email, "ONLINE")
 			}
 
 		case client := <-h.unregister:
 			h.removeClient(client)
 
 		case message := <-h.broadcast:
-			for client := range h.clients {
-				if slices.Contains(message.TargetEmails, client.Email) {
-					select {
-					case client.send <- message.Payload:
-					default:
-						// Client is too slow, drop it like a disconnect
-						h.removeClient(client)
-					}
-				}
-			}
+			h.deliver(message)
 		}
 	}
 }

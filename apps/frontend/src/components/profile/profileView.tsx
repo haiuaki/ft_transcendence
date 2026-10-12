@@ -20,7 +20,7 @@ interface ProfileViewProps {
 
 const ProfileView = ({ username, backHref }: ProfileViewProps) => {
   const { token, isLoading: isAuthLoading, user, logout } = useAuth();
-  const { subscribe } = useSocket();
+  const { subscribe, isConnected } = useSocket();
   const [friendAction, setFriendAction] = useState<"add" | "accept" | "deny" | null>(null);
   const [openEditProfileModal, setOpenEditProfileModal] = useState<boolean>(false);
   const [twoFactorMode, setTwoFactorMode] = useState<"enable" | "disable" | null>(null);
@@ -51,20 +51,23 @@ const ProfileView = ({ username, backHref }: ProfileViewProps) => {
     fetchUser();
   }, [token, isAuthLoading, router, username, isOwnProfile])
 
-  const setFriendshipStatus = useCallback((status: FriendshipStatus) => {
-    setFetched((prev) => prev?.user ? { ...prev, user: { ...prev.user, friendship_status: status } } : prev);
+  const patchFetchedUser = useCallback((fields: Partial<User>) => {
+    setFetched((prev) => prev?.user ? { ...prev, user: { ...prev.user, ...fields } } : prev);
   }, [])
+  const setFriendshipStatus = useCallback((status: FriendshipStatus) => patchFetchedUser({ friendship_status: status }), [patchFetchedUser])
 
-  // Keep the friend button in sync when the other user acts on the friendship
+  // Keep the viewed profile in sync with what the other user does
   useEffect(() => {
     if (!username) return;
     return subscribe((message) => {
-      if (message.payload?.username?.toLowerCase() !== username.toLowerCase()) return;
+      const { payload } = message;
+      if (payload?.username?.toLowerCase() !== username.toLowerCase()) return;
       if (message.type === "friend_request") setFriendshipStatus("pending_received");
       else if (message.type === "friend_accepted") setFriendshipStatus("friends");
       else if (message.type === "friend_removed") setFriendshipStatus("none");
+      else if (message.type === "status_changed") patchFetchedUser({ status: payload.status });
     });
-  }, [subscribe, username, setFriendshipStatus])
+  }, [subscribe, username, setFriendshipStatus, patchFetchedUser])
 
   const runFriendAction = async (name: "add" | "accept" | "deny", action: () => Promise<string>, nextStatus: FriendshipStatus) => {
     try {
@@ -81,6 +84,8 @@ const ProfileView = ({ username, backHref }: ProfileViewProps) => {
   const isLoading = !isOwnProfile && fetched?.username !== username;
   const error = isOwnProfile ? "" : fetched?.error ?? "";
   const userProfile = isOwnProfile ? user : fetched?.user ?? null;
+  // Our own status can lag behind the socket, so trust the live connection instead
+  const isOnline = isOwnProfile ? isConnected : userProfile?.status === "ONLINE";
 
   const formatDuration = (seconds: number = 0) => {
     const hours = Math.floor(seconds / 3600);
@@ -105,9 +110,13 @@ const ProfileView = ({ username, backHref }: ProfileViewProps) => {
       </Link>}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Image src={userProfile?.avatar_url || "/img/avatar.jpg"} alt="img profile" width={1000} height={1000} unoptimized className="w-30 h-30 rounded-full" />
+          <div className="relative shrink-0">
+            <Image src={userProfile?.avatar_url || "/img/avatar.jpg"} alt="img profile" width={1000} height={1000} unoptimized className="w-30 h-30 rounded-full" />
+            <div className={`absolute bottom-1.5 right-1.5 w-5 h-5 rounded-full border-3 border-white ${isOnline ? "bg-[#45a367]" : "bg-gray-300"}`} />
+          </div>
           <div className="flex flex-col gap-1">
             <h1 className="text-3xl font-semibold">{userProfile?.username}</h1>
+            <p className={`text-xs font-semibold ${isOnline ? "text-[#45a367]" : "text-black/50"}`}>{isOnline ? "Online" : "Offline"}</p>
             <h1 className="text-sm text-black/80 font-semibold">{userProfile?.email}</h1>
           </div>
         </div>

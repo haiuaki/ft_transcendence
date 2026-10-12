@@ -174,3 +174,31 @@ func RemoveFriend(dbPool *pgxpool.Pool, notifier Notifier) http.HandlerFunc {
 		w.Write([]byte("Friend removed."))
 	}
 }
+
+// FriendEmails returns the emails of everyone with an accepted friendship
+// with the given user, so live events can be pushed to them
+func FriendEmails(ctx context.Context, dbPool *pgxpool.Pool, email string) ([]string, error) {
+	query := `
+		SELECT u.email
+		FROM users me
+		JOIN friendships f ON f.status = 'ACCEPTED' AND me.id IN (f.user_id, f.friend_id)
+		JOIN users u ON u.id = CASE WHEN f.user_id = me.id THEN f.friend_id ELSE f.user_id END
+		WHERE me.email = $1 AND u.email IS NOT NULL
+	`
+
+	rows, err := dbPool.Query(ctx, query, email)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	emails := []string{}
+	for rows.Next() {
+		var e string
+		if err := rows.Scan(&e); err != nil {
+			return nil, err
+		}
+		emails = append(emails, e)
+	}
+	return emails, rows.Err()
+}

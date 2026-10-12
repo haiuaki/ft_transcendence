@@ -77,6 +77,8 @@ function FriendsContent() {
         setFriends((prev) => prev.some((f) => f.username === other.username) ? prev : [...prev, other]);
       else if (message.type === "friend_removed")
         setFriends((prev) => prev.filter((f) => f.username !== other.username));
+      else if (message.type === "status_changed")
+        setFriends((prev) => prev.map((f) => f.username === other.username ? { ...f, status: other.status } : f));
     });
   }, [subscribe])
 

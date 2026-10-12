@@ -32,6 +32,12 @@ type OutboundChatMessage struct {
 	CreatedAt string `json:"created_at"` // using string for ISO8601 or time.Time
 }
 
+// StatusChangedPayload is pushed to friends when a user goes ONLINE or OFFLINE
+type StatusChangedPayload struct {
+	Username string `json:"username"`
+	Status   string `json:"status"`
+}
+
 // BroadcastMessage is used internally to route payloads to specific target emails.
 type BroadcastMessage struct {
 	TargetEmails []string
