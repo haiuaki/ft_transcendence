@@ -54,7 +54,7 @@ const EditProfileModal = ({ onClose }: EditProfileModalProps) => {
     const updateProfile = async () => {
         if (!token) return toast.error("Your session has expired. Please log in again.");
         if (usernameChanged && !USERNAME_REGEX.test(trimmedUsername))
-            return toast.error("Username must be 3-20 characters: letters, numbers and underscores only.");
+            return toast.error("Username must be 3-30 characters: letters, numbers and underscores only.");
         try {
             setIsLoading(true);
             await userService.edit(token, {
@@ -131,7 +131,7 @@ const EditProfileModal = ({ onClose }: EditProfileModalProps) => {
                         </button>
                     </div>
                     <div className="w-full flex flex-col gap-4">
-                        <InputField title="Username" value={username} onChange={(e) => setUsername(e.target.value)} maxLength={20} type="text" />
+                        <InputField title="Username" value={username} onChange={(e) => setUsername(e.target.value)} maxLength={30} type="text" />
                         <button disabled={(!usernameChanged && !avatarChanged) || isLoading} className="cursor-pointer flex items-center justify-center gap-2 bg-black hover:bg-black/80 disabled:bg-black/80 p-2 rounded-md text-white" onClick={updateProfile}>
                             {isLoading && <Loader2 size={16} className="animate-spin" />}
                             <p>Update profile</p>
