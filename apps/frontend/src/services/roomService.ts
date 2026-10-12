@@ -8,6 +8,7 @@ export interface Room {
     model_type: string;
     max_capacity: number;
     owner_id?: string;
+    is_owner: boolean;
     active_members: number;
     created_at: string;
 }
