@@ -125,6 +125,14 @@ async def import_from_json(json_path: str = "dataset.json"):
             )
         print(f"Imported {len(messages)} messages with RAG embeddings.")
 
+        # Resynchronize database sequences after inserting explicit IDs
+        await conn.execute(
+            """
+            SELECT setval('messages_id_seq', COALESCE((SELECT MAX(id) FROM messages), 1));
+            SELECT setval('channels_id_seq', COALESCE((SELECT MAX(id) FROM channels), 1));
+            """
+        )
+
         print("\n[SUCCESS] Dataset successfully imported into PostgreSQL!")
     finally:
         await conn.close()
