@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { ArrowUp, Loader2, Pin, PinOff } from 'lucide-react';
+import { ArrowUp, Loader2, Pin, PinOff, Trash2 } from 'lucide-react';
 import { motion, useDragControls } from 'motion/react';
 
 type KewanProps = {
@@ -12,6 +12,9 @@ type ChatMessage = {
     role: 'user' | 'assistant';
     content: string;
 };
+
+const STORAGE_KEY = 'kewan_ai_history';
+const DRAFT_KEY = 'kewan_ai_draft';
 
 const GREETINGS = [
     "How can I help you ?",
@@ -56,11 +59,26 @@ export default function KewanWindow({ onClose }: KewanProps) {
 
     const [message, setMessage] = useState(() => {
         if (typeof window !== 'undefined') {
-            return sessionStorage.getItem('kewan_ai_draft') || '';
+            return sessionStorage.getItem(DRAFT_KEY) || '';
         }
         return '';
     });
-    const [messages, setMessages] = useState<ChatMessage[]>([]);
+    const [messages, setMessages] = useState<ChatMessage[]>(() => {
+        if (typeof window !== 'undefined') {
+            try {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    if (Array.isArray(parsed)) {
+                        return parsed;
+                    }
+                }
+            } catch {
+                // Ignore storage parse error
+            }
+        }
+        return [];
+    });
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [isPinned, setIsPinned] = useState(false);
@@ -71,8 +89,27 @@ export default function KewanWindow({ onClose }: KewanProps) {
     const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         const val = e.target.value;
         setMessage(val);
-        sessionStorage.setItem('kewan_ai_draft', val);
+        sessionStorage.setItem(DRAFT_KEY, val);
     };
+
+    const handleClearHistory = () => {
+        setMessages([]);
+        if (typeof window !== 'undefined') {
+            localStorage.removeItem(STORAGE_KEY);
+        }
+    };
+
+    useEffect(() => {
+        if (typeof window !== 'undefined' && !isLoading) {
+            // Filter out empty placeholder assistant messages before saving
+            const validMessages = messages.filter((m) => m.content.trim().length > 0);
+            if (validMessages.length > 0) {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(validMessages));
+            } else {
+                localStorage.removeItem(STORAGE_KEY);
+            }
+        }
+    }, [messages, isLoading]);
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -100,7 +137,7 @@ export default function KewanWindow({ onClose }: KewanProps) {
         if (!promptToSend || isLoading) return;
 
         setMessage('');
-        sessionStorage.removeItem('kewan_ai_draft');
+        sessionStorage.removeItem(DRAFT_KEY);
         setError(null);
 
         setMessages((prev) => [
@@ -248,6 +285,18 @@ export default function KewanWindow({ onClose }: KewanProps) {
                 </h2>
 
                 <div className="flex items-center gap-1">
+                    {messages.length > 0 && (
+                        <button
+                            type="button"
+                            onClick={handleClearHistory}
+                            onPointerDown={(e) => e.stopPropagation()}
+                            className="flex h-9 w-9 items-center justify-center rounded-xl text-black/50 transition-all duration-200 hover:bg-red-50 hover:text-red-600 cursor-pointer"
+                            title="Effacer l'historique"
+                        >
+                            <Trash2 strokeWidth={1.5} size={18} />
+                        </button>
+                    )}
+
                     <button
                         type="button"
                         onClick={() => setIsPinned((prev) => !prev)}
