@@ -8,6 +8,7 @@ import SceneWindows from "./ui/SceneWindows";
 import { ArrowUp, MessageCircle, X } from "lucide-react";
 import { useSocket } from "@/src/context/SocketContext";
 import chatService, { Message } from "@/src/services/chatService";
+import roomService from "@/src/services/roomService";
 import { toast } from "sonner";
 import decodeHtml from "@/src/lib/decodeHtml";
 import { useAuth } from "@/src/context/AuthContext";
@@ -24,6 +25,8 @@ const RoomChat = ({ roomId }: { roomId?: string }) => {
 	const [messages, setMessages] = useState<Message[]>([]);
 
 	const bottomRef = useRef<HTMLDivElement | null>(null);
+	const lastSentRef = useRef<string | null>(null);
+	const retriedRef = useRef(false);
 
 	useEffect(() => {
 		if (!token || !roomId) return;
@@ -45,13 +48,37 @@ const RoomChat = ({ roomId }: { roomId?: string }) => {
 
 	useEffect(() => {
 		return subscribe((data) => {
+			if (data.type === "chat_error" && data.payload.room_id === Number(roomId)) {
+				const failed = lastSentRef.current;
+				lastSentRef.current = null;
+				// we were seated out of the room (socket drop, other tab): sit back down and resend once
+				if (data.payload.code === "not_in_room" && failed && token && !retriedRef.current) {
+					retriedRef.current = true;
+					roomService.join(token, String(roomId), undefined)
+						.then(() => send({ type: "chat", payload: { room_id: Number(roomId), message: failed } }))
+						.catch(() => {
+							setContent((current) => current || failed);
+							toast.error(data.payload.message);
+						});
+					return;
+				}
+				if (failed) setContent((current) => current || failed);
+				toast.error(data.payload.message);
+				return;
+			}
 			if (data.type !== "chat" || data.payload.room_id !== Number(roomId)) return;
-			setMessages((prev) => [...prev, data.payload]);
+			if (data.payload.username === user?.username) {
+				lastSentRef.current = null;
+				retriedRef.current = false;
+			}
+			setMessages((prev) => prev.some((m) => m.id === data.payload.id) ? prev : [...prev, data.payload]);
 		});
-	}, [roomId, subscribe]);
+	}, [roomId, subscribe, token, send, user?.username]);
 
 	const sendMessage = () => {
+		if (!content.trim()) return;
 		if (!send({ type: "chat", payload: { room_id: Number(roomId), message: content } })) return toast.error("Not connected to chat");
+		lastSentRef.current = content;
 		setContent("");
 	};
 
@@ -186,9 +213,10 @@ export default function ThreeScene({ roomId = null, onLeave }: { roomId?: string
 		textureModeRef.current = textureMode;
 	}, [textureMode]);
 
-	// the panel toggle drives the scene; only nightMode and readiness trigger a switch, so a failed load is not retried in a loop
+	// the panel toggle drives the scene. The initial preload runs its own switchMode("day"), which makes
+	// switchMode ignore calls until it ends, so we also re-check once loading/transition settle
 	useEffect(() => {
-		if (!texturesReady) {
+		if (!texturesReady || texturesLoading || transitioning) {
 			return;
 		}
 		const wanted: TextureMode = nightMode ? "night" : "day";
@@ -196,7 +224,7 @@ export default function ThreeScene({ roomId = null, onLeave }: { roomId?: string
 			return;
 		}
 		void switchModeRef.current?.(wanted);
-	}, [nightMode, texturesReady]);
+	}, [nightMode, texturesReady, texturesLoading, transitioning]);
 
 	useEffect(() => {
 		if (!roomId) {

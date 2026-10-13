@@ -26,10 +26,13 @@ const RoomContent = () => {
             return;
         }
 
+        // the effect can run twice (strict mode, dep changes); only the latest run may join, otherwise two joins race on the backend
+        let cancelled = false;
         const fetchRoom = async () => {
             setStep("loading")
             try {
                 const rooms: Room[] = await roomService.rooms(token);
+                if (cancelled) return;
                 const roomId = Number(params.id);
                 const currentRoom = rooms.find((item) => item.id === roomId);
 
@@ -40,9 +43,11 @@ const RoomContent = () => {
                 }
                 try {
                     await roomService.join(token || "", params.id, undefined);
+                    if (cancelled) return;
                     toast.success("Successfully joined the room.", { id: "room-joined" });
                     setStep("success");
                 } catch (e) {
+                    if (cancelled) return;
                     if (e instanceof ApiError && e.status === 401) {
                         setStep("password_required");
                         return;
@@ -50,12 +55,14 @@ const RoomContent = () => {
                     throw e;
                 }
             } catch (e) {
+                if (cancelled) return;
                 setError(e instanceof Error ? e.message : "Failed to fetch the room")
                 setStep("error")
             }
         };
 
         fetchRoom();
+        return () => { cancelled = true; };
     }, [isLoading, params.id, token, router]);
 
     return (
