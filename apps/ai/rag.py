@@ -43,14 +43,16 @@ async def sync_pending_embeddings(client: genai.Client, db_pool: asyncpg.Pool) -
     return len(rows)
 
 
+import re
+
 async def get_relevant_context(
     client: genai.Client,
     db_pool: asyncpg.Pool,
     user_prompt: str,
     channel_id: int | None = None,
-    limit: int = 5,
+    limit: int = 15,
 ) -> str:
-    """Retrieves messages with the highest semantic similarity to the prompt."""
+    """Retrieves messages with semantic similarity and channel/DM context."""
     # Ensure any recent messages without embeddings get vectorized
     try:
         await sync_pending_embeddings(client, db_pool)
@@ -60,30 +62,96 @@ async def get_relevant_context(
     prompt_vector = generate_embedding(client, user_prompt)
     vector_json = json.dumps(prompt_vector)
 
-    query = """
-        SELECT 
-            u.username, 
-            m.content, 
-            m.created_at,
-            (m.embedding <=> $1::vector) AS distance
-        FROM messages m
-        JOIN users u ON m.sender_id = u.id
-        WHERE m.embedding IS NOT NULL
-          AND ($2::INT IS NULL OR m.channel_id = $2)
-        ORDER BY distance ASC
-        LIMIT $3
-    """
-
     async with db_pool.acquire() as connection:
-        rows = await connection.fetch(query, vector_json, channel_id, limit)
+        # Check if prompt specifically mentions any known usernames
+        tokens = re.findall(r"\b[a-zA-Z0-9_-]{2,}\b", user_prompt)
+        mentioned_users: list[str] = []
+        if tokens:
+            user_rows = await connection.fetch(
+                "SELECT username FROM users WHERE username = ANY($1)", tokens
+            )
+            mentioned_users = [r["username"] for r in user_rows]
 
-    if not rows:
+        # 1. Semantic similarity query with channel metadata and DM participants
+        semantic_query = """
+            SELECT 
+                m.id,
+                u.username, 
+                c.name AS channel_name,
+                c.type AS channel_type,
+                (
+                    SELECT string_agg(u2.username, ', ')
+                    FROM channel_members cm2
+                    JOIN users u2 ON cm2.user_id = u2.id
+                    WHERE cm2.channel_id = m.channel_id
+                ) AS participants,
+                m.content, 
+                m.created_at,
+                (m.embedding <=> $1::vector) AS distance
+            FROM messages m
+            JOIN users u ON m.sender_id = u.id
+            JOIN channels c ON m.channel_id = c.id
+            WHERE m.embedding IS NOT NULL
+              AND ($2::INT IS NULL OR m.channel_id = $2)
+            ORDER BY distance ASC
+            LIMIT $3
+        """
+        rows = await connection.fetch(semantic_query, vector_json, channel_id, limit)
+
+        # 2. If specific users were mentioned (e.g. "DMs between ksilvest and user3"),
+        # also retrieve their most recent direct messages/conversations so they are not missed
+        targeted_rows = []
+        if mentioned_users:
+            targeted_query = """
+                SELECT DISTINCT
+                    m.id,
+                    u.username,
+                    c.name AS channel_name,
+                    c.type AS channel_type,
+                    (
+                        SELECT string_agg(u2.username, ', ')
+                        FROM channel_members cm2
+                        JOIN users u2 ON cm2.user_id = u2.id
+                        WHERE cm2.channel_id = m.channel_id
+                    ) AS participants,
+                    m.content,
+                    m.created_at,
+                    0.0 AS distance
+                FROM messages m
+                JOIN users u ON m.sender_id = u.id
+                JOIN channels c ON m.channel_id = c.id
+                JOIN channel_members cm ON cm.channel_id = m.channel_id
+                JOIN users member_u ON cm.user_id = member_u.id
+                WHERE member_u.username = ANY($1)
+                ORDER BY m.created_at DESC
+                LIMIT 10
+            """
+            targeted_rows = await connection.fetch(targeted_query, mentioned_users)
+
+    # Merge results without duplicates, prioritizing targeted user messages then semantic matches
+    seen_ids = set()
+    combined_rows = []
+    for r in list(targeted_rows) + list(rows):
+        if r["id"] not in seen_ids:
+            seen_ids.add(r["id"])
+            combined_rows.append(r)
+
+    if not combined_rows:
         return "No semantically relevant messages found in database archives."
 
-    lines = [
-        f"[{r['created_at'].strftime('%Y-%m-%d %H:%M')}] {r['username']}: {r['content']} (relevance: {1 - r['distance']:.2f})"
-        for r in rows
-    ]
+    lines = []
+    for r in combined_rows:
+        c_type = r["channel_type"]
+        if c_type == "DIRECT":
+            channel_info = f"DM [participants: {r['participants']}]"
+        else:
+            channel_info = f"Salon {r['channel_name']} ({c_type})"
+
+        created = r["created_at"].strftime("%Y-%m-%d %H:%M")
+        dist = r["distance"]
+        relevance_str = f"relevance: {1 - dist:.2f}" if dist > 0 else "direct match"
+        lines.append(f"[{created}] ({channel_info}) {r['username']}: {r['content']} ({relevance_str})")
+
     return "Relevant context extracted from archives:\n" + "\n".join(lines)
 
 

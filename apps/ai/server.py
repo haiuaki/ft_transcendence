@@ -73,7 +73,7 @@ async def health_check():
     return {"status": "ok"}
 
 @app.post("/stream")
-@limiter.limit("3/minute")
+@limiter.limit("20/minute")
 async def stream_ai(request: Request, body: PromptRequest):
     if not body.prompt.strip():
         raise HTTPException(status_code=400, detail="Prompt cannot be empty")
