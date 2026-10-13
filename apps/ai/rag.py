@@ -132,25 +132,34 @@ async def get_relevant_context(
     seen_ids = set()
     combined_rows = []
     for r in list(targeted_rows) + list(rows):
-        if r["id"] not in seen_ids:
-            seen_ids.add(r["id"])
-            combined_rows.append(r)
+        row_id = r.get("id") if isinstance(r, dict) else getattr(r, "id", None)
+        if row_id is not None:
+            if row_id in seen_ids:
+                continue
+            seen_ids.add(row_id)
+        combined_rows.append(r)
 
     if not combined_rows:
         return "No semantically relevant messages found in database archives."
 
     lines = []
     for r in combined_rows:
-        c_type = r["channel_type"]
-        if c_type == "DIRECT":
-            channel_info = f"DM [participants: {r['participants']}]"
-        else:
-            channel_info = f"Salon {r['channel_name']} ({c_type})"
+        c_type = r.get("channel_type") if isinstance(r, dict) else getattr(r, "channel_type", None)
+        c_name = r.get("channel_name") if isinstance(r, dict) else getattr(r, "channel_name", "")
+        participants = r.get("participants") if isinstance(r, dict) else getattr(r, "participants", "")
 
+        if c_type == "DIRECT":
+            channel_info = f"DM [participants: {participants}]"
+        elif c_name:
+            channel_info = f"Salon {c_name} ({c_type})"
+        else:
+            channel_info = ""
+
+        prefix = f"({channel_info}) " if channel_info else ""
         created = r["created_at"].strftime("%Y-%m-%d %H:%M")
         dist = r["distance"]
         relevance_str = f"relevance: {1 - dist:.2f}" if dist > 0 else "direct match"
-        lines.append(f"[{created}] ({channel_info}) {r['username']}: {r['content']} ({relevance_str})")
+        lines.append(f"[{created}] {prefix}{r['username']}: {r['content']} ({relevance_str})")
 
     return "Relevant context extracted from archives:\n" + "\n".join(lines)
 
