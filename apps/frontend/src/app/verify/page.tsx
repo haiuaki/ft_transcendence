@@ -21,7 +21,7 @@ const VerifyContent = () => {
             try {
                 await userService.verify(token);
                 setStatus("success");
-            } catch (e) {
+            } catch {
                 setStatus("error")
             }
         }

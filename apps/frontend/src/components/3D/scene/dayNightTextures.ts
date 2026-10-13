@@ -180,7 +180,7 @@ export function createDayNightTextures(
 			}
 			blend.value = 0;
 			setTextureMode(mode);
-		} catch (error)
+		} catch
 		{
 			if (!disposed)
 			{
@@ -218,7 +218,7 @@ export function createDayNightTextures(
 
 			setTexturesReady(true);
 			await switchMode("day");
-		} catch (error)
+		} catch
 		{
 			if (disposed)
 			{

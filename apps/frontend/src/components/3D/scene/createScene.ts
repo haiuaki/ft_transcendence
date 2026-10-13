@@ -79,7 +79,7 @@ export function createScene(container: HTMLDivElement, callbacks: SceneCallbacks
 		centerCameraOnModel(model, camera, controls);
 	}
 
-	function handleModelError(error: unknown): void
+	function handleModelError(): void
 	{
 		if (!disposed)
 		{
