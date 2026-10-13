@@ -180,11 +180,10 @@ export function createDayNightTextures(
 			}
 			blend.value = 0;
 			setTextureMode(mode);
-		} catch (error)
+		} catch
 		{
 			if (!disposed)
 			{
-				console.error("Could not load scene textures:", error);
 				setTextureError("Could not load textures. Please try again.");
 			}
 		} finally
@@ -219,14 +218,12 @@ export function createDayNightTextures(
 
 			setTexturesReady(true);
 			await switchMode("day");
-		} catch (error)
+		} catch
 		{
 			if (disposed)
 			{
 				return;
 			}
-
-			console.error("Could not preload day/night textures:", error);
 			setTexturesLoading(false);
 			setTextureError("Could not load all textures. Reload the page to try again.");
 		}

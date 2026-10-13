@@ -35,7 +35,7 @@ export default function InputField({
           </p>
         )}
       </div>
-      <div className={`flex items-center justify-between gap-2 w-full ring-1 ring-[#dedede] focus-within:ring-black/80 rounded-md ${disabled ? "bg-black/5 cursor-not-allowed" : ""}`}>
+      <div className={`flex items-center justify-between gap-2 w-full ring-1 ring-ui-line focus-within:ring-black/80 rounded-md ${disabled ? "bg-black/5 cursor-not-allowed" : ""}`}>
         <input
           disabled={disabled}
           placeholder={placeholder}

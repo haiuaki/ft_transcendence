@@ -139,12 +139,12 @@ function FriendsContent() {
         </div>
       </div>
       <div className="flex items-center gap-2">
-        <div className="flex items-center justify-between gap-2 w-full ring-1 ring-[#dedede] focus-within:ring-black/80 rounded-md pl-2">
+        <div className="flex items-center justify-between gap-2 w-full ring-1 ring-ui-line focus-within:ring-black/80 rounded-md pl-2">
           <Search size={12} className="shrink-0" />
           <input placeholder={"Search a friend"} value={query} onChange={(e) => updateQuery(e.target.value)} className="w-full py-2 outline-none text-sm" />
         </div>
       </div>
-      <div className="h-[0.5px] w-full bg-[#dedede]" />
+      <div className="h-[0.5px] w-full bg-ui-line" />
       {isLoading && <div className="mt-20 flex flex-col items-center gap-2">
         <Loader2 className="animate-spin" size={24} />
         <p>Loading...</p>
@@ -160,7 +160,7 @@ function FriendsContent() {
             <Link className="hover:underline" href={`/users/${item.username}?from=friends`}>{item.username}</Link>
           </div>
           <div className="flex items-center gap-2">
-            <div className="cursor-pointer flex items-center gap-2 ring-1 ring-[#dedede] p-2 text-sm rounded-md font-semibold" onClick={() => denyRequest(item.username)}>
+            <div className="cursor-pointer flex items-center gap-2 ring-1 ring-ui-line p-2 text-sm rounded-md font-semibold" onClick={() => denyRequest(item.username)}>
               <p>Deny</p>
             </div>
             <div className="cursor-pointer flex items-center gap-2 text-white bg-black p-2 text-sm rounded-md font-semibold" onClick={() => acceptRequest(item.username)}>
@@ -182,7 +182,7 @@ function FriendsContent() {
             <Link className="hover:underline" href={`/users/${item.username}?from=friends`}>{item.username}</Link>
           </div>
           <div className="flex items-center gap-2">
-            <Link className="cursor-pointer flex items-center gap-2 ring-1 ring-[#dedede] p-2 text-sm rounded-md font-semibold" href={`/chat/${item.username}`}>
+            <Link className="cursor-pointer flex items-center gap-2 ring-1 ring-ui-line p-2 text-sm rounded-md font-semibold" href={`/chat/${item.username}`}>
               <p>Chat</p>
             </Link>
             <div className="cursor-pointer flex items-center gap-2  p-2 text-sm rounded-md font-semibold" onClick={() => setFriendToRemove(item)}>

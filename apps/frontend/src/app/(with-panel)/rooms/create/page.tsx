@@ -20,7 +20,7 @@ interface ModelMenuProps {
 
 const ModelMenu = ({ ref, models, selectedModelId, onSelect, onClose }: ModelMenuProps) => {
   return (
-    <DynamicModalTemplate ref={ref} className="text-black w-full max-w-[400px] ring-1 ring-[#dedede] bg-white rounded-md p-2" onClose={onClose}>
+    <DynamicModalTemplate ref={ref} className="text-black w-full max-w-[400px] ring-1 ring-ui-line bg-white rounded-md p-2" onClose={onClose}>
       {models.map((model, idx) => (
         <div key={idx} className="cursor-pointer flex items-center justify-between p-2 hover:bg-black/5 rounded-md text-sm" onClick={() => onSelect(model.id)}>
           <div className="flex items-center gap-2">
@@ -70,7 +70,7 @@ export default function CreateRoom() {
       <h1 className="text-3xl font-semibold">Create a room</h1>
       <div className="flex flex-col gap-2">
         <p className="font-semibold text-sm">Room model</p>
-        <div ref={selectedModelRef} className="cursor-pointer flex items-center justify-between ring-1 ring-[#dedede] rounded-md p-2 text-sm" onClick={() => setIsModelMenuOpen(!isModelMenuOpen)}>
+        <div ref={selectedModelRef} className="cursor-pointer flex items-center justify-between ring-1 ring-ui-line rounded-md p-2 text-sm" onClick={() => setIsModelMenuOpen(!isModelMenuOpen)}>
           <div className="flex items-center gap-2">
             <p className="font-semibold">{currentModel?.name}</p>
             <p className="text-xs">{currentModel?.max_capacity} seats</p>

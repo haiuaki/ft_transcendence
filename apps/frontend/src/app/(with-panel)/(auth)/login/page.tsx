@@ -85,14 +85,14 @@ function LogInContent() {
       <div className="flex flex-col gap-4 w-full">
         {oauth.map((item, idx) => {
           return (
-            <a key={idx} href={item.href} className="w-full h-10 flex items-center justify-center gap-2 ring-1 ring-[#dedede] hover:bg-black/3 rounded-md ">
+            <a key={idx} href={item.href} className="w-full h-10 flex items-center justify-center gap-2 ring-1 ring-ui-line hover:bg-black/3 rounded-md ">
               {typeof item.icon === "string" ? <Image src={"/img/42.png"} alt="42" width={32} height={32} /> : <item.icon size={16} />}
               <p className="text-sm font-semibold">{item.text}</p>
             </a>
           )
         })}
       </div>
-      <div className="h-[0.5px] w-full bg-[#dedede]" />
+      <div className="h-[0.5px] w-full bg-ui-line" />
       <div className="flex flex-col gap-5">
         {inputs.map((item, idx) => {
           return <InputField key={idx} title={item.title} maxLength={item.maxLength} value={item.value} onChange={item.onChange} type={item.isPassword ? "password" : "text"} />
