@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { createScene } from "./scene/createScene";
 import type { SwitchMode, TextureMode } from "./scene/types";
+import { useAuth } from "@/src/context/AuthContext";
+import roomService, { RoomMember } from "@/src/services/roomService";
 import SceneLoading from "./ui/SceneLoading";
 import SceneWindows from "./ui/SceneWindows";
 import { ArrowUp, MessageCircle, X } from "lucide-react";
@@ -189,15 +191,55 @@ export default function ThreeScene({ roomId = null }: { roomId?: string | null }
 				setSelectedGroup(group);
 			},
 		});
+		sceneRef.current = scene;
 		switchModeRef.current = scene.switchMode;
 
+<<<<<<< HEAD
 		return () => {
+=======
+		return () =>
+		{
+			sceneRef.current = null;
+>>>>>>> eb19950 (feat: users turn black when seat is empty)
 			switchModeRef.current = null;
 			scene.dispose();
 		};
 	}, [setPanelOpen]);
 
+<<<<<<< HEAD
 	function closeWindow(): void {
+=======
+    const members = occupancy && occupancy.roomId === roomId ? occupancy.members : emptyMembers;
+    const membersLoading = Boolean(roomId && occupancy?.roomId !== roomId);
+    const membersError = occupancy && occupancy.roomId === roomId ? occupancy.error : "";
+
+    useEffect(() => {
+        sceneRef.current?.setOccupied(members.map(() => true));
+    }, [members]);
+
+    useEffect(() => {
+        sceneRef.current?.setOccupied([]);
+        if (!token || !roomId) return;
+        const controller = new AbortController();
+        let timer: ReturnType<typeof setTimeout>;
+        const refresh = async () => {
+            try {
+                const next = await roomService.members(token, roomId, controller.signal);
+                if (controller.signal.aborted) return;
+                setOccupancy({ roomId, members: next, error: "" });
+            } catch (e) {
+                if (controller.signal.aborted) return;
+                setOccupancy((prev) => ({ roomId, members: prev?.roomId === roomId ? prev.members : [], error: e instanceof Error ? e.message : "Failed to fetch room members" }));
+            }
+            timer = setTimeout(refresh, 3000);
+        };
+        void refresh();
+        return () => { controller.abort(); clearTimeout(timer); };
+    }, [token, roomId]);
+
+	function closeWindow(): void
+	{
+>>>>>>> eb19950 (feat: users turn black when seat is empty)
 		setSelectedGroup(null);
 	}
 
@@ -251,7 +293,11 @@ export default function ThreeScene({ roomId = null }: { roomId?: string | null }
 
 			{sceneLoadedOnce && roomId && <RoomChat roomId={roomId} />}
 
+<<<<<<< HEAD
 			<SceneWindows roomId={roomId ?? undefined} selectedGroup={selectedGroup} onClose={closeWindow} />
+=======
+			<SceneWindows members={members} loading={membersLoading} error={membersError} selectedGroup={selectedGroup} onClose={closeWindow} />
+>>>>>>> eb19950 (feat: users turn black when seat is empty)
 		</>
 	);
 }

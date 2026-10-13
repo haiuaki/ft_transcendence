@@ -25,6 +25,8 @@ export default function HomeScene() {
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.enablePan = false;
+    controls.minDistance = 2;
+    controls.maxDistance = 6;
 
     const model = new THREE.Group();
     scene.add(model);
