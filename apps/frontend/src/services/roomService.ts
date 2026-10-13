@@ -13,6 +13,13 @@ export interface Room {
     created_at: string;
 }
 
+export interface RoomMember {
+    username: string;
+    avatar_url: string | null;
+    role: string;
+    joined_at: string;
+}
+
 export interface RoomModel {
     id: string;
     name: string;
@@ -28,6 +35,16 @@ export class ApiError extends Error {
 
 
 const roomService = {
+    members: async (token: string, roomId: string, signal?: AbortSignal): Promise<RoomMember[]> => {
+        const response = await fetch(`${URL}/rooms/members?room_id=${encodeURIComponent(roomId)}`, {
+            headers: { Authorization: `Bearer ${token}` },
+            signal,
+            cache: "no-store",
+        });
+        if (!response.ok)
+            throw new ApiError(await response.text() || "Failed to fetch room members", response.status);
+        return response.json();
+    },
     rooms: async (token: string): Promise<Room[]> => {
         if (!token.trim())
             throw new Error("Token is required")
