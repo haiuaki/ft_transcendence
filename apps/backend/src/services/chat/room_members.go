@@ -119,9 +119,6 @@ func JoinRoom(dbPool *pgxpool.Pool) http.HandlerFunc {
 		insertSQL := `
 			INSERT INTO channel_members (channel_id, user_id, role, status)
 			VALUES ($1, (SELECT id FROM users WHERE email = $2), 'MEMBER', 'ACTIVE')
-			ON CONFLICT (channel_id, user_id) DO UPDATE
-			SET status = 'ACTIVE', joined_at = NOW()
-			WHERE channel_members.role <> 'BANNED'
 		`
 
 		_, err = dbPool.Exec(context.Background(), insertSQL, req.ChannelID, email)

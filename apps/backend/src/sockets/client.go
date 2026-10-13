@@ -140,14 +140,12 @@ func (c *Client) readPump() {
 			// Ignore message if not authenticated
 			if !c.IsAuthenticated {
 				log.Println("Unauthenticated user tried to send a message.")
-				c.sendChatError(0, "unauthenticated", "Not authenticated yet, try again.")
 				continue
 			}
 
 			// Parse the chat message and send to the Hub
 			var chatData ChatMessagePayload
 			if err := json.Unmarshal(wsMsg.Payload, &chatData); err != nil {
-				c.sendChatError(0, "invalid_payload", "Invalid message.")
 				continue
 			}
 
@@ -157,7 +155,6 @@ func (c *Client) readPump() {
 			// Prevent malicious scripts from filling up the database
 			if len(chatData.Message) == 0 || len(chatData.Message) > 500 {
 				log.Printf("Security: Message from %s too long or empty.", c.Email)
-				c.sendChatError(chatData.RoomID, "invalid_length", "Message must be between 1 and 500 characters.")
 				continue
 			}
 
@@ -175,7 +172,6 @@ func (c *Client) readPump() {
 			rows, err := c.dbPool.Query(context.Background(), roomQuery, chatData.RoomID)
 			if err != nil {
 				log.Println("Database error retrieving active room members:", err)
-				c.sendChatError(chatData.RoomID, "server_error", "Could not send the message.")
 				continue
 			}
 
@@ -199,7 +195,6 @@ func (c *Client) readPump() {
 			// Enforce spatial consistency: sender must be actively seating in the room
 			if !isSenderInRoom {
 				log.Printf("WebSocket security warning: Client %s attempted to broadcast to unjoined room %d.", c.Email, chatData.RoomID)
-				c.sendChatError(chatData.RoomID, "not_in_room", "You are not in this room anymore.")
 				continue
 			}
 
@@ -239,7 +234,6 @@ func (c *Client) readPump() {
 			)
 			if err != nil {
 				log.Println("Database error: Failed to save chat history:", err)
-				c.sendChatError(chatData.RoomID, "server_error", "Could not send the message.")
 				continue
 			}
 
@@ -258,16 +252,6 @@ func (c *Client) readPump() {
 				Payload:      safeRawMessage,
 			}
 		}
-	}
-}
-
-func (c *Client) sendChatError(roomID int, code string, message string) {
-	payload, _ := json.Marshal(map[string]any{"room_id": roomID, "code": code, "message": message})
-	raw, _ := json.Marshal(WSMessage{Type: "chat_error", Payload: payload})
-	select {
-	case c.send <- raw:
-	default:
-		log.Printf("Send buffer full, could not report chat error to %s.", c.Email)
 	}
 }
 
