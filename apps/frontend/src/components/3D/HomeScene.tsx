@@ -5,14 +5,19 @@ import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { useRoomControls } from "@/src/context/RoomControlsContext";
+import { backgroundColors } from "./scene/config";
 
 export default function HomeScene() {
   const ref = useRef<HTMLDivElement>(null);
+  const backgroundRef = useRef<THREE.Color | null>(null);
+  const { nightMode } = useRoomControls();
 
   useEffect(() => {
     const container = ref.current!;
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color("black");
+    scene.background = new THREE.Color("white");
+    backgroundRef.current = scene.background;
 
     const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
     camera.position.set(0, 0.5, 4);
@@ -66,6 +71,7 @@ export default function HomeScene() {
 
     return () => {
       disposed = true;
+      backgroundRef.current = null;
       renderer.setAnimationLoop(null);
       observer.disconnect();
       controls.dispose();
@@ -82,6 +88,10 @@ export default function HomeScene() {
       renderer.domElement.remove();
     };
   }, []);
+
+  useEffect(() => {
+    backgroundRef.current?.set(nightMode ? backgroundColors.night : 0xffffff);
+  }, [nightMode]);
 
   return <div ref={ref} className="three-scene" />;
 }
