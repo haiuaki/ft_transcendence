@@ -31,12 +31,12 @@ const ConfirmRemoveFriendModal = ({ onClose, user, token, onSuccess }: ConfirmRe
     return (
         <CenterModalTemplate onClose={onClose} className="flex flex-col gap-5 rounded-2xl text-black w-full max-w-[500px] bg-white p-7" overlay="bg-black/20">
             <h1 className="text-2xl font-semibold">Remove {user.username}</h1>
-            <div className="flex items-center gap-2 w-full ring-1 ring-[#dedede] rounded-md p-2">
+            <div className="flex items-center gap-2 w-full ring-1 ring-ui-line rounded-md p-2">
                 <Image src={user.avatar_url || "/img/avatar.jpg"} alt={user.username} width={32} height={32} unoptimized className="w-8 h-8 rounded-full object-cover shrink-0" />
                 <p>{user.username}</p>
             </div>
             <div className="flex items-center justify-end gap-2">
-                <div className="cursor-pointer flex items-center gap-2 ring-1 ring-[#dedede] p-2 text-sm rounded-md font-semibold" onClick={onClose}>
+                <div className="cursor-pointer flex items-center gap-2 ring-1 ring-ui-line p-2 text-sm rounded-md font-semibold" onClick={onClose}>
                     <p>Cancel</p>
                 </div>
                 <button disabled={isLoading} className="cursor-pointer flex items-center gap-2 text-white bg-black disabled:bg-black/80 p-2 text-sm rounded-md font-semibold" onClick={handleRemoveFriend}>

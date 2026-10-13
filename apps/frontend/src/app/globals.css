@@ -5,6 +5,26 @@
   --foreground: #171717;
 }
 
+@theme {
+  --color-ui-line: #dedede;
+  --color-ui-hover: #dededc;
+  --color-ui-panel: #ececeb;
+  --color-ui-soft: #efefef;
+}
+
+/* Night mode: swapping white/black remaps every bg-white, text-black, bg-black/5... utility at once */
+.night {
+  --color-white: #121212;
+  --color-black: #f2f2f2;
+  --color-ui-line: #2e2e2e;
+  --color-ui-hover: #2a2a29;
+  --color-ui-panel: #1b1b1b;
+  --color-ui-soft: #232323;
+  --background: #0a0a0a;
+  --foreground: #ededed;
+  color-scheme: dark;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

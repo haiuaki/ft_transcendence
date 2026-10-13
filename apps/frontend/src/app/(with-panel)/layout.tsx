@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <main className="flex h-screen w-full overflow-hidden bg-[#ececeb] text-black">
+    <main className="flex h-screen w-full overflow-hidden bg-ui-panel text-black">
       <PanelShell >
         {children}
       </PanelShell>

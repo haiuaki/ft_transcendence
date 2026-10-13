@@ -88,12 +88,12 @@ function RoomsContent() {
     <div className="flex flex-col gap-5 max-w-[550px] w-full">
       <h1 className="text-3xl font-semibold">Browse rooms</h1>
       <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center justify-between gap-2 w-full ring-1 ring-[#dedede] focus-within:ring-black/80 rounded-md pl-2">
+        <div className="flex items-center justify-between gap-2 w-full ring-1 ring-ui-line focus-within:ring-black/80 rounded-md pl-2">
           <Search size={12} className="shrink-0" />
           <input placeholder={"Search a room"} value={query} onChange={(e) => updateQuery(e.target.value)} className="w-full py-2 outline-none text-sm" />
         </div>
       </div>
-      <div className="h-[0.5px] w-full bg-[#dedede]" />
+      <div className="h-[0.5px] w-full bg-ui-line" />
       {filteredRooms.length > 0 ?
         <div className="flex flex-col">
           {isLoading ? (

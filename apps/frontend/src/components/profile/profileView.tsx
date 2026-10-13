@@ -145,7 +145,7 @@ const ProfileView = ({ username, backHref, compact = false }: ProfileViewProps) 
             <p>Add friend</p>
           </button>}
           {userProfile.friendship_status === "pending_received" && <div className="flex items-center gap-2">
-            <button disabled={friendAction !== null} className="cursor-pointer flex items-center gap-2 ring-1 ring-[#dedede] hover:bg-black/5 disabled:opacity-60 p-2 text-sm rounded-md font-semibold" onClick={() => runFriendAction("deny", () => friendService.deny(token, userProfile.username), "none")}>
+            <button disabled={friendAction !== null} className="cursor-pointer flex items-center gap-2 ring-1 ring-ui-line hover:bg-black/5 disabled:opacity-60 p-2 text-sm rounded-md font-semibold" onClick={() => runFriendAction("deny", () => friendService.deny(token, userProfile.username), "none")}>
               {friendAction === "deny" ? <Loader2 size={16} className="animate-spin" /> : <X size={16} />}
               <p>Deny</p>
             </button>
@@ -154,7 +154,7 @@ const ProfileView = ({ username, backHref, compact = false }: ProfileViewProps) 
               <p>Accept</p>
             </button>
           </div>}
-          {userProfile.friendship_status === "pending_sent" && <div className="flex items-center gap-2 ring-1 ring-[#dedede] text-black/60 p-2 text-sm rounded-md font-semibold">
+          {userProfile.friendship_status === "pending_sent" && <div className="flex items-center gap-2 ring-1 ring-ui-line text-black/60 p-2 text-sm rounded-md font-semibold">
             <Clock size={16} />
             <p>Request sent</p>
           </div>}
@@ -162,7 +162,7 @@ const ProfileView = ({ username, backHref, compact = false }: ProfileViewProps) 
       </div>
       <div className="flex flex-col gap-4">
         <p className="text-sm font-semibold">Dashboard</p>
-        <div className="h-[0.5px] w-full bg-[#dedede]" />
+        <div className="h-[0.5px] w-full bg-ui-line" />
         <div className="flex items-center gap-4 w-full">
           <div className="flex-1 flex flex-col gap-5 bg-black/5 rounded-xl p-5">
             <p className="text-xs font-semibold text-black/80">Total message sent</p>
@@ -179,13 +179,13 @@ const ProfileView = ({ username, backHref, compact = false }: ProfileViewProps) 
 
         <div className="flex flex-col gap-4">
           <p className="text-sm font-semibold">Settings</p>
-          <div className="h-[0.5px] w-full bg-[#dedede]" />
+          <div className="h-[0.5px] w-full bg-ui-line" />
           <div className="flex items-center justify-between gap-4">
             <div className="flex flex-col">
               <p className="text-sm font-semibold">Two-factor authentication</p>
               <p className="text-xs text-black/60">Add an extra layer of security to your account at sign-in.</p>
             </div>
-            <button className="cursor-pointer text-sm p-2 rounded-md ring ring-[#dedede] hover:bg-black/5 shrink-0" onClick={() => setTwoFactorMode(user?.is_2fa_enabled ? "disable" : "enable")}>
+            <button className="cursor-pointer text-sm p-2 rounded-md ring ring-ui-line hover:bg-black/5 shrink-0" onClick={() => setTwoFactorMode(user?.is_2fa_enabled ? "disable" : "enable")}>
               <p>{user?.is_2fa_enabled ? "Disable" : "Enable"}</p>
             </button>
           </div>
@@ -194,7 +194,7 @@ const ProfileView = ({ username, backHref, compact = false }: ProfileViewProps) 
               <p className="text-sm font-semibold">Sign out</p>
               <p className="text-xs text-black/60">End your current session on this device.</p>
             </div>
-            <button className="cursor-pointer text-sm p-2 rounded-md ring ring-[#dedede] hover:bg-black/5 shrink-0" onClick={() => logout()}>
+            <button className="cursor-pointer text-sm p-2 rounded-md ring ring-ui-line hover:bg-black/5 shrink-0" onClick={() => logout()}>
               <p>Sign out</p>
             </button>
           </div>

@@ -114,7 +114,8 @@ export function createScene(container: HTMLDivElement, callbacks: SceneCallbacks
 		outlinePass.resolution.set(width, height);
 	}
 
-	window.addEventListener("resize", handleResize);
+	const resizeObserver = new ResizeObserver(handleResize);
+	resizeObserver.observe(container);
 
 	function animate(): void
 	{
@@ -133,7 +134,7 @@ export function createScene(container: HTMLDivElement, callbacks: SceneCallbacks
 		disposed = true;
 		textures.dispose();
 		renderer.setAnimationLoop(null);
-		window.removeEventListener("resize", handleResize);
+		resizeObserver.disconnect();
 		interactions.dispose();
 		controls.dispose();
 		composer.dispose();

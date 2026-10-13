@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import decodeHtml from "@/src/lib/decodeHtml";
 import { useAuth } from "@/src/context/AuthContext";
 import Link from "next/link";
+import { useRoomControls, useRoomControlsActions } from "@/src/context/RoomControlsContext";
 
 
 const RoomChat = ({ roomId }: { roomId?: string }) => {
@@ -28,7 +29,7 @@ const RoomChat = ({ roomId }: { roomId?: string }) => {
 		if (!token || !roomId) return;
 		chatService.messages(token, Number(roomId))
 			.then(setMessages)
-			.catch(() => toast.error("Failed to load messages"));
+			.catch((e) => toast.error(e instanceof Error ? e.message : "Failed to load messages"));
 	}, [token, roomId]);
 
 	useEffect(() => {
@@ -64,16 +65,17 @@ const RoomChat = ({ roomId }: { roomId?: string }) => {
 	return (
 		<div
 			onClick={() => !open && setOpen(true)}
-			className={`fixed ring-1 ring-[#dedede] shadow-md z-10 bg-white overflow-hidden transition-all duration-300 ease-in-out ${open ? "bottom-5 right-5 w-[400px] h-[550px] rounded-xl" : "bottom-5 right-5 w-9 h-9 rounded-md cursor-pointer hover:bg-black/5"}`} >
+			className={`fixed ring-1 ring-ui-line shadow-md z-10 bg-white overflow-hidden transition-all duration-300 ease-in-out ${open ? "bottom-5 right-5 w-[400px] h-[550px] rounded-xl" : "bottom-5 right-5 h-9 w-20 rounded-md cursor-pointer hover:bg-black/5"}`} >
 			{!open ? (
-				<div className="w-full h-full flex items-center justify-center">
+				<div className="w-full h-full flex items-center justify-center gap-2 bg-white">
 					<MessageCircle size={16} />
+					<p className="font-semibold">Chat</p>
 				</div>
 			) : (
 				<div className="p-4 h-full flex flex-col justify-between">
 					<div className="flex-1 min-h-0 flex flex-col gap-2">
 						<button className="cursor-pointer w-fit p-1 rounded-md hover:bg-black/5" onClick={() => setOpen(false)}><X size={16} /></button>
-						<div className="h-[0.5px] w-full bg-[#dedede]" />
+						<div className="h-[0.5px] w-full bg-ui-line" />
 						<div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar-none flex flex-col gap-1 pr-1">
 							{messages.map((msg, idx) => {
 								const prev = messages[idx - 1];
@@ -87,7 +89,7 @@ const RoomChat = ({ roomId }: { roomId?: string }) => {
 										{!isMine && prev?.username !== msg.username && (
 											<Link href={`/profile?username=${msg.username}`} target="_blank" className="ml-1 mb-0.5 text-xs text-black/40 hover:underline">{msg.username}</Link>
 										)}
-										<p className={`px-3 py-2 text-sm whitespace-pre-wrap [overflow-wrap:anywhere] rounded-2xl ${isMine ? "bg-black text-white rounded-br-md" : "bg-[#efefef] rounded-bl-md"}`}>
+										<p className={`px-3 py-2 text-sm whitespace-pre-wrap [overflow-wrap:anywhere] rounded-2xl ${isMine ? "bg-black text-white rounded-br-md" : "bg-ui-soft rounded-bl-md"}`}>
 											{decodeHtml(msg.content)}
 										</p>
 										{!sameAsNext && (
@@ -101,7 +103,7 @@ const RoomChat = ({ roomId }: { roomId?: string }) => {
 							<div ref={bottomRef} />
 						</div>
 					</div>
-					<div className="shrink-0 flex items-end gap-2 ring ring-[#dedede] p-2 pl-4 rounded-3xl">
+					<div className="shrink-0 flex items-end gap-2 ring ring-ui-line p-2 pl-4 rounded-3xl">
 						<textarea
 							className="flex-1 w-full resize-none outline-none text-sm py-1.5 overflow-y-auto custom-scrollbar-none"
 							rows={1}
@@ -124,16 +126,26 @@ const RoomChat = ({ roomId }: { roomId?: string }) => {
 
 	)
 }
-export default function ThreeScene({ roomId = null }: { roomId?: string | null }) {
+
+export default function ThreeScene({ roomId = null, onLeave }: { roomId?: string | null, onLeave?: () => void }) {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const switchModeRef = useRef<SwitchMode | null>(null);
 	const [textureMode, setTextureMode] = useState<TextureMode>("day");
 	const [texturesLoading, setTexturesLoading] = useState(true);
+	// texturesLoading goes back to true on every mode switch; the chat must outlive that
+	const [sceneLoadedOnce, setSceneLoadedOnce] = useState(false);
+
+	useEffect(() => {
+		if (!texturesLoading) {
+			setSceneLoadedOnce(true);
+		}
+	}, [texturesLoading]);
 	const [texturesReady, setTexturesReady] = useState(false);
 	const [transitioning, setTransitioning] = useState(false);
 	const [textureError, setTextureError] = useState<string | null>(null);
 
 	const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
+	const { setControls, setPanelOpen } = useRoomControlsActions();
 
 	useEffect(() => {
 		const container = containerRef.current;
@@ -147,7 +159,13 @@ export default function ThreeScene({ roomId = null }: { roomId?: string | null }
 			setTexturesReady,
 			setTransitioning,
 			setTextureError,
-			setSelectedGroup,
+			setSelectedGroup: (group) => {
+				if (group === "menu") {
+					setPanelOpen(true);
+					return;
+				}
+				setSelectedGroup(group);
+			},
 		});
 		switchModeRef.current = scene.switchMode;
 
@@ -155,25 +173,50 @@ export default function ThreeScene({ roomId = null }: { roomId?: string | null }
 			switchModeRef.current = null;
 			scene.dispose();
 		};
-	}, []);
+	}, [setPanelOpen]);
 
 	function closeWindow(): void {
 		setSelectedGroup(null);
 	}
 
-	function handleModeClick(): void {
-		const changeMode = switchModeRef.current;
-		if (!changeMode) {
+	const { nightMode } = useRoomControls();
+	const textureModeRef = useRef(textureMode);
+
+	useEffect(() => {
+		textureModeRef.current = textureMode;
+	}, [textureMode]);
+
+	// the panel toggle drives the scene; only nightMode and readiness trigger a switch, so a failed load is not retried in a loop
+	useEffect(() => {
+		if (!texturesReady) {
 			return;
 		}
-
-		let nextMode: TextureMode = "day";
-		if (textureMode === "day") {
-			nextMode = "night";
+		const wanted: TextureMode = nightMode ? "night" : "day";
+		if (textureModeRef.current === wanted) {
+			return;
 		}
+		void switchModeRef.current?.(wanted);
+	}, [nightMode, texturesReady]);
 
-		void changeMode(nextMode);
-	}
+	useEffect(() => {
+		if (!roomId) {
+			return;
+		}
+		setControls({
+			ready: texturesReady && !transitioning,
+			onLeave,
+		});
+	}, [roomId, texturesReady, transitioning, onLeave, setControls]);
+
+	useEffect(() => {
+		if (!roomId) {
+			return;
+		}
+		return () => {
+			setControls(null);
+			setPanelOpen(false);
+		};
+	}, [roomId, setControls, setPanelOpen]);
 
 	return (
 		<>
@@ -186,17 +229,7 @@ export default function ThreeScene({ roomId = null }: { roomId?: string | null }
 				{texturesLoading && <SceneLoading />}
 			</div>
 
-			{/* {!texturesLoading && (
-				<SceneModeButton
-					textureMode={textureMode}
-					texturesReady={texturesReady}
-					transitioning={transitioning}
-					textureError={textureError}
-					onClick={handleModeClick}
-				/>
-			)}
- */}
-			{!texturesLoading && roomId && <RoomChat roomId={roomId} />}
+			{sceneLoadedOnce && roomId && <RoomChat roomId={roomId} />}
 
 			<SceneWindows roomId={roomId} selectedGroup={selectedGroup} onClose={closeWindow} />
 		</>
