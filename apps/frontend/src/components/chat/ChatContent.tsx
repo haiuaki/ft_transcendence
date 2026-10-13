@@ -132,7 +132,7 @@ export default function ChatContent({ username, backHref = "/friends", compact =
 
               return (
                 <div key={msg.id} className={`flex flex-col max-w-[75%] ${isMine ? "self-end items-end" : "self-start items-start"}`}>
-                  <p className={`px-3 py-2 text-sm whitespace-pre-wrap break-words rounded-2xl ${isMine ? "bg-black text-white rounded-br-md" : "bg-[#efefef] rounded-bl-md"}`}>
+                  <p className={`px-3 py-2 text-sm whitespace-pre-wrap break-words rounded-2xl ${isMine ? "bg-black text-white rounded-br-md" : "bg-ui-soft rounded-bl-md"}`}>
                     {decodeHtml(msg.content)}
                   </p>
                   {!sameAsNext && <p className="mt-1 mb-2 text-[10px] text-black/40">
@@ -143,7 +143,7 @@ export default function ChatContent({ username, backHref = "/friends", compact =
             })}
             <div ref={bottomRef} />
           </div>
-          <div className="shrink-0 flex items-end gap-2 ring ring-[#dedede] p-2 pl-4 rounded-3xl">
+          <div className="shrink-0 flex items-end gap-2 ring ring-ui-line p-2 pl-4 rounded-3xl">
             <textarea
               className="flex-1 w-full resize-none outline-none text-sm py-1.5 overflow-y-auto custom-scrollbar-none"
               rows={1}

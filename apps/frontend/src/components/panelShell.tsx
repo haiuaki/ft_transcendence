@@ -17,6 +17,7 @@ import RoomControls from "./room/RoomControls";
 export const HomePanel = ({className = ""}) => {
   const { isAuthenticated, user } = useAuth();
   const colors = themeColors;
+  const { currentRoom } = useRoomControls();
   const rooms = [
     { icon: <LayoutGrid size={12} />, title: "Browse rooms", href: "/rooms" },
     { icon: <CirclePlusIcon size={12} />, title: "Create a room", href: "/rooms/create" },
@@ -40,10 +41,21 @@ export const HomePanel = ({className = ""}) => {
           <div className="flex flex-col gap-1">
             {rooms.map((item, idx) => {
               return (
-                <Link key={idx} href={item.href} className="cursor-pointer flex items-center gap-2 p-2 rounded-md hover:bg-ui-hover ">
-                  {item.icon}
-                  <p>{item.title}</p>
-                </Link>
+                <div key={idx} className="flex flex-col">
+                  <Link href={item.href} className="cursor-pointer flex items-center gap-2 p-2 rounded-md hover:bg-ui-hover ">
+                    {item.icon}
+                    <p>{item.title}</p>
+                  </Link>
+                  {idx === 0 && currentRoom && (
+                    <Link
+                      href={`/room/${currentRoom.id}`}
+                      className="flex min-w-0 items-center gap-2 p-2 rounded-md text-sm hover:bg-ui-hover"
+                    >
+                      <span aria-hidden className="mb-2 h-3.5 w-3 shrink-0 rounded-bl-[2px] border-b-2 border-l-2 border-black/30 ml-1" />
+                      <p className="truncate ">{currentRoom.name}</p>
+                    </Link>
+                  )}
+                </div>
               )
             })}
           </div>
@@ -75,7 +87,6 @@ export const HomePanel = ({className = ""}) => {
 const PanelShellInner = ({ children }: { children: React.ReactNode }) => {
   const { controls, panelOpen: open } = useRoomControls();
   const { setPanelOpen } = useRoomControlsActions();
-  // inside a room the panel is a drawer on every screen size, opened from the 3D menu
   const inRoom = controls !== null;
 
   return (

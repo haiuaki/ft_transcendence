@@ -261,7 +261,6 @@ func (c *Client) readPump() {
 	}
 }
 
-// sendChatError tells the sender why a chat message was dropped, instead of failing silently
 func (c *Client) sendChatError(roomID int, code string, message string) {
 	payload, _ := json.Marshal(map[string]any{"room_id": roomID, "code": code, "message": message})
 	raw, _ := json.Marshal(WSMessage{Type: "chat_error", Payload: payload})

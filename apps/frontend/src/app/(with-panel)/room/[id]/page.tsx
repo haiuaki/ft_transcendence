@@ -8,6 +8,7 @@ import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import RoomView from "@/src/components/room/RoomView";
 import InfoView from "@/src/components/room/InfoView";
+import { useRoomControlsActions } from "@/src/context/RoomControlsContext";
 import RoomPasswordView from "@/src/components/room/RoomPasswordView";
 
 type Step = "loading" | "error" | "password_required" | "success"
@@ -16,6 +17,7 @@ const RoomContent = () => {
     const params = useParams<{ id: string }>();
     const { token, isLoading } = useAuth();
     const router = useRouter();
+    const { setCurrentRoom } = useRoomControlsActions();
     const [step, setStep] = useState<Step>("loading");
     const [error, setError] = useState<string | null>(null);
 
@@ -26,7 +28,6 @@ const RoomContent = () => {
             return;
         }
 
-        // the effect can run twice (strict mode, dep changes); only the latest run may join, otherwise two joins race on the backend
         let cancelled = false;
         const fetchRoom = async () => {
             setStep("loading")
@@ -34,9 +35,9 @@ const RoomContent = () => {
                 const rooms: Room[] = await roomService.rooms(token);
                 if (cancelled) return;
                 const roomId = Number(params.id);
-                const currentRoom = rooms.find((item) => item.id === roomId);
+                const found = rooms.find((item) => item.id === roomId);
 
-                if (!currentRoom) {
+                if (!found) {
                     setStep("error");
                     setError("This room doesn't exist or is no longer available.")
                     return;
@@ -44,6 +45,7 @@ const RoomContent = () => {
                 try {
                     await roomService.join(token || "", params.id, undefined);
                     if (cancelled) return;
+                    setCurrentRoom({ id: params.id, name: found.name });
                     toast.success("Successfully joined the room.", { id: "room-joined" });
                     setStep("success");
                 } catch (e) {
@@ -63,7 +65,7 @@ const RoomContent = () => {
 
         fetchRoom();
         return () => { cancelled = true; };
-    }, [isLoading, params.id, token, router]);
+    }, [isLoading, params.id, token, router, setCurrentRoom]);
 
     return (
         <div className="scene-page">

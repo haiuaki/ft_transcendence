@@ -2,14 +2,32 @@
 
 import { DoorOpen, Moon, Sun } from "lucide-react";
 import { motion } from "motion/react";
+import { useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { useRoomControls, useRoomControlsActions } from "@/src/context/RoomControlsContext";
+import { useAuth } from "@/src/context/AuthContext";
+import roomService from "@/src/services/roomService";
 
 const RoomControls = () => {
-    const { controls, nightMode } = useRoomControls();
-    const { setNightMode } = useRoomControlsActions();
+    const { controls, currentRoom, nightMode } = useRoomControls();
+    const { setNightMode, setCurrentRoom } = useRoomControlsActions();
+    const { token } = useAuth();
+    const router = useRouter();
+    const pathname = usePathname();
+    const [leaving, setLeaving] = useState(false);
     const isLight = !nightMode;
-    // the scene is busy loading or blending textures
     const busy = controls !== null && !controls.ready;
+
+    const handleLeave = async () => {
+        if (!currentRoom || leaving) return;
+        setLeaving(true);
+        try {
+            if (token) await roomService.leave(token, currentRoom.id);
+        } catch { }
+        setCurrentRoom(null);
+        setLeaving(false);
+        if (pathname.startsWith("/room/")) router.push("/rooms");
+    };
 
     return (
         <div className="flex flex-col gap-2">
@@ -40,12 +58,12 @@ const RoomControls = () => {
                     </span>
                 </button>
             </div>
-            {controls && (
+            {currentRoom && (
                 <button
                     type="button"
-                    onClick={controls.onLeave}
-                    disabled={!controls.onLeave}
-                    className="cursor-pointer flex items-center gap-2 p-2 rounded-md text-left hover:bg-ui-hover disabled:cursor-not-allowed disabled:opacity-40"
+                    onClick={handleLeave}
+                    disabled={leaving}
+                    className="cursor-pointer flex items-center gap-2 p-2 rounded-md text-left hover:bg-ui-hover disabled:cursor-wait disabled:opacity-40"
                 >
                     <DoorOpen size={12} />
                     <p>Leave room</p>

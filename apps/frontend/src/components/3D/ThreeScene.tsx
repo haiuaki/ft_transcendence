@@ -51,7 +51,6 @@ const RoomChat = ({ roomId }: { roomId?: string }) => {
 			if (data.type === "chat_error" && data.payload.room_id === Number(roomId)) {
 				const failed = lastSentRef.current;
 				lastSentRef.current = null;
-				// we were seated out of the room (socket drop, other tab): sit back down and resend once
 				if (data.payload.code === "not_in_room" && failed && token && !retriedRef.current) {
 					retriedRef.current = true;
 					roomService.join(token, String(roomId), undefined)
@@ -154,12 +153,11 @@ const RoomChat = ({ roomId }: { roomId?: string }) => {
 	)
 }
 
-export default function ThreeScene({ roomId = null, onLeave }: { roomId?: string | null, onLeave?: () => void }) {
+export default function ThreeScene({ roomId = null }: { roomId?: string | null }) {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const switchModeRef = useRef<SwitchMode | null>(null);
 	const [textureMode, setTextureMode] = useState<TextureMode>("day");
 	const [texturesLoading, setTexturesLoading] = useState(true);
-	// texturesLoading goes back to true on every mode switch; the chat must outlive that
 	const [sceneLoadedOnce, setSceneLoadedOnce] = useState(false);
 
 	useEffect(() => {
@@ -213,8 +211,6 @@ export default function ThreeScene({ roomId = null, onLeave }: { roomId?: string
 		textureModeRef.current = textureMode;
 	}, [textureMode]);
 
-	// the panel toggle drives the scene. The initial preload runs its own switchMode("day"), which makes
-	// switchMode ignore calls until it ends, so we also re-check once loading/transition settle
 	useEffect(() => {
 		if (!texturesReady || texturesLoading || transitioning) {
 			return;
@@ -232,9 +228,8 @@ export default function ThreeScene({ roomId = null, onLeave }: { roomId?: string
 		}
 		setControls({
 			ready: texturesReady && !transitioning,
-			onLeave,
 		});
-	}, [roomId, texturesReady, transitioning, onLeave, setControls]);
+	}, [roomId, texturesReady, transitioning, setControls]);
 
 	useEffect(() => {
 		if (!roomId) {
@@ -259,7 +254,7 @@ export default function ThreeScene({ roomId = null, onLeave }: { roomId?: string
 
 			{sceneLoadedOnce && roomId && <RoomChat roomId={roomId} />}
 
-			<SceneWindows roomId={roomId} selectedGroup={selectedGroup} onClose={closeWindow} />
+			<SceneWindows roomId={roomId ?? undefined} selectedGroup={selectedGroup} onClose={closeWindow} />
 		</>
 	);
 }

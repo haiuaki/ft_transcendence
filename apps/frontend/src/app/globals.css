@@ -12,7 +12,6 @@
   --color-ui-soft: #efefef;
 }
 
-/* Night mode: swapping white/black remaps every bg-white, text-black, bg-black/5... utility at once */
 .night {
   --color-white: #121212;
   --color-black: #f2f2f2;
