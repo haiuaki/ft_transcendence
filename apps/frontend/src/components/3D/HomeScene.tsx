@@ -12,7 +12,7 @@ export default function HomeScene() {
   useEffect(() => {
     const container = ref.current!;
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color("white");
+    scene.background = new THREE.Color("black");
 
     const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
     camera.position.set(0, 0.5, 4);

@@ -10,10 +10,8 @@ import SceneWindows from "./ui/SceneWindows";
 import { ArrowUp, MessageCircle, X } from "lucide-react";
 import { useSocket } from "@/src/context/SocketContext";
 import chatService, { Message } from "@/src/services/chatService";
-import roomService from "@/src/services/roomService";
 import { toast } from "sonner";
 import decodeHtml from "@/src/lib/decodeHtml";
-import { useAuth } from "@/src/context/AuthContext";
 import Link from "next/link";
 import { useRoomControls, useRoomControlsActions } from "@/src/context/RoomControlsContext";
 
@@ -154,7 +152,12 @@ const RoomChat = ({ roomId }: { roomId?: string }) => {
 	)
 }
 
+const emptyMembers: RoomMember[] = [];
+
 export default function ThreeScene({ roomId = null }: { roomId?: string | null }) {
+	const { token } = useAuth();
+	const sceneRef = useRef<ReturnType<typeof createScene> | null>(null);
+	const [occupancy, setOccupancy] = useState<{ roomId: string; members: RoomMember[]; error: string } | null>(null);
 	const containerRef = useRef<HTMLDivElement>(null);
 	const switchModeRef = useRef<SwitchMode | null>(null);
 	const [textureMode, setTextureMode] = useState<TextureMode>("day");
@@ -194,21 +197,14 @@ export default function ThreeScene({ roomId = null }: { roomId?: string | null }
 		sceneRef.current = scene;
 		switchModeRef.current = scene.switchMode;
 
-<<<<<<< HEAD
-		return () => {
-=======
 		return () =>
 		{
 			sceneRef.current = null;
->>>>>>> eb19950 (feat: users turn black when seat is empty)
 			switchModeRef.current = null;
 			scene.dispose();
 		};
 	}, [setPanelOpen]);
 
-<<<<<<< HEAD
-	function closeWindow(): void {
-=======
     const members = occupancy && occupancy.roomId === roomId ? occupancy.members : emptyMembers;
     const membersLoading = Boolean(roomId && occupancy?.roomId !== roomId);
     const membersError = occupancy && occupancy.roomId === roomId ? occupancy.error : "";
@@ -239,7 +235,6 @@ export default function ThreeScene({ roomId = null }: { roomId?: string | null }
 
 	function closeWindow(): void
 	{
->>>>>>> eb19950 (feat: users turn black when seat is empty)
 		setSelectedGroup(null);
 	}
 
@@ -293,11 +288,7 @@ export default function ThreeScene({ roomId = null }: { roomId?: string | null }
 
 			{sceneLoadedOnce && roomId && <RoomChat roomId={roomId} />}
 
-<<<<<<< HEAD
-			<SceneWindows roomId={roomId ?? undefined} selectedGroup={selectedGroup} onClose={closeWindow} />
-=======
 			<SceneWindows members={members} loading={membersLoading} error={membersError} selectedGroup={selectedGroup} onClose={closeWindow} />
->>>>>>> eb19950 (feat: users turn black when seat is empty)
 		</>
 	);
 }
