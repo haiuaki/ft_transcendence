@@ -1,12 +1,12 @@
 "use client"
 
-import ThreeScene from "../../components/3D/ThreeScene";
+import HomeScene from "../../components/3D/HomeScene";
 import { Suspense } from "react";
 
 function HomeContent() {
   return (
     <div className="scene-page">
-      <ThreeScene />
+      <HomeScene />
     </div>
   );
 }
