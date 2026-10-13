@@ -7,7 +7,7 @@ import SceneLoading from "./ui/SceneLoading";
 import SceneModeButton from "./ui/SceneModeButton";
 import SceneWindows from "./ui/SceneWindows";
 
-export default function ThreeScene()
+export default function ThreeScene({ roomId }: { roomId?: string })
 {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const switchModeRef = useRef<SwitchMode | null>(null);
@@ -87,7 +87,7 @@ export default function ThreeScene()
 				/>
 			)}
 
-			<SceneWindows selectedGroup={selectedGroup} onClose={closeWindow} />
+			<SceneWindows roomId={roomId} selectedGroup={selectedGroup} onClose={closeWindow} />
 		</>
 	);
 }

@@ -16,9 +16,10 @@ import { toast } from "sonner";
 interface ProfileViewProps {
   username?: string,
   backHref?: string,
+  compact?: boolean,
 }
 
-const ProfileView = ({ username, backHref }: ProfileViewProps) => {
+const ProfileView = ({ username, backHref, compact = false }: ProfileViewProps) => {
   const { token, isLoading: isAuthLoading, user, logout } = useAuth();
   const { subscribe, isConnected } = useSocket();
   const [friendAction, setFriendAction] = useState<"add" | "accept" | "deny" | null>(null);
@@ -35,7 +36,7 @@ const ProfileView = ({ username, backHref }: ProfileViewProps) => {
       return;
     }
     if (isOwnProfile) {
-      if (username) router.replace("/profile");
+      if (username && !compact) router.replace("/profile");
       return;
     }
     if (!username) return;
@@ -49,7 +50,7 @@ const ProfileView = ({ username, backHref }: ProfileViewProps) => {
       }
     };
     fetchUser();
-  }, [token, isAuthLoading, router, username, isOwnProfile])
+  }, [token, isAuthLoading, router, username, isOwnProfile, compact])
 
   const patchFetchedUser = useCallback((fields: Partial<User>) => {
     setFetched((prev) => prev?.user ? { ...prev, user: { ...prev.user, ...fields } } : prev);
@@ -63,6 +64,10 @@ const ProfileView = ({ username, backHref }: ProfileViewProps) => {
       const { payload } = message;
       if (message.type === "user_updated") {
         // Follow a rename to the new URL, which refetches the profile
+        if (compact && payload.old_username.toLowerCase() === username.toLowerCase()) {
+          patchFetchedUser(payload);
+          return;
+        }
         if (payload.old_username.toLowerCase() === username.toLowerCase())
           router.replace(`/users/${payload.username}${window.location.search}`);
         return;
@@ -73,7 +78,7 @@ const ProfileView = ({ username, backHref }: ProfileViewProps) => {
       else if (message.type === "friend_removed") setFriendshipStatus("none");
       else if (message.type === "status_changed") patchFetchedUser({ status: payload.status });
     });
-  }, [subscribe, username, router, setFriendshipStatus, patchFetchedUser])
+  }, [subscribe, username, router, setFriendshipStatus, patchFetchedUser, compact])
 
   const runFriendAction = async (name: "add" | "accept" | "deny", action: () => Promise<string>, nextStatus: FriendshipStatus) => {
     try {
@@ -109,21 +114,21 @@ const ProfileView = ({ username, backHref }: ProfileViewProps) => {
     <p>{error}</p>
   </div>
 
-  return <div className="mt-7 flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-10 items-center w-full h-full p-5 text-black">
-    <div className="flex flex-col gap-10 min-w-0 max-w-[550px] w-full">
+  return <div className={compact ? "flex flex-col gap-6 w-full text-black" : "mt-7 flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-10 items-center w-full h-full p-5 text-black"}>
+    <div className={`flex flex-col ${compact ? "gap-6" : "gap-10"} min-w-0 max-w-[550px] w-full`}>
       {!isOwnProfile && backHref && <Link href={backHref} className="-mb-6 self-start flex items-center justify-center p-1 rounded-md hover:bg-black/5">
         <ArrowLeft size={16} />
       </Link>}
-      <div className="flex items-center justify-between">
+      <div className={compact ? "flex flex-wrap items-center justify-between gap-4" : "flex items-center justify-between"}>
         <div className="flex items-center gap-4">
           <div className="relative shrink-0">
-            <Image src={userProfile?.avatar_url || "/img/avatar.jpg"} alt="img profile" width={1000} height={1000} unoptimized className="w-30 h-30 rounded-full" />
+            <Image src={userProfile?.avatar_url || "/img/avatar.jpg"} alt="img profile" width={1000} height={1000} unoptimized className={compact ? "w-16 h-16 rounded-full object-cover" : "w-30 h-30 rounded-full"} />
             <div className={`absolute bottom-1.5 right-1.5 w-5 h-5 rounded-full border-3 border-white ${isOnline ? "bg-[#45a367]" : "bg-gray-300"}`} />
           </div>
           <div className="flex flex-col gap-1">
-            <h1 className="text-3xl font-semibold">{userProfile?.username}</h1>
+            <h1 className={compact ? "text-xl font-semibold break-all" : "text-3xl font-semibold"}>{userProfile?.username}</h1>
             <p className={`text-xs font-semibold ${isOnline ? "text-[#45a367]" : "text-black/50"}`}>{isOnline ? "Online" : "Offline"}</p>
-            <h1 className="text-sm text-black/80 font-semibold">{userProfile?.email}</h1>
+            <h1 className="text-sm text-black/80 font-semibold break-all">{userProfile?.email}</h1>
           </div>
         </div>
         {isOwnProfile && <div className="cursor-pointer flex items-center gap-2 text-white bg-black p-2 text-sm rounded-md font-semibold" onClick={() => setOpenEditProfileModal(true)}>
@@ -161,11 +166,11 @@ const ProfileView = ({ username, backHref }: ProfileViewProps) => {
         <div className="flex items-center gap-4 w-full">
           <div className="flex-1 flex flex-col gap-5 bg-black/5 rounded-xl p-5">
             <p className="text-xs font-semibold text-black/80">Total message sent</p>
-            <p className="text-4xl">{userProfile?.total_messages_sent}</p>
+            <p className={compact ? "text-2xl" : "text-4xl"}>{userProfile?.total_messages_sent}</p>
           </div>
           <div className="flex-1 flex flex-col gap-5 bg-black/5 rounded-xl p-5">
             <p className="text-xs font-semibold text-black/80">Total time spent</p>
-            <p className="text-4xl">{formatDuration(userProfile?.cumulative_time_seconds)}</p>
+            <p className={compact ? "text-2xl" : "text-4xl"}>{formatDuration(userProfile?.cumulative_time_seconds)}</p>
           </div>
         </div>
       </div>
