@@ -160,14 +160,12 @@ export default function ThreeScene({ roomId = null }: { roomId?: string | null }
 	const [texturesLoading, setTexturesLoading] = useState(true);
 	const [sceneLoadedOnce, setSceneLoadedOnce] = useState(false);
 
-	useEffect(() => {
-		if (!texturesLoading) {
-			setSceneLoadedOnce(true);
-		}
-	}, [texturesLoading]);
+	if (!texturesLoading && !sceneLoadedOnce) {
+		setSceneLoadedOnce(true);
+	}
 	const [texturesReady, setTexturesReady] = useState(false);
 	const [transitioning, setTransitioning] = useState(false);
-	const [textureError, setTextureError] = useState<string | null>(null);
+	const [, setTextureError] = useState<string | null>(null);
 
 	const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
 	const { setControls, setPanelOpen } = useRoomControlsActions();

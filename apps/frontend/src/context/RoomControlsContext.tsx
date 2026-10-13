@@ -1,8 +1,34 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 
 const NIGHT_MODE_KEY = "night-mode";
+
+const nightListeners = new Set<() => void>();
+let nightFallback = false;
+
+function subscribeNight(listener: () => void) {
+	nightListeners.add(listener);
+	return () => {
+		nightListeners.delete(listener);
+	};
+}
+
+function readNight(): boolean {
+	try {
+		return localStorage.getItem(NIGHT_MODE_KEY) === "true";
+	} catch {
+		return nightFallback;
+	}
+}
+
+function writeNight(night: boolean) {
+	nightFallback = night;
+	try {
+		localStorage.setItem(NIGHT_MODE_KEY, String(night));
+	} catch { }
+	nightListeners.forEach((listener) => listener());
+}
 
 export type RoomControls = {
 	ready: boolean;
@@ -36,15 +62,7 @@ export const RoomControlsProvider = ({ children }: { children: React.ReactNode }
 	const [controls, setControls] = useState<RoomControls | null>(null);
 	const [currentRoom, setCurrentRoom] = useState<CurrentRoom | null>(null);
 	const [panelOpen, setPanelOpen] = useState(false);
-	const [nightMode, setNightMode] = useState(false);
-
-	useEffect(() => {
-		try {
-			if (localStorage.getItem(NIGHT_MODE_KEY) === "true") {
-				setNightMode(true);
-			}
-		} catch { }
-	}, []);
+	const nightMode = useSyncExternalStore(subscribeNight, readNight, () => false);
 
 	useEffect(() => {
 		document.documentElement.classList.toggle("night", nightMode);
@@ -55,12 +73,7 @@ export const RoomControlsProvider = ({ children }: { children: React.ReactNode }
 		setControls,
 		setCurrentRoom,
 		setPanelOpen,
-		setNightMode: (night: boolean) => {
-			setNightMode(night);
-			try {
-				localStorage.setItem(NIGHT_MODE_KEY, String(night));
-			} catch { }
-		},
+		setNightMode: writeNight,
 	}), []);
 
 	return (
