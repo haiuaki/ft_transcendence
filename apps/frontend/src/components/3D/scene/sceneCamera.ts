@@ -62,8 +62,4 @@ export function centerCameraOnModel(
 
 		controls.update();
 	}
-	else
-	{
-		console.warn('Objet "murs.001" introuvable dans le GLB');
-	}
 }

@@ -81,7 +81,6 @@ export function createScene(container: HTMLDivElement, callbacks: SceneCallbacks
 
 	function handleModelError(error: unknown): void
 	{
-		console.error("Erreur avec le modèle :", error);
 		if (!disposed)
 		{
 			callbacks.setTexturesLoading(false);

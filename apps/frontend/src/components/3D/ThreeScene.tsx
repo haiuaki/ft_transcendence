@@ -87,7 +87,6 @@ const RoomChat = ({ roomId }: { roomId?: string }) => {
 			sendMessage();
 		}
 	}
-	console.log(messages)
 	return (
 		<div
 			onClick={() => !open && setOpen(true)}

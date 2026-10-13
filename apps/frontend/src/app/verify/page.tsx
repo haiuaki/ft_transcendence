@@ -23,7 +23,6 @@ const VerifyContent = () => {
                 setStatus("success");
             } catch (e) {
                 setStatus("error")
-                console.log(e)
             }
         }
         verifyAccount();
