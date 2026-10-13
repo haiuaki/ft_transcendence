@@ -8,6 +8,7 @@ import { backgroundColors } from "./config";
 import { createCameraControls, centerCameraOnModel } from "./sceneCamera";
 import { createDayNightTextures } from "./dayNightTextures";
 import { createSceneInteractions } from "./sceneInteractions";
+import { createSeatAppearance } from "./seatAppearance";
 import type { SceneCallbacks } from "./types";
 
 export function createScene(container: HTMLDivElement, callbacks: SceneCallbacks)
@@ -62,6 +63,7 @@ export function createScene(container: HTMLDivElement, callbacks: SceneCallbacks
 
 	const textures = createDayNightTextures(scene, renderer, callbacks);
 	const loader = new GLTFLoader();
+	const seats = createSeatAppearance();
 
 	function handleModelLoaded(gltf: GLTF): void
 	{
@@ -72,6 +74,7 @@ export function createScene(container: HTMLDivElement, callbacks: SceneCallbacks
 
 		const model = gltf.scene;
 		textures.initialize(model);
+		seats.setModel(model);
 		model.scale.set(1, 1, 1);
 		model.rotation.y = Math.PI / 2;
 		scene.add(model);
@@ -132,6 +135,7 @@ export function createScene(container: HTMLDivElement, callbacks: SceneCallbacks
 	{
 		disposed = true;
 		textures.dispose();
+		seats.dispose();
 		renderer.setAnimationLoop(null);
 		resizeObserver.disconnect();
 		interactions.dispose();
@@ -145,5 +149,5 @@ export function createScene(container: HTMLDivElement, callbacks: SceneCallbacks
 		}
 	}
 
-	return { switchMode: textures.switchMode, dispose };
+	return { switchMode: textures.switchMode, setOccupied: seats.setOccupied, dispose };
 }

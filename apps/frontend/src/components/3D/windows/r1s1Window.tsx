@@ -1,10 +1,5 @@
-import SeatProfileWindow from "./SeatProfileWindow";
+import SeatProfileWindow, { type SeatProfileWindowProps } from "./SeatProfileWindow";
 
-type R1s1Props = {
-    onClose: () => void;
-    roomId?: string;
-};
-
-export default function R1s1Window(props: R1s1Props) {
+export default function R1s1Window(props: Omit<SeatProfileWindowProps, "seatIndex">) {
     return <SeatProfileWindow {...props} seatIndex={0} />;
 }
