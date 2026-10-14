@@ -57,7 +57,7 @@ services:
     container_name: reverse_proxy
     restart: unless-stopped
     ports:
-      - "443:443"
+      - "${HTTPS_PORT:-8443}:443"
     depends_on:
       - frontend
     networks:

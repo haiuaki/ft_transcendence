@@ -91,10 +91,10 @@ func Signup(dbPool *pgxpool.Pool) http.HandlerFunc {
 		if resendAPIKey != "" {
 			client := resend.NewClient(resendAPIKey)
 
-			// Construct the link pointing to the frontend (fallback to 3000 if not set)
+			// Construct the link pointing to the frontend (fallback if not set)
 			frontendURL := os.Getenv("FRONTEND_URL")
 			if frontendURL == "" {
-				frontendURL = "https://localhost"
+				frontendURL = "https://localhost:8443"
 			}
 			verifyLink := fmt.Sprintf("%s/verify?token=%s", frontendURL, verificationToken)
 

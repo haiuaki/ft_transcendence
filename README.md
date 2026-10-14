@@ -92,7 +92,7 @@ Before running the project, ensure you have the following software installed:
    make up
    ```
    *(Alternatively, run `docker compose up --build -d`)*
-2. Open your browser and navigate to **`https://localhost`**.
+2. Open your browser and navigate to **`https://localhost:8443`**.
    > *Note: Because we use self-signed SSL certificates, your browser will warn you that the connection is not private. Click "Advanced" -> "Proceed to localhost".*
 
 ## Technical Stack
