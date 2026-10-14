@@ -2,7 +2,7 @@ import os
 from typing import AsyncGenerator
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from google import genai
@@ -10,8 +10,9 @@ from pydantic import BaseModel, Field
 from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
-from rag import format_rag_prompt, get_relevant_context, store_message_with_embedding
+from rag import format_rag_prompt, get_relevant_context
 
+from auth import current_user_id
 from database import init_db_pool
 
 load_dotenv()
@@ -99,7 +100,7 @@ async def health_check():
 
 @app.post("/stream")
 @limiter.limit("20/minute")
-async def stream_ai(request: Request, body: PromptRequest):
+async def stream_ai(request: Request, body: PromptRequest, user_id: str = Depends(current_user_id)):
     if not body.prompt.strip():
         raise HTTPException(status_code=400, detail="Prompt cannot be empty")
 
@@ -116,6 +117,7 @@ async def stream_ai(request: Request, body: PromptRequest):
             client=client,
             db_pool=request.app.state.db_pool,
             user_prompt=body.prompt,
+            user_id=user_id,
             channel_id=body.channel_id,
     )
 
@@ -124,33 +126,3 @@ async def stream_ai(request: Request, body: PromptRequest):
             stream_generator(augmented_prompt),
             media_type="text/event-stream",
     )
-
-class MessageCreateRequest(BaseModel):
-    sender_id: str
-    channel_id: int
-    content: str = Field(max_length=MAX_TEXT_LENGTH)
-
-@app.post("/messages", status_code=201)
-async def create_message(request: Request, body: MessageCreateRequest):
-    if not body.content.strip():
-        raise HTTPException(status_code=400, detail="Content cannot be empty")
-
-    if not client:
-        raise HTTPException(
-            status_code=503,
-            detail="Google Gemini API client is not configured (missing GOOGLE_API_KEY).",
-        )
-
-    try:
-        message_id = await store_message_with_embedding(
-                client=client,
-                db_pool=request.app.state.db_pool,
-                sender_id=body.sender_id,
-                channel_id=body.channel_id,
-                content=body.content,
-        )
-        return {"id": message_id, "status": "stored"}
-    except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Failed to store message: {str(e)}"
-        )

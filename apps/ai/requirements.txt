@@ -13,3 +13,6 @@ slowapi==0.1.9
 
 # A fast PostgreSQL Database Client Library for Python
 asyncpg
+
+# Verifying the session tokens issued by the Go backend
+PyJWT==2.15.1
