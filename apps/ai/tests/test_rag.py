@@ -62,6 +62,7 @@ async def test_get_relevant_context_with_matches(monkeypatch):
         client=mock_client,
         db_pool=mock_pool,
         user_prompt="When is the tournament?",
+        user_id="00000000-0000-0000-0000-000000000001",
     )
 
     assert "user1: Tournament starts at 18:00" in context
@@ -82,6 +83,7 @@ async def test_get_relevant_context_empty(monkeypatch):
         client=MagicMock(),
         db_pool=mock_pool,
         user_prompt="Any secret codes?",
+        user_id="00000000-0000-0000-0000-000000000001",
     )
 
     assert context == "No semantically relevant messages found in database archives."
@@ -108,3 +110,33 @@ async def test_store_message_with_embedding(monkeypatch):
 
     assert message_id == 42
     mock_conn.fetchval.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_get_relevant_context_only_searches_own_channels(monkeypatch):
+    """Checks both searches are limited to the channels the user belongs to."""
+    monkeypatch.setattr("apps.ai.rag.generate_embedding", lambda client, text: [0.1, 0.2])
+
+    mock_conn = AsyncMock()
+    mock_conn.fetch.side_effect = [
+        [],  # messages still waiting for an embedding
+        [{"username": "alice"}],  # usernames mentioned in the prompt
+        [],  # semantic search
+        [],  # search on the mentioned users' conversations
+    ]
+    mock_pool = MagicMock()
+    mock_pool.acquire.return_value.__aenter__.return_value = mock_conn
+
+    user_id = "00000000-0000-0000-0000-000000000001"
+    await get_relevant_context(
+        client=MagicMock(),
+        db_pool=mock_pool,
+        user_prompt="What did alice say in her DMs?",
+        user_id=user_id,
+    )
+
+    semantic_call, targeted_call = mock_conn.fetch.call_args_list[-2:]
+    for query_call in (semantic_call, targeted_call):
+        query, *params = query_call.args
+        assert "FROM channel_members" in query
+        assert user_id in params

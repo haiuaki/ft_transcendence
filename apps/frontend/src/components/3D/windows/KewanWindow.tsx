@@ -154,6 +154,10 @@ export default function KewanWindow({ isOpen = true, onClose }: KewanProps) {
         if (e) e.preventDefault();
         const promptToSend = message.trim();
         if (!promptToSend || isLoading) return;
+        if (!token) {
+            setError('Log in to chat with the assistant.');
+            return;
+        }
 
         setMessage('');
         sessionStorage.removeItem(DRAFT_KEY);
@@ -175,6 +179,7 @@ export default function KewanWindow({ isOpen = true, onClose }: KewanProps) {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
                 },
                 body: JSON.stringify({ prompt: promptToSend }),
             });

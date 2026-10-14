@@ -45,14 +45,26 @@ async def sync_pending_embeddings(client: genai.Client, db_pool: asyncpg.Pool) -
 
 import re
 
+# Channels (rooms and DMs) a user belongs to, unless they were banned from it
+MEMBER_CHANNELS = """
+    SELECT channel_id FROM channel_members
+    WHERE user_id = {user_param}::uuid AND role <> 'BANNED'
+"""
+
+
 async def get_relevant_context(
     client: genai.Client,
     db_pool: asyncpg.Pool,
     user_prompt: str,
+    user_id: str,
     channel_id: int | None = None,
     limit: int = 15,
 ) -> str:
-    """Retrieves messages with semantic similarity and channel/DM context."""
+    """Retrieves messages with semantic similarity and channel/DM context.
+
+    Only messages from rooms and DMs that `user_id` belongs to are searched,
+    so the assistant can never reveal someone else's conversations.
+    """
     # Ensure any recent messages without embeddings get vectorized
     try:
         await sync_pending_embeddings(client, db_pool)
@@ -73,7 +85,7 @@ async def get_relevant_context(
             mentioned_users = [r["username"] for r in user_rows]
 
         # 1. Semantic similarity query with channel metadata and DM participants
-        semantic_query = """
+        semantic_query = f"""
             SELECT 
                 m.id,
                 u.username, 
@@ -93,16 +105,17 @@ async def get_relevant_context(
             JOIN channels c ON m.channel_id = c.id
             WHERE m.embedding IS NOT NULL
               AND ($2::INT IS NULL OR m.channel_id = $2)
+              AND m.channel_id IN ({MEMBER_CHANNELS.format(user_param='$4')})
             ORDER BY distance ASC
             LIMIT $3
         """
-        rows = await connection.fetch(semantic_query, vector_json, channel_id, limit)
+        rows = await connection.fetch(semantic_query, vector_json, channel_id, limit, user_id)
 
         # 2. If specific users were mentioned (e.g. "DMs between ksilvest and user3"),
         # also retrieve their most recent direct messages/conversations so they are not missed
         targeted_rows = []
         if mentioned_users:
-            targeted_query = """
+            targeted_query = f"""
                 SELECT DISTINCT
                     m.id,
                     u.username,
@@ -123,10 +136,11 @@ async def get_relevant_context(
                 JOIN channel_members cm ON cm.channel_id = m.channel_id
                 JOIN users member_u ON cm.user_id = member_u.id
                 WHERE member_u.username = ANY($1)
+                  AND m.channel_id IN ({MEMBER_CHANNELS.format(user_param='$2')})
                 ORDER BY m.created_at DESC
                 LIMIT 10
             """
-            targeted_rows = await connection.fetch(targeted_query, mentioned_users)
+            targeted_rows = await connection.fetch(targeted_query, mentioned_users, user_id)
 
     # Merge results without duplicates, prioritizing targeted user messages then semantic matches
     seen_ids = set()
