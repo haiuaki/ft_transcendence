@@ -72,6 +72,25 @@ _This project has been created as part of the 42 curriculum by juljin, ksilvest,
   - *Why it is a Minor:* It builds on the existing 3D scene rather than adding a new system, but it needed its own work in Blender, a custom shader and careful texture handling, which is well beyond a CSS theme toggle.
   - *Team:* dinza-cr
 
+### Point Calculation
+| Module | Category | Type | Points |
+|---|---|:---:|---:|
+| Frameworks: Next.js and FastAPI | Web | Major | 2 |
+| Real-time WebSockets | Web | Major | 2 |
+| User Interaction | Web | Major | 2 |
+| Support for additional browsers | Accessibility & Internationalization | Minor | 1 |
+| Standard Authentication | User Management | Major | 2 |
+| Remote Authentication (OAuth 2.0) | User Management | Minor | 1 |
+| Two-Factor Authentication (2FA) | User Management | Minor | 1 |
+| User analytics and insights dashboard | User Management | Minor | 1 |
+| LLM Interface | Artificial Intelligence | Major | 2 |
+| Retrieval-Augmented Generation (RAG) | Artificial Intelligence | Major | 2 |
+| Advanced 3D Graphics | Gaming & User Experience | Major | 2 |
+| Day / Night Environment | Modules of Choice | Minor | 1 |
+| **Total** | | **7 Majors + 5 Minors** | **19** |
+
+**19 points** claimed, out of the **14** required (Major = 2 pts, Minor = 1 pt).
+
 ## Features List
 * **Authentication:** Secure JWT-based session management, Resend Email Verification, and robust Multi-Provider OAuth 2.0 (Google, GitHub, 42 Intra) featuring a smart auto-incrementing username resolver for collision prevention. *(By juljin, nlienard)*
 * **Two-Factor Authentication:** Optional TOTP 2FA with QR code setup for any authenticator app (Google Authenticator, Authy, 1Password...). Once enabled, every login (password or OAuth) requires a 6-digit code; pending login tokens expire after 5 minutes and lock after 5 wrong codes. *(By juljin)*
