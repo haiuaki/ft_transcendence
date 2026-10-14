@@ -61,6 +61,17 @@ _This project has been created as part of the 42 curriculum by juljin, ksilvest,
   - *Implementation:* Designed custom Blender `.glb` assets, rendered via native Three.js inside React with interactive raycasting.
   - *Team:* dinza-cr
 
+### Modules of Choice
+- **[Minor - 1pt] Day / Night Environment**
+  - *Why we chose it:* People study at every hour of the day, so the workspace should be comfortable to use late at night. Instead of only darkening the interface, we change the lighting of the whole 3D room.
+  - *Technical challenges:*
+    - **Two sets of baked lighting:** the room's lighting is baked in Blender twice, once for day and once for night, and exported as two texture sets compressed to WebP (≈4.2 MB day, ≈2.8 MB night).
+    - **Smooth transition:** a custom shader is added to Three.js's built-in materials (`onBeforeCompile`) so they draw both texture sets and fade between them, with eased timing over 1 s while the background colour changes with them. Users who ask for reduced motion get an instant switch.
+    - **Loading and memory:** both sets are downloaded once when the room loads, sent to the GPU in advance (`renderer.initTexture`) and cached, so switching never stutters. A failed download shows an error message instead of breaking the scene, and every texture is freed when the scene closes.
+  - *Value to the project:* The 3D room and the interface (colour theme, panels, room controls) switch together from one toggle, so the whole app changes, not just the page colours.
+  - *Why it is a Minor:* It builds on the existing 3D scene rather than adding a new system, but it needed its own work in Blender, a custom shader and careful texture handling, which is well beyond a CSS theme toggle.
+  - *Team:* dinza-cr
+
 ## Features List
 * **Authentication:** Secure JWT-based session management, Resend Email Verification, and robust Multi-Provider OAuth 2.0 (Google, GitHub, 42 Intra) featuring a smart auto-incrementing username resolver for collision prevention. *(By juljin, nlienard)*
 * **Two-Factor Authentication:** Optional TOTP 2FA with QR code setup for any authenticator app (Google Authenticator, Authy, 1Password...). Once enabled, every login (password or OAuth) requires a 6-digit code; pending login tokens expire after 5 minutes and lock after 5 wrong codes. *(By juljin)*
