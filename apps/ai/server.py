@@ -18,9 +18,10 @@ load_dotenv()
 
 api_key = os.getenv("GOOGLE_API_KEY")
 if not api_key:
-    raise RuntimeError("Missing GOOGLE_API_KEY environment variable")
-
-client = genai.Client(api_key=api_key)
+    print("WARNING: GOOGLE_API_KEY is not set. AI features will return a configuration error.")
+    client = None
+else:
+    client = genai.Client(api_key=api_key)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -61,6 +62,10 @@ DEFAULT_MODELS = [
 ]
 
 async def stream_generator(prompt: str) -> AsyncGenerator[str, None]:
+    if not client:
+        yield "data: [ERROR: GOOGLE_API_KEY is not configured in .env]\n\n"
+        return
+
     last_error = None
     for model_name in DEFAULT_MODELS:
         try:
@@ -94,6 +99,15 @@ async def stream_ai(request: Request, body: PromptRequest):
     if not body.prompt.strip():
         raise HTTPException(status_code=400, detail="Prompt cannot be empty")
 
+    if not client:
+        async def missing_key_stream():
+            yield "data: [ERROR: GOOGLE_API_KEY is not configured in .env]\n\n"
+
+        return StreamingResponse(
+            missing_key_stream(),
+            media_type="text/event-stream",
+        )
+
     context = await get_relevant_context(
             client=client,
             db_pool=request.app.state.db_pool,
@@ -116,6 +130,12 @@ class MessageCreateRequest(BaseModel):
 async def create_message(request: Request, body: MessageCreateRequest):
     if not body.content.strip():
         raise HTTPException(status_code=400, detail="Content cannot be empty")
+
+    if not client:
+        raise HTTPException(
+            status_code=503,
+            detail="Google Gemini API client is not configured (missing GOOGLE_API_KEY).",
+        )
 
     try:
         message_id = await store_message_with_embedding(
