@@ -18,7 +18,7 @@ def test_stream_empty_prompt():
     assert "Prompt cannot be empty" in response.json()["detail"]
 
 def test_rate_limiting(monkeypatch):
-    """Checks limiter blocks after 3 queries (code 429)."""
+    """Checks limiter blocks after 20 queries (code 429)."""
     app.state.db_pool = MagicMock()
     monkeypatch.setattr("apps.ai.server.get_relevant_context", AsyncMock(return_value=""))
     async def dummy_stream(*args, **kwargs):
@@ -27,8 +27,8 @@ def test_rate_limiting(monkeypatch):
 
     status_codes = []
     
-    # Sending up to 5 queries. The limiter should throw an error
-    for _ in range(5):
+    # Sending up to 25 queries. The limiter should throw an error after 20
+    for _ in range(25):
         res = client.post("/stream", json={"prompt": "test"})
         status_codes.append(res.status_code)
         if res.status_code == 429:

@@ -32,7 +32,14 @@ services:
     container_name: ai_bot
     env_file:
       - .env
+    environment:
+      - POSTGRES_HOST=database
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@database:5432/${POSTGRES_DB}
+    depends_on:
+      - database
     restart: unless-stopped
+    volumes:
+      - ./apps/ai:/app
     networks:
       - app_network
 

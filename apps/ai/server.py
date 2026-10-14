@@ -18,16 +18,18 @@ load_dotenv()
 
 api_key = os.getenv("GOOGLE_API_KEY")
 if not api_key:
-    raise RuntimeError("Missing GOOGLE_API_KEY environment variable")
-
-client = genai.Client(api_key=api_key)
+    print("WARNING: GOOGLE_API_KEY is not set. AI features will return a configuration error.")
+    client = None
+else:
+    client = genai.Client(api_key=api_key)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Manages application lifecycle"""
     app.state.db_pool = await init_db_pool()
     yield
-    await app.state.db_pool.close()
+    if app.state.db_pool is not None:
+        await app.state.db_pool.close()
 
 app = FastAPI(title="LLM", lifespan=lifespan)
 
@@ -53,30 +55,59 @@ class PromptRequest(BaseModel):
     prompt: str
     channel_id: int | None = None
 
+DEFAULT_MODELS = [
+    "gemini-3.5-flash-lite",
+    "gemini-3.1-flash-lite",
+    "gemini-3.6-flash",
+    "gemini-3.8-flash",
+]
+
 async def stream_generator(prompt: str) -> AsyncGenerator[str, None]:
-    try:
-        chat = client.chats.create(model="gemini-3.6-flash")
+    if not client:
+        yield "data: [ERROR: GOOGLE_API_KEY is not configured in .env]\n\n"
+        return
 
-        response = chat.send_message_stream(prompt)
+    last_error = None
+    for model_name in DEFAULT_MODELS:
+        try:
+            chat = client.chats.create(model=model_name)
+            response = chat.send_message_stream(prompt)
 
-        for chunk in response:
-            if chunk.text:
-                yield f"data: {chunk.text}\n\n"
-        yield "data: Done\n\n"
+            streamed_any = False
+            for chunk in response:
+                if chunk.text:
+                    streamed_any = True
+                    yield f"data: {chunk.text}\n\n"
 
-    except Exception as e:
-        clean_error = str(e).replace("\n", " ")
-        yield f"data: [ERROR: {clean_error}]\n\n"
+            if streamed_any:
+                yield "data: Done\n\n"
+                return
+        except Exception as e:
+            last_error = e
+            # Try next fallback model if 503 UNAVAILABLE or 429 RESOURCE_EXHAUSTED
+            continue
+
+    clean_error = str(last_error).replace("\n", " ") if last_error else "Service unavailable"
+    yield f"data: [ERROR: {clean_error}]\n\n"
 
 @app.get("/health")
 async def health_check():
     return {"status": "ok"}
 
 @app.post("/stream")
-@limiter.limit("3/minute")
+@limiter.limit("20/minute")
 async def stream_ai(request: Request, body: PromptRequest):
     if not body.prompt.strip():
         raise HTTPException(status_code=400, detail="Prompt cannot be empty")
+
+    if not client:
+        async def missing_key_stream():
+            yield "data: [ERROR: GOOGLE_API_KEY is not configured in .env]\n\n"
+
+        return StreamingResponse(
+            missing_key_stream(),
+            media_type="text/event-stream",
+        )
 
     context = await get_relevant_context(
             client=client,
@@ -100,6 +131,12 @@ class MessageCreateRequest(BaseModel):
 async def create_message(request: Request, body: MessageCreateRequest):
     if not body.content.strip():
         raise HTTPException(status_code=400, detail="Content cannot be empty")
+
+    if not client:
+        raise HTTPException(
+            status_code=503,
+            detail="Google Gemini API client is not configured (missing GOOGLE_API_KEY).",
+        )
 
     try:
         message_id = await store_message_with_embedding(

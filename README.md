@@ -58,7 +58,7 @@ _This project has been created as part of the 42 curriculum by juljin, ksilvest,
 * **Direct Messaging:** Private, omnipresent 1-on-1 chats elegantly architected on top of the existing spatial channel infrastructure. *(By juljin, nlienard)*
 * **User Management:** Full CRUD operations for user profiles, settings, and avatars. *(By juljin, nlienard)*
 * **Social Network:** Bidirectional friend request system (Add, Accept, Deny, Remove). *(By juljin, nlienard)*
-* **AI Assistant:** Integration of a real-time, streaming conversational agent powered by the Google Gemini SDK. *(By ksilvest)*
+* **AI Assistant (Kewan AI):** Integration of a real-time, streaming conversational agent powered by the Google Gemini SDK, pgvector-backed semantic RAG search, and an interactive window UI (`KewanWindow`) featuring smooth entrance animations, window dragging, and markdown rendering. *(By ksilvest)*
 * **3D Workspace:** An interactive 3D virtual environment built with native Three.js, featuring custom `.glb` models, interactive raycasting, smooth mouse-follow camera mechanics, and dynamic React window UI overlays for 3D object click interactions. *(By dinza-cr)*
 
 ## Instructions
@@ -119,7 +119,7 @@ Our database utilizes a Domain-Driven Design approach with strict constraints to
 * **Friendships Table:** Manages the social network. Uses a custom Bidirectional Unique Index (`LEAST/GREATEST`) on `user_id` and `friend_id` (both UUID Foreign Keys) to elegantly handle overlapping friend requests and race conditions.
 * **Channels Table:** Represents the 3D Coworking spaces. Primary key is a `SERIAL id`. Key fields include `name` (VARCHAR) and `owner_id` (UUID Foreign Key).
 * **Channel_Members Table:** A junction table tracking who is currently sitting in a 3D room. Uses a composite primary key (`channel_id`, `user_id`) and tracks permissions via the `role` field.
-* **Messages Table:** Stores the real-time chat history for each channel, mapping `sender_id` (UUID) to `channel_id` (INTEGER).
+* **Messages Table:** Stores the real-time chat history for each channel, mapping `sender_id` (UUID) to `channel_id` (INTEGER) and vector embeddings (`pgvector`) used for AI contextual search.
 
 ```mermaid
 erDiagram
@@ -169,6 +169,7 @@ erDiagram
         UUID sender_id FK
         INTEGER channel_id FK
         TEXT content
+        VECTOR embedding
         TIMESTAMPTZ created_at
     }
 ```
@@ -195,8 +196,8 @@ erDiagram
 * **Challenges Overcome:** Engineering a bulletproof backend that gracefully handles deep edge cases. Overcame this by implementing strict cryptographic CSRF validation to prevent replay attacks, type-safe API parsing to handle malformed OAuth payloads, and a highly resilient Gorilla WebSocket architecture that seamlessly manages network latency, dropped connections, and Ghost-Avatar cleanup.
 
 ### ksilvest (AI Service Architecture & Infrastructure)
-* **Contributions:** Developed the standalone Python 3.12 FastAPI microservice that powers the real-time AI Assistant. Integrated the Google GenAI SDK and established comprehensive unit testing using Pytest and HTTPX.
-* **Challenges Overcome:** [TBD - Detail any bugs or architectural hurdles faced during development]
+* **Contributions:** Developed the standalone Python 3.12 FastAPI microservice and RAG pipeline using pgvector and Google GenAI SDK. Implemented real-time Server-Sent Events (SSE) streaming, rate limiting, and the interactive frontend chat window (`KewanWindow`) with animations, draft persistence, and markdown rendering.
+* **Challenges Overcome:** Connected the AI service to PostgreSQL in Docker, matched Gemini embedding dimensions with pgvector, and ensured smooth real-time text streaming to the chat UI.
 
 ### nlienard (Frontend Architecture & UI/UX)
 * **Contributions:** Bootstrapped the Next.js application utilizing Tailwind CSS and strict TypeScript. Engineered the global React Auth Context, the API Gateway proxy layer, and the responsive authentication UI modals.

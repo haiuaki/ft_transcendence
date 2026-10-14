@@ -16,11 +16,10 @@ export default function SceneWindows({ selectedGroup, onClose, members, loading,
 {
 	return (
 		<>
-			{selectedGroup === "mesh_node" && (
-				<KewanWindow
-					onClose={onClose}
-				/>
-			)}
+			<KewanWindow
+				isOpen={selectedGroup === "mesh_node"}
+				onClose={onClose}
+			/>
 
 			{selectedGroup === "user.r1s1" && (
 				<R1s1Window

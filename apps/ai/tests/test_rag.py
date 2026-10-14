@@ -28,8 +28,9 @@ def test_generate_embedding():
 
     assert result == mock_values
     mock_client.models.embed_content.assert_called_once_with(
-        model="text-embedding-004",
+        model="gemini-embedding-001",
         contents="Sample test text",
+        config={"output_dimensionality": 768},
     )
 
 @pytest.mark.asyncio
@@ -42,10 +43,14 @@ async def test_get_relevant_context_with_matches(monkeypatch):
     mock_conn = AsyncMock()
     mock_conn.fetch.return_value = [
         {
+            "id": 1,
             "username": "user1",
             "content": "Tournament starts at 18:00",
             "created_at": MagicMock(strftime=lambda fmt: "2026-09-30 18:00"),
             "distance": 0.15,
+            "channel_name": "general",
+            "channel_type": "PUBLIC",
+            "participants": "",
         }
     ]
 
