@@ -78,6 +78,11 @@ export const HomePanel = ({className = ""}) => {
           </Link>
         </div>
       }
+      <nav aria-label="Legal" className={`flex items-center justify-center gap-3 text-xs ${colors.textSecondary}`}>
+        <Link href="/privacy-policy" className="hover:underline">Privacy policy</Link>
+        <span aria-hidden>·</span>
+        <Link href="/terms-of-service" className="hover:underline">Terms of service</Link>
+      </nav>
       </div>
     </div>
   )
