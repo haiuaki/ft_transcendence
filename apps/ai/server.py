@@ -28,7 +28,8 @@ async def lifespan(app: FastAPI):
     """Manages application lifecycle"""
     app.state.db_pool = await init_db_pool()
     yield
-    await app.state.db_pool.close()
+    if app.state.db_pool is not None:
+        await app.state.db_pool.close()
 
 app = FastAPI(title="LLM", lifespan=lifespan)
 
