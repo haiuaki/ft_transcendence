@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "FT_Cluster",
+  title: "ft_cluster",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

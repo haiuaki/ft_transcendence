@@ -136,7 +136,7 @@ const userService = {
             const message = await response.text();
             throw new Error(message || "Failed to export your data")
         }
-        const filename = response.headers.get("Content-Disposition")?.match(/filename="(.+)"/)?.[1] ?? "ft_transcendence-data.json";
+        const filename = response.headers.get("Content-Disposition")?.match(/filename="(.+)"/)?.[1] ?? "ft_cluster-data.json";
         return { blob: await response.blob(), filename };
     },
     delete: async (token: string, username: string) => {

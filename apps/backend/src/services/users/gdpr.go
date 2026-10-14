@@ -115,13 +115,13 @@ func ExportData(dbPool *pgxpool.Pool) http.HandlerFunc {
 			return
 		}
 
-		mail.Send(email, "Your ft_transcendence data export",
+		mail.Send(email, "Your ft_cluster data export",
 			fmt.Sprintf(`<p>Hi %s,</p>
 			             <p>A copy of your personal data was exported from your account on %s.</p>
 			             <p>If this wasn't you, change your password and enable two-factor authentication.</p>`,
 				mail.Escape(username), time.Now().UTC().Format("2 January 2006 at 15:04 UTC")))
 
-		filename := fmt.Sprintf("ft_transcendence-%s-data.json", username)
+		filename := fmt.Sprintf("ft_cluster-%s-data.json", username)
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, filename))
 		w.Write(export)

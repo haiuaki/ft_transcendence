@@ -25,7 +25,7 @@ export const HomePanel = ({className = ""}) => {
   return (
     <div className={`flex justify-between bg-ui-panel gap-5 h-full w-[300px] shrink-0 flex-col p-4 text-black ${className}`}>
       <div className="flex flex-col gap-5">
-        <Link className="w-fit text-2xl font-bold" href={"/"}>FT_Cluster</Link>
+        <Link className="w-fit text-2xl font-bold" href={"/"}>ft_cluster</Link>
         <div className="flex flex-col gap-1">
           <Link href={"/"} className="cursor-pointer flex items-center gap-2 p-2 rounded-md hover:bg-ui-hover ">
             <HomeIcon size={12} />
@@ -107,7 +107,7 @@ const PanelShellInner = ({ children }: { children: React.ReactNode }) => {
           <button onClick={() => setPanelOpen(!open)} aria-label="Toggle menu" aria-expanded={open}>
             {open ? <X size={20} /> : <Menu size={20} />}
           </button>
-          <span className="font-bold">FT_Cluster</span>
+          <span className="font-bold">ft_cluster</span>
         </div>
         {children}
       </div>
