@@ -25,3 +25,10 @@ type UserUpdatedEvent struct {
 	Username    string  `json:"username"`
 	AvatarURL   *string `json:"avatar_url"`
 }
+
+// DailyActivity is one day of the analytics dashboard
+type DailyActivity struct {
+	Date             string `json:"date"` // YYYY-MM-DD
+	TimeSpentSeconds int    `json:"time_spent_seconds"`
+	MessagesSent     int    `json:"messages_sent"`
+}
