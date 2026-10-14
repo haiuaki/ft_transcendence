@@ -1,5 +1,11 @@
 const URL = "/api"
 
+export interface DailyActivity {
+    date: string; // YYYY-MM-DD
+    time_spent_seconds: number;
+    messages_sent: number;
+}
+
 export interface UpdateProfilePayload {
     username?: string;
     avatar_url?: string;
@@ -101,6 +107,21 @@ const userService = {
             throw new Error(message || "Failed to update profile")
 
         return message;
+    },
+    getAnalytics: async (token: string, days: number): Promise<DailyActivity[]> => {
+        if (!token.trim())
+            throw new Error("Token is required")
+        const response = await fetch(URL + "/profile/analytics?days=" + days, {
+            method: "GET",
+            headers: {
+                Authorization: `Bearer ${token}`
+            },
+        })
+        if (!response.ok) {
+            const message = await response.text();
+            throw new Error(message || "Failed to get analytics")
+        }
+        return response.json();
     },
     delete: async (token: string) => {
         if (!token.trim())

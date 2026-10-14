@@ -2,6 +2,7 @@
 
 import EditProfileModal from "./editProfileModal";
 import TwoFactorModal from "./TwoFactorModal";
+import ActivityCharts from "./ActivityCharts";
 import { useAuth, User } from "@/src/context/AuthContext";
 import { useSocket } from "@/src/context/SocketContext";
 import friendService, { FriendshipStatus } from "@/src/services/friendService";
@@ -173,6 +174,7 @@ const ProfileView = ({ username, backHref, compact = false }: ProfileViewProps) 
             <p className={compact ? "text-2xl" : "text-4xl"}>{formatDuration(userProfile?.cumulative_time_seconds)}</p>
           </div>
         </div>
+        {isOwnProfile && token && <ActivityCharts token={token} compact={compact} />}
       </div>
 
       {isOwnProfile && <div className="flex flex-col gap-2">

@@ -81,6 +81,9 @@ func main() {
 	// GET: View user profile
 	http.HandleFunc("/profile", auth.RequireAuth(users.GetProfile(dbPool)))
 
+	// GET: Own activity per day for the dashboard charts (?days=1-30)
+	http.HandleFunc("/profile/analytics", auth.RequireAuth(users.GetAnalytics(dbPool)))
+
 	// GET: View someone else's public profile
 	http.HandleFunc("/users/{username}", auth.RequireAuth(users.GetPublicProfile(dbPool)))
 
