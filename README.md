@@ -260,8 +260,16 @@ erDiagram
 ## Individual Contributions
 
 ### juljin (Backend Architecture & DevOps)
-* **Contributions:** Architected the entire Go backend utilizing Gorilla WebSockets for real-time presence. Engineered the complete Multi-Provider OAuth 2.0 pipeline (42, Google, GitHub), TOTP two-factor authentication, and constructed the secure NGINX HTTPS reverse proxy network. Built the activity analytics dashboard (per-day API and bar charts) and the GDPR module: data export, full account erasure, confirmation emails and the privacy policy. Wrote the Terms of Service and made both legal pages reachable from every page. Enforced the frontend's input rules on the backend too (password strength, room names and passwords, message and prompt lengths, WebSocket frame size). Secured the AI assistant by making it verify the user's session token and only search their own conversations. Made the Docker stack run on rootless Podman (school machines) by serving HTTPS on port 8443, keeping the frontend proxy in sync with the backend port, and stopped exposing the database outside Docker.
-* **Challenges Overcome:** Engineering a bulletproof backend that gracefully handles deep edge cases. Overcame this by implementing strict cryptographic CSRF validation to prevent replay attacks, type-safe API parsing to handle malformed OAuth payloads, and a highly resilient Gorilla WebSocket architecture that seamlessly manages network latency, dropped connections, and Ghost-Avatar cleanup. For GDPR, the existing soft delete kept all personal data and blocked the email from being reused, so deletion was reworked to erase everything in a single transaction while keeping an anonymous placeholder so the rest of the app keeps working. While auditing the app for GDPR, I also found that the AI assistant had no authentication and searched every message in the database, so anyone could ask it about other users' private DMs; the fix was to check the session token in the AI service and limit both RAG searches to the channels the user belongs to, without changing how the assistant answers.
+* **Contributions:**
+  * **Backend:** Go backend with Gorilla WebSockets for real-time presence and chat.
+  * **Authentication:** OAuth 2.0 (42, Google, GitHub) and TOTP two-factor authentication.
+  * **Features:** activity analytics dashboard (per-day API and charts), GDPR module (data export, account erasure, confirmation emails), Privacy Policy and Terms of Service.
+  * **Security:** backend validation matching every frontend rule; AI assistant locked to the logged-in user's own conversations.
+  * **DevOps:** NGINX HTTPS reverse proxy; Docker stack that runs on rootless Podman (port 8443), with the database kept off the host.
+* **Challenges Overcome:**
+  * **Edge cases:** CSRF validation against replay attacks, type-safe parsing of malformed OAuth payloads, and a WebSocket layer that survives dropped connections and cleans up ghost avatars.
+  * **GDPR erasure:** the soft delete kept all personal data and blocked email reuse, so deletion now wipes everything in one transaction and leaves an anonymous placeholder.
+  * **AI data leak:** the assistant had no authentication and searched every message, exposing other users' DMs; it now checks the session token and only searches the user's own channels.
 
 ### ksilvest (AI Service Architecture & Infrastructure)
 * **Contributions:** Developed the standalone Python 3.12 FastAPI microservice and RAG pipeline using pgvector and Google GenAI SDK. Implemented real-time Server-Sent Events (SSE) streaming, rate limiting, and the interactive frontend chat window (`KewanWindow`) with animations, draft persistence, and markdown rendering.
