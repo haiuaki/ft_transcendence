@@ -42,7 +42,7 @@ _This project has been created as part of the 42 curriculum by juljin, ksilvest,
   - *Team:* juljin
 - **[Minor - 1pt] User analytics and insights dashboard**
   - *Justification:* Lets users see how much they actually study and interact in the space, which fits a productivity-focused coworking app.
-  - *Implementation:* The backend records time spent in rooms (saved when a user leaves, disconnects or is removed from a room) and messages sent, both as lifetime totals on the user and per day in a `daily_user_analytics` table. The profile page shows a dashboard with total messages sent and total time spent.
+  - *Implementation:* The backend records time spent in rooms (saved when a user leaves, disconnects or is removed from a room) and messages sent, both as lifetime totals on the user and per day in a `daily_user_analytics` table. A `GET /profile/analytics` endpoint returns that per-day data for the last 7 or 30 days, with empty days filled in as zeros. The profile dashboard shows the lifetime totals and two bar charts (messages sent per day, time spent per day) with a 7/30-day switch and per-day tooltips on hover or keyboard focus. The charts are visible only on the user's own profile.
   - *Team:* juljin, dinza-cr, nlienard
 
 ### Artificial Intelligence
@@ -78,6 +78,7 @@ _This project has been created as part of the 42 curriculum by juljin, ksilvest,
 * **Real-Time Presence & Chat:** Gorilla WebSocket architecture with Ping/Pong heartbeats, real-time presence tracking (ONLINE/OFFLINE), Ghost-Avatar auto-cleanup, and spatial anti-cheat DB validation. *(By juljin, nlienard)*
 * **Direct Messaging:** Private, omnipresent 1-on-1 chats elegantly architected on top of the existing spatial channel infrastructure. *(By juljin, nlienard)*
 * **User Management:** Full CRUD operations for user profiles, settings, and avatars. *(By juljin, nlienard)*
+* **Activity Dashboard:** Lifetime totals plus daily bar charts of messages sent and time spent in rooms, over the last 7 or 30 days. *(By juljin, dinza-cr, nlienard)*
 * **Social Network:** Bidirectional friend request system (Add, Accept, Deny, Remove). *(By juljin, nlienard)*
 * **AI Assistant (Kewan AI):** Integration of a real-time, streaming conversational agent powered by the Google Gemini SDK, pgvector-backed semantic RAG search, and an interactive window UI (`KewanWindow`) featuring smooth entrance animations, window dragging, and markdown rendering. *(By ksilvest)*
 * **3D Workspace:** An interactive 3D virtual environment built with native Three.js, featuring custom `.glb` models, interactive raycasting, smooth mouse-follow camera mechanics, and dynamic React window UI overlays for 3D object click interactions. *(By dinza-cr)*
