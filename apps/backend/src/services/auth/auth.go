@@ -48,8 +48,8 @@ func Signup(dbPool *pgxpool.Pool) http.HandlerFunc {
 			return
 		}
 
-		if len(creds.Password) < 8 || len(creds.Password) > 72 {
-			http.Error(w, "Password must be between 8 and 72 characters long.", http.StatusBadRequest)
+		if problem := PasswordProblem(creds.Password); problem != "" {
+			http.Error(w, problem, http.StatusBadRequest)
 			return
 		}
 

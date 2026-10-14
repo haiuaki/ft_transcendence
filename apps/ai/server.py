@@ -6,7 +6,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from google import genai
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
@@ -51,8 +51,11 @@ async def rate_limit_handler(request: Request, exc: Exception) -> JSONResponse:
         content={"error": f"Rate limit exceeded: {exc}"},
     )
 
+# Same limit as the chat inputs on the frontend
+MAX_TEXT_LENGTH = 500
+
 class PromptRequest(BaseModel):
-    prompt: str
+    prompt: str = Field(max_length=MAX_TEXT_LENGTH)
     channel_id: int | None = None
 
 DEFAULT_MODELS = [
@@ -125,7 +128,7 @@ async def stream_ai(request: Request, body: PromptRequest):
 class MessageCreateRequest(BaseModel):
     sender_id: str
     channel_id: int
-    content: str
+    content: str = Field(max_length=MAX_TEXT_LENGTH)
 
 @app.post("/messages", status_code=201)
 async def create_message(request: Request, body: MessageCreateRequest):
