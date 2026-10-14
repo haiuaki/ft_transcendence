@@ -153,8 +153,9 @@ Before running the project, ensure you have the following software installed:
   * *Justification:* Go was strictly chosen for its concurrency model (Goroutines), which allows us to efficiently manage hundreds of simultaneous real-time WebSocket connections and ping/pong heartbeats with virtually zero latency.
 * **Backend (AI Service):** Python 3.12, FastAPI, Google GenAI SDK
   * *Justification:* Python is the industry standard for AI. FastAPI provides asynchronous request handling (`async/await`), which is crucial for streaming large LLM text chunks back to the user in real-time.
-* **Database:** PostgreSQL 18, pgx/v5 driver
+* **Database:** PostgreSQL 17 with the pgvector extension (`pgvector/pgvector:pg17` image), pgx/v5 driver (Go), asyncpg (Python)
   * *Justification:* PostgreSQL was chosen for its unmatched ACID compliance and advanced relational indexing. Because our app relies on a complex Bidirectional Friendship system and strict spatial anti-cheat validations, we required a rigid, schema-enforced relational database rather than a NoSQL document store.
+  * *Why pgvector:* The RAG assistant needs to find chat messages by meaning, not just by keywords. pgvector stores each message's Gemini embedding (a 768-dimension vector) in a column right next to the message and searches it by cosine distance through an HNSW index. Keeping vectors in PostgreSQL instead of a separate vector database (Pinecone, Qdrant...) means one less service to deploy, and semantic search can be joined directly with users, channels and memberships in plain SQL.
 * **Third-Party APIs:** Resend Go SDK, Google Gemini API
 * **Security Libraries:** golang-jwt (session tokens), bcrypt (password hashing), pquerna/otp (TOTP generation, validation and QR codes)
 * **Infrastructure:** Docker, Docker Compose, NGINX (HTTPS Reverse Proxy)
@@ -162,13 +163,16 @@ Before running the project, ensure you have the following software installed:
 * **CI/CD:** GitHub Actions (Automated Go formatting and builds)
 
 ## Database Schema
-Our database utilizes a Domain-Driven Design approach with strict constraints to ensure data integrity.
+Our database utilizes a Domain-Driven Design approach with strict constraints to ensure data integrity. The schema is created on first boot from `infra/postgresql/init.sql`.
 
-* **Users Table:** Stores user profiles and authentication data. Primary key is a `UUID`. Key fields include `username` (VARCHAR, Unique), `email` (VARCHAR, Unique), `status` (VARCHAR), and the 2FA state `is_2fa_enabled` (BOOLEAN) with its `two_factor_secret` (VARCHAR).
-* **Friendships Table:** Manages the social network. Uses a custom Bidirectional Unique Index (`LEAST/GREATEST`) on `user_id` and `friend_id` (both UUID Foreign Keys) to elegantly handle overlapping friend requests and race conditions.
-* **Channels Table:** Represents the 3D Coworking spaces. Primary key is a `SERIAL id`. Key fields include `name` (VARCHAR) and `owner_id` (UUID Foreign Key).
-* **Channel_Members Table:** A junction table tracking who is currently sitting in a 3D room. Uses a composite primary key (`channel_id`, `user_id`) and tracks permissions via the `role` field.
-* **Messages Table:** Stores the real-time chat history for each channel, mapping `sender_id` (UUID) to `channel_id` (INTEGER) and vector embeddings (`pgvector`) used for AI contextual search.
+* **Users Table:** Stores user profiles and authentication data. Primary key is a `UUID`. Key fields include `username` (VARCHAR(30), unique ignoring case thanks to a `LOWER(username)` index), `email` (VARCHAR, Unique), `password_hash` (bcrypt), `avatar_url` (TEXT), `status` (VARCHAR), the 2FA state `is_2fa_enabled` (BOOLEAN) with its `two_factor_secret` (VARCHAR), lifetime counters (`total_messages_sent`, `cumulative_time_seconds`) and `deleted_at` (TIMESTAMPTZ) for soft deletion. A deleted account is anonymised: its personal fields are wiped and its username becomes `deleted_<id>`.
+* **Daily_User_Analytics Table:** One row per user per day (composite primary key `user_id`, `date`) holding `time_spent_seconds` and `messages_sent`. It feeds the daily charts of the analytics dashboard.
+* **Friendships Table:** Manages the social network. Uses a custom Bidirectional Unique Index (`LEAST/GREATEST`) on `user_id` and `friend_id` (both UUID Foreign Keys) to elegantly handle overlapping friend requests and race conditions, plus a `CHECK` constraint that forbids befriending yourself. `status` is `PENDING` or `ACCEPTED`.
+* **Channels Table:** Represents the 3D Coworking spaces and direct messages. Primary key is a `SERIAL id`. Key fields include `name` (VARCHAR(30)), `type` (`PUBLIC`, `PRIVATE` or `DIRECT`), `password_hash` for private rooms, the 3D settings `model_type` and `max_capacity`, and `owner_id` (UUID Foreign Key, set to NULL if the owner disappears).
+* **Channel_Members Table:** A junction table tracking who is currently sitting in a 3D room or taking part in a DM. Uses a composite primary key (`channel_id`, `user_id`), tracks permissions via the `role` field (`OWNER`, `MEMBER`, `BANNED`) and presence via `status` (`ACTIVE` or `LEFT`).
+* **Messages Table:** Stores the real-time chat history for each channel, mapping `sender_id` (UUID) to `channel_id` (INTEGER). Each message also has an `embedding` column (`vector(768)`, pgvector) used by the RAG assistant, searched through an HNSW cosine index.
+
+Foreign keys use `ON DELETE CASCADE`, so removing a user row or a channel automatically removes its memberships, messages, friendships and analytics.
 
 ```mermaid
 erDiagram
@@ -177,6 +181,7 @@ erDiagram
     USERS ||--o{ CHANNELS : "owns"
     USERS ||--o{ CHANNEL_MEMBERS : "joins"
     USERS ||--o{ MESSAGES : "sends"
+    USERS ||--o{ DAILY_USER_ANALYTICS : "tracks"
     CHANNELS ||--o{ CHANNEL_MEMBERS : "contains"
     CHANNELS ||--o{ MESSAGES : "hosts"
 
@@ -185,18 +190,30 @@ erDiagram
         VARCHAR email UK
         VARCHAR password_hash
         VARCHAR username UK
+        TEXT avatar_url
         BOOLEAN is_verified
+        VARCHAR verification_token
         BOOLEAN is_2fa_enabled
         VARCHAR two_factor_secret
         VARCHAR status
         INTEGER total_messages_sent
         INTEGER cumulative_time_seconds
+        TIMESTAMPTZ created_at
+        TIMESTAMPTZ updated_at
+        TIMESTAMPTZ deleted_at
+    }
+    DAILY_USER_ANALYTICS {
+        UUID user_id PK, FK
+        DATE date PK
+        INTEGER time_spent_seconds
+        INTEGER messages_sent
     }
     FRIENDSHIPS {
         SERIAL id PK
         UUID user_id FK
         UUID friend_id FK
         VARCHAR status
+        TIMESTAMPTZ created_at
     }
     CHANNELS {
         SERIAL id PK
@@ -206,19 +223,21 @@ erDiagram
         VARCHAR model_type
         INTEGER max_capacity
         UUID owner_id FK
+        TIMESTAMPTZ created_at
     }
     CHANNEL_MEMBERS {
         INTEGER channel_id PK, FK
         UUID user_id PK, FK
         VARCHAR role
         VARCHAR status
+        TIMESTAMPTZ joined_at
     }
     MESSAGES {
         SERIAL id PK
         UUID sender_id FK
         INTEGER channel_id FK
         TEXT content
-        VECTOR embedding
+        VECTOR embedding "vector(768)"
         TIMESTAMPTZ created_at
     }
 ```
@@ -231,7 +250,7 @@ erDiagram
 * **nlienard (Project Manager & Frontend Developer)**
   * *Responsibilities:* Facilitated team communication and sprint goals. Architected the Next.js frontend, global state management, and user interface.
 * **dinza-cr (Developer & 3D Artist)**
-  * *Responsibilities:* Designed the interactive 3D Coworking assets in Blender and integrated the WebGL rendering pipeline using React Three Fiber.
+  * *Responsibilities:* Designed the interactive 3D Coworking assets in Blender and integrated the WebGL rendering pipeline using native Three.js inside React.
 
 ## Project Management
 * **Task Distribution & Organization:** The project was divided into autonomous modules (Frontend, Backend, AI, 3D). We held weekly sync meetings to align on API contracts and Docker infrastructure changes before merging feature branches into `main`.
