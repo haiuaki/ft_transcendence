@@ -1,5 +1,8 @@
 import type { NextConfig } from "next";
 
+// Same port the backend listens on (PORT in .env, 8080 by default)
+const backendPort = process.env.BACKEND_PORT || "8080";
+
 const nextConfig: NextConfig = {
   async rewrites() {
     return [
@@ -9,7 +12,7 @@ const nextConfig: NextConfig = {
       },
       {
         source: "/api/:path*",
-        destination: "http://backend:8080/:path*",
+        destination: `http://backend:${backendPort}/:path*`,
       },
     ];
   },
