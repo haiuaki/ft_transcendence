@@ -5,6 +5,7 @@ import { ArrowUp, Loader2, Pin, PinOff, Trash2 } from 'lucide-react';
 import { motion, useDragControls } from 'motion/react';
 
 type KewanProps = {
+    isOpen?: boolean;
     onClose: () => void;
 };
 
@@ -36,14 +37,14 @@ function renderFormattedText(text: string) {
         }
         if (part.startsWith('*') && part.endsWith('*') && part.length >= 2) {
             return (
-                <em key={index} className="italic">
+                <em key={index} className="italic text-black">
                     {part.slice(1, -1)}
                 </em>
             );
         }
         if (part.startsWith('`') && part.endsWith('`') && part.length >= 2) {
             return (
-                <code key={index} className="rounded bg-black/10 px-1 py-0.5 text-xs font-mono">
+                <code key={index} className="rounded bg-black/10 px-1 py-0.5 text-xs font-mono text-black">
                     {part.slice(1, -1)}
                 </code>
             );
@@ -52,7 +53,7 @@ function renderFormattedText(text: string) {
     });
 }
 
-export default function KewanWindow({ onClose }: KewanProps) {
+export default function KewanWindow({ isOpen = true, onClose }: KewanProps) {
     const dragControls = useDragControls();
     const windowRef = useRef<HTMLDivElement>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -112,10 +113,14 @@ export default function KewanWindow({ onClose }: KewanProps) {
     }, [messages, isLoading]);
 
     useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [messages, isLoading]);
+        if (isOpen) {
+            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        }
+    }, [messages, isLoading, isOpen]);
 
     useEffect(() => {
+        if (!isOpen) return;
+
         function handleClickOutside(event: MouseEvent) {
             if (isPinned) {
                 return;
@@ -129,7 +134,7 @@ export default function KewanWindow({ onClose }: KewanProps) {
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
-    }, [onClose, isPinned]);
+    }, [onClose, isPinned, isOpen]);
 
     const handleSubmit = async (e?: React.FormEvent) => {
         if (e) e.preventDefault();
@@ -272,9 +277,15 @@ export default function KewanWindow({ onClose }: KewanProps) {
             dragControls={dragControls}
             dragMomentum={false}
             initial={{ opacity: 0, x: 100 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.35, ease: 'easeOut' }}
-            className="fixed bottom-20 right-4 z-[9999] w-[420px] max-h-[85vh] rounded-2xl bg-white p-6 shadow-2xl ring-1 ring-black/10 flex flex-col gap-4"
+            animate={{
+                opacity: isOpen ? 1 : 0,
+                x: isOpen ? 0 : 60,
+                pointerEvents: isOpen ? 'auto' : 'none',
+            }}
+            transition={{ duration: 0.3, ease: 'easeOut' }}
+            className={`fixed bottom-20 right-4 z-[9999] w-[420px] max-h-[85vh] rounded-2xl bg-white p-6 shadow-2xl ring-1 ring-black/10 flex flex-col gap-4 ${
+                !isOpen ? 'invisible' : ''
+            }`}
         >
             <div
                 onPointerDown={(e) => dragControls.start(e)}
@@ -343,7 +354,7 @@ export default function KewanWindow({ onClose }: KewanProps) {
                                 className={`rounded-2xl px-3.5 py-2.5 text-sm max-w-[85%] break-words leading-relaxed ${
                                     msg.role === 'user'
                                         ? 'bg-black text-white rounded-br-xs'
-                                        : 'bg-zinc-100 text-zinc-900 rounded-bl-xs whitespace-pre-wrap'
+                                        : 'bg-ui-soft text-black rounded-bl-xs whitespace-pre-wrap'
                                 }`}
                             >
                                 {msg.content ? (
@@ -353,7 +364,7 @@ export default function KewanWindow({ onClose }: KewanProps) {
                                         msg.content
                                     )
                                 ) : (
-                                    <div className="flex items-center gap-1.5 py-1 text-zinc-400">
+                                    <div className="flex items-center gap-1.5 py-1 text-black/40">
                                         <Loader2 className="animate-spin" size={14} />
                                         <span className="text-xs">Generating response...</span>
                                     </div>
@@ -363,16 +374,16 @@ export default function KewanWindow({ onClose }: KewanProps) {
                     ))
                 )}
                 {error && (
-                    <div className="rounded-xl bg-red-50 p-2.5 text-xs text-red-600 border border-red-200">
+                    <div className="rounded-xl bg-red-500/10 p-2.5 text-xs text-red-500 border border-red-500/20">
                         {error}
                     </div>
                 )}
                 <div ref={messagesEndRef} />
             </div>
 
-            <form onSubmit={handleSubmit} className="w-full ring-2 ring-black/30 shadow-lg rounded-xl overflow-hidden focus-within:ring-black transition-all">
+            <form onSubmit={handleSubmit} className="w-full ring-2 ring-ui-line shadow-lg rounded-xl overflow-hidden focus-within:ring-black transition-all">
                 <textarea 
-                    className="resize-none text-black w-full p-2.5 outline-none block text-sm" 
+                    className="resize-none text-black w-full p-2.5 outline-none block text-sm bg-transparent placeholder:text-black/40" 
                     maxLength={500} 
                     rows={2}
                     placeholder="Type your message here..." 
@@ -382,7 +393,7 @@ export default function KewanWindow({ onClose }: KewanProps) {
                     disabled={isLoading}
                 />
                 <div className="flex items-center justify-between w-full px-2.5 pb-2 pt-1 bg-white">
-                    <span className="text-[11px] text-zinc-400">
+                    <span className="text-[11px] text-black/40">
                         {message.length}/500
                     </span>
                     <button
