@@ -42,6 +42,9 @@ services:
       dockerfile: Dockerfile
     container_name: nextjs
     restart: unless-stopped
+    environment:
+      # Not PORT: Next.js would use it as its own listen port
+      - BACKEND_PORT=${PORT:-8080}
     depends_on:
       - backend
       - ai-service
