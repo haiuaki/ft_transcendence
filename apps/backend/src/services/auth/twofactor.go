@@ -21,7 +21,7 @@ import (
 
 const (
 	// Name shown above the code in the authenticator app
-	twoFactorIssuer = "ft_transcendence"
+	twoFactorIssuer = "ft_cluster"
 
 	// How long the user has to type their code after a correct password
 	pendingTokenTTL = 5 * time.Minute

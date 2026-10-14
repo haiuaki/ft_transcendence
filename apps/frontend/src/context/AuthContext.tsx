@@ -4,6 +4,7 @@ import { createContext, useContext, useState, ReactNode, useEffect } from "react
 import userService from "../services/userService";
 import twoFactorService, { TwoFactorSetupResponse } from "../services/twoFactorService";
 import { FriendshipStatus } from "../services/friendService";
+import { clearAiHistory } from "../lib/aiHistory";
 
 interface AuthProviderProps {
     children: ReactNode
@@ -27,7 +28,7 @@ interface AuthContextProps {
     login: (email: string, password: string) => Promise<LoginResult>,
     completeTwoFactor: (tempToken: string, code: string) => Promise<void>,
     logout: () => void,
-    deleteProfile: (token: string) => Promise<void>,
+    deleteProfile: (token: string, username: string) => Promise<void>,
     setupTwoFactor: () => Promise<TwoFactorSetupResponse>,
     enableTwoFactor: (code: string) => Promise<void>,
     disableTwoFactor: (code: string) => Promise<void>,
@@ -74,8 +75,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         setUser(data);
     }
 
-    const deleteProfile = async (token: string) => {
-        await userService.delete(token);
+    const deleteProfile = async (token: string, username: string) => {
+        await userService.delete(token, username);
         logout()
     }
 
@@ -117,6 +118,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
     const logout = async () => {
         localStorage.removeItem("token");
+        clearAiHistory();
         setToken(null)
         setUser(null)
     }

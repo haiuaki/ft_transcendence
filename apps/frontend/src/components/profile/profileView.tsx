@@ -3,6 +3,7 @@
 import EditProfileModal from "./editProfileModal";
 import TwoFactorModal from "./TwoFactorModal";
 import ActivityCharts from "./ActivityCharts";
+import DeleteAccountModal from "./DeleteAccountModal";
 import { useAuth, User } from "@/src/context/AuthContext";
 import { useSocket } from "@/src/context/SocketContext";
 import friendService, { FriendshipStatus } from "@/src/services/friendService";
@@ -26,6 +27,8 @@ const ProfileView = ({ username, backHref, compact = false }: ProfileViewProps) 
   const [friendAction, setFriendAction] = useState<"add" | "accept" | "deny" | null>(null);
   const [openEditProfileModal, setOpenEditProfileModal] = useState<boolean>(false);
   const [twoFactorMode, setTwoFactorMode] = useState<"enable" | "disable" | null>(null);
+  const [openDeleteAccountModal, setOpenDeleteAccountModal] = useState<boolean>(false);
+  const [isExporting, setIsExporting] = useState<boolean>(false);
   const [fetched, setFetched] = useState<{ username: string, user: User | null, error: string } | null>(null);
   const router = useRouter();
   const isOwnProfile = !username || username.toLowerCase() === user?.username.toLowerCase();
@@ -98,6 +101,26 @@ const ProfileView = ({ username, backHref, compact = false }: ProfileViewProps) 
   const userProfile = isOwnProfile ? user : fetched?.user ?? null;
   // Our own status can lag behind the socket, so trust the live connection instead
   const isOnline = isOwnProfile ? isConnected : userProfile?.status === "ONLINE";
+
+  const exportData = async () => {
+    if (!token || isExporting) return;
+    try {
+      setIsExporting(true);
+      const { blob, filename } = await userService.exportData(token);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      link.click();
+      // Revoking right away can cancel the download in Safari and Firefox
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      toast.success("Your data has been downloaded.");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to export your data.");
+    } finally {
+      setIsExporting(false);
+    }
+  }
 
   const formatDuration = (seconds: number = 0) => {
     const hours = Math.floor(seconds / 3600);
@@ -201,11 +224,37 @@ const ProfileView = ({ username, backHref, compact = false }: ProfileViewProps) 
             </button>
           </div>
         </div>
+
+        <div className="flex flex-col gap-4 mt-4">
+          <p className="text-sm font-semibold">Your data</p>
+          <div className="h-px w-full bg-ui-line" />
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex flex-col">
+              <p className="text-sm font-semibold">Export your data</p>
+              <p className="text-xs text-black/60">Download a copy of your profile, friends, rooms, messages and activity as JSON.</p>
+            </div>
+            <button disabled={isExporting} className="cursor-pointer flex items-center gap-2 text-sm p-2 rounded-md ring ring-ui-line hover:bg-black/5 disabled:opacity-60 shrink-0" onClick={exportData}>
+              {isExporting && <Loader2 size={14} className="animate-spin" />}
+              <p>Export</p>
+            </button>
+          </div>
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex flex-col">
+              <p className="text-sm font-semibold">Delete account</p>
+              <p className="text-xs text-black/60">Permanently erase your account and all of its data.</p>
+            </div>
+            <button className="cursor-pointer text-sm p-2 rounded-md ring ring-red-600/40 text-red-600 hover:bg-red-600/10 shrink-0" onClick={() => setOpenDeleteAccountModal(true)}>
+              <p>Delete</p>
+            </button>
+          </div>
+          <p className="text-xs text-black/60">Read how we handle your data in the <Link href="/privacy-policy" className="underline">privacy policy</Link>.</p>
+        </div>
       </div>
       }
     </div>
     {openEditProfileModal && <EditProfileModal onClose={() => setOpenEditProfileModal(false)} />}
     {twoFactorMode && <TwoFactorModal mode={twoFactorMode} onClose={() => setTwoFactorMode(null)} />}
+    {openDeleteAccountModal && <DeleteAccountModal onClose={() => setOpenDeleteAccountModal(false)} />}
   </div>
 }
 

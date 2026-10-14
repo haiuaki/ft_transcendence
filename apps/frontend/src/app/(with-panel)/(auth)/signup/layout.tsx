@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Sign up | FT_Cluster",
+  title: "Sign up | ft_cluster",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/signup">) {
