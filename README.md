@@ -3,7 +3,7 @@ _This project has been created as part of the 42 curriculum by juljin, ksilvest,
 # ft_transcendence
 
 ## Description
-**[TBD - Project Name]** is a web-based **3D Coworking and Study Space**. We built this project to provide a collaborative virtual environment where users can work together in real-time. The core features include an interactive 3D room, a live chat system, user profiles with friend management, third-party OAuth logins, and an integrated AI chatbot to help answer questions while you study.
+**ft_cluster** is a web-based **3D Coworking and Study Space**. We built this project to provide a collaborative virtual environment where users can work together in real-time. The core features include an interactive 3D room, a live chat system, user profiles with friend management, third-party OAuth logins, and an integrated AI chatbot to help answer questions while you study.
 
 ## Modules
 
@@ -21,6 +21,12 @@ _This project has been created as part of the 42 curriculum by juljin, ksilvest,
   - *Implementation:* Engineered a live chat, profile CRUD, and a bidirectional Postgres friendship system.
   - *Team:* juljin, nlienard
 
+### Accessibility & Internationalization
+- **[Minor - 1pt] Support for additional browsers**
+  - *Justification:* A study space should work for everyone in the room, whatever browser they use, not just in Chrome.
+  - *Implementation:* Every feature was tested and fixed in Chrome, Firefox and Safari, with the same UI in each. Browser-specific CSS has standard fallbacks (e.g. `scrollbar-width`/`scrollbar-color` for Firefox alongside the `::-webkit-scrollbar` styles). Known limitations: [TBD - list any, or write "none found"].
+  - *Team:* juljin, ksilvest, dinza-cr, nlienard
+
 ### User Management
 - **[Major - 2pts] Standard Authentication**
   - *Justification:* Required to securely isolate user data and sessions.
@@ -34,6 +40,10 @@ _This project has been created as part of the 42 curriculum by juljin, ksilvest,
   - *Justification:* Protects accounts even when a password or an OAuth provider account is compromised.
   - *Implementation:* TOTP (RFC 6238) codes from any authenticator app, enforced on both password and OAuth logins, with short-lived pending tokens and per-login attempt limits.
   - *Team:* juljin
+- **[Minor - 1pt] User analytics and insights dashboard**
+  - *Justification:* Lets users see how much they actually study and interact in the space, which fits a productivity-focused coworking app.
+  - *Implementation:* The backend records time spent in rooms (saved when a user leaves, disconnects or is removed from a room) and messages sent, both as lifetime totals on the user and per day in a `daily_user_analytics` table. The profile page shows a dashboard with total messages sent and total time spent.
+  - *Team:* juljin, dinza-cr, nlienard
 
 ### Artificial Intelligence
 - **[Major - 2pts] LLM Interface**
