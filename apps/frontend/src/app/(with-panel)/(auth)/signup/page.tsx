@@ -53,7 +53,7 @@ export default function SignUp() {
         icon: <MailCheck size={20} />,
         duration: 7000,
       });
-      <p className={`text-sm text-center ${colors.textSecondary}`}>By continuing, you agree to our <Link className="font-medium text-black cursor-pointer" href={"/privacy-policy"} target="_blank">privacy policy</Link></p>
+      <p className={`text-sm text-center ${colors.textSecondary}`}>By continuing, you agree to our <Link className="font-medium text-black cursor-pointer" href={"/terms-of-service"} target="_blank">terms of service</Link> and <Link className="font-medium text-black cursor-pointer" href={"/privacy-policy"} target="_blank">privacy policy</Link></p>
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to create user")
     } finally {
@@ -91,7 +91,7 @@ export default function SignUp() {
                 })}
               </div>}
       {error && <p className="text-sm text-red-500 font-semibold">{error}</p>}
-      <p className={`text-sm text-left ${colors.textSecondary}`}>By continuing, you agree to our <Link className="font-medium text-black cursor-pointer" href={"/privacy-policy"} target="_blank">privacy policy</Link></p>
+      <p className={`text-sm text-left ${colors.textSecondary}`}>By continuing, you agree to our <Link className="font-medium text-black cursor-pointer" href={"/terms-of-service"} target="_blank">terms of service</Link> and <Link className="font-medium text-black cursor-pointer" href={"/privacy-policy"} target="_blank">privacy policy</Link></p>
       <div className="flex flex-col gap-2">
 
       <button
