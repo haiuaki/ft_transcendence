@@ -10,6 +10,7 @@ import { FaGithub } from "react-icons/fa6";
 import { FcGoogle } from "react-icons/fc";
 import { toast } from "sonner";
 import InputField from "@/src/components/InputField";
+import { EMAIL_REGEX, passwordRules, USERNAME_REGEX, USERNAME_RULE } from "@/src/lib/validation";
 
 interface AuthFormData {
   email: string,
@@ -34,14 +35,14 @@ export default function SignUp() {
     { title: "Password", placeholder: "", maxLength: undefined, isPassword: true, onChange: (e: ChangeEvent<HTMLInputElement>) => setAuthFormData({ ...authFormData, password: e.target.value }), value: authFormData.password },
   ]
 
-  const passwordConditions = [
-    { isValid: authFormData.password.length >= 10, text: "10 characters minimum" },
-    { isValid: /[^a-zA-Z0-9]/.test(authFormData.password), text: "1 special character" },
-    { isValid: /[0-9]/.test(authFormData.password), text: "1 number" },
-    { isValid: authFormData.password.trim().length > 0 && authFormData.password.length == authFormData.password.trim().length, text: "No leading or trailing whitespace" },
-  ]
+  const passwordConditions = passwordRules(authFormData.password)
 
   const createAccount = async () => {
+    setError(null);
+    if (!EMAIL_REGEX.test(authFormData.email.trim()))
+      return setError("Please enter a valid email address.");
+    if (!USERNAME_REGEX.test(authFormData.username.trim()))
+      return setError(USERNAME_RULE);
     if (passwordConditions.some((item) => !item.isValid))
       return;
     try {

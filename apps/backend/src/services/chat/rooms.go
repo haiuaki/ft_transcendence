@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/crypto/bcrypt"
@@ -103,7 +104,7 @@ func CreateRoom(dbPool *pgxpool.Pool) http.HandlerFunc {
 		}
 
 		req.Name = strings.TrimSpace(req.Name)
-		if len(req.Name) < 3 || len(req.Name) > 30 {
+		if nameLen := utf8.RuneCountInString(req.Name); nameLen < 3 || nameLen > 30 {
 			http.Error(w, "Room name must be between 3 and 30 characters.", http.StatusBadRequest)
 			return
 		}
@@ -112,9 +113,11 @@ func CreateRoom(dbPool *pgxpool.Pool) http.HandlerFunc {
 			req.Type = "PUBLIC" // Default to public if garbage was sent
 		}
 
-		if req.Type == "PRIVATE" && req.Password == "" {
-			http.Error(w, "Private rooms require a password.", http.StatusBadRequest)
-			return
+		if req.Type == "PRIVATE" {
+			if problem := roomPasswordProblem(req.Password); problem != "" {
+				http.Error(w, problem, http.StatusBadRequest)
+				return
+			}
 		}
 
 		var passwordHash *string
@@ -194,7 +197,7 @@ func UpdateRoom(dbPool *pgxpool.Pool) http.HandlerFunc {
 
 		if req.Name != "" {
 			req.Name = strings.TrimSpace(req.Name)
-			if len(req.Name) < 3 || len(req.Name) > 30 {
+			if nameLen := utf8.RuneCountInString(req.Name); nameLen < 3 || nameLen > 30 {
 				http.Error(w, "Room name must be between 3 and 30 characters.", http.StatusBadRequest)
 				return
 			}
@@ -205,9 +208,11 @@ func UpdateRoom(dbPool *pgxpool.Pool) http.HandlerFunc {
 			return
 		}
 
-		if req.Type == "PRIVATE" && req.Password == "" {
-			http.Error(w, "Private rooms require a password.", http.StatusBadRequest)
-			return
+		if req.Type == "PRIVATE" {
+			if problem := roomPasswordProblem(req.Password); problem != "" {
+				http.Error(w, problem, http.StatusBadRequest)
+				return
+			}
 		}
 
 		// Prepare dynamic update
@@ -324,4 +329,16 @@ func DeleteRoom(dbPool *pgxpool.Pool) http.HandlerFunc {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("Room successfully deleted."))
 	}
+}
+
+// roomPasswordProblem returns why a private room password is rejected, or "" if it is valid
+func roomPasswordProblem(password string) string {
+	if strings.TrimSpace(password) == "" {
+		return "Private rooms require a password."
+	}
+	// bcrypt only uses the first 72 bytes of a password
+	if len(password) > 72 {
+		return "Room password must be at most 72 bytes long."
+	}
+	return ""
 }

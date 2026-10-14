@@ -9,6 +9,7 @@ import { useAuth } from "@/src/context/AuthContext"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import DynamicModalTemplate from "@/src/components/TemplateModal/DynamicModalTemplate"
+import { roomNameProblem, roomPasswordProblem } from "@/src/lib/validation";
 
 interface ModelMenuProps {
   ref: RefObject<HTMLElement | null>;
@@ -95,8 +96,10 @@ export default function CreateRoom() {
         className={`select-none w-full flex items-center gap-2 justify-center p-2 rounded-md cursor-pointer ${isLoading ? "bg-black/80" : "bg-black hover:bg-black/85 active:bg-black/90 active:scale-99"} text-white `}
         onClick={async () => {
           try {
-            if (!roomFormData.name.trim()) return setError("A name is required for a room.");
-            if (!roomFormData.isPublic && !roomFormData.password.trim()) return setError("A password is required for a private room.");
+            const nameProblem = roomNameProblem(roomFormData.name);
+            if (nameProblem) return setError(nameProblem);
+            const passwordProblem = roomFormData.isPublic ? null : roomPasswordProblem(roomFormData.password);
+            if (passwordProblem) return setError(passwordProblem);
             setIsLoading(true);
             const roomId = await roomService.create(token || "", roomFormData.name, roomFormData.isPublic ? "PUBLIC" : "PRIVATE", roomFormData.password, selectedModelId);
             router.push(`/room/${roomId}`);

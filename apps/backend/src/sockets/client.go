@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/gorilla/websocket"
@@ -23,6 +24,13 @@ const (
 
 	// Send pings to peer with this period. Must be less than `pongWait`
 	pingPeriod = (pongWait * 9) / 10
+
+	// Largest frame accepted from a client: a 500-character message plus its JSON envelope,
+	// or an auth token. Bigger frames close the connection instead of filling memory.
+	maxFrameSize = 8 * 1024
+
+	// Same limit as the chat input on the frontend
+	maxChatMessageLen = 500
 )
 
 // Client acts as an intermediary between the WebSocket connection and the Hub
@@ -89,6 +97,7 @@ func (c *Client) readPump() {
 		c.conn.Close()
 	}()
 
+	c.conn.SetReadLimit(maxFrameSize)
 	c.conn.SetReadDeadline(time.Now().Add(pongWait))
 	c.conn.SetPongHandler(func(string) error { c.conn.SetReadDeadline(time.Now().Add(pongWait)); return nil })
 
@@ -153,7 +162,8 @@ func (c *Client) readPump() {
 			chatData.Message = strings.TrimSpace(chatData.Message)
 
 			// Prevent malicious scripts from filling up the database
-			if len(chatData.Message) == 0 || len(chatData.Message) > 500 {
+			// Count characters, not bytes, like the frontend does (é is 2 bytes)
+			if msgLen := utf8.RuneCountInString(chatData.Message); msgLen == 0 || msgLen > maxChatMessageLen {
 				log.Printf("Security: Message from %s too long or empty.", c.Email)
 				continue
 			}

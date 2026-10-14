@@ -17,6 +17,16 @@ def test_stream_empty_prompt():
     assert response.status_code == 400
     assert "Prompt cannot be empty" in response.json()["detail"]
 
+def test_stream_prompt_too_long():
+    """Checks prompts over 500 characters are rejected, like on the frontend."""
+    response = client.post("/stream", json={"prompt": "a" * 501})
+    assert response.status_code == 422
+
+def test_message_too_long():
+    """Checks stored messages over 500 characters are rejected."""
+    response = client.post("/messages", json={"sender_id": "x", "channel_id": 1, "content": "a" * 501})
+    assert response.status_code == 422
+
 def test_rate_limiting(monkeypatch):
     """Checks limiter blocks after 20 queries (code 429)."""
     app.state.db_pool = MagicMock()

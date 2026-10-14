@@ -6,6 +6,7 @@ import { useState } from "react";
 import { useAuth } from "@/src/context/AuthContext";
 import CenterModalTemplate from "../TemplateModal/CenterModalTemplate";
 import Image from "next/image";
+import { USERNAME_REGEX, USERNAME_RULE } from "@/src/lib/validation";
 
 interface EditProfileModalProps {
     onClose: () => void,
@@ -14,7 +15,6 @@ interface EditProfileModalProps {
 const DEFAULT_AVATAR = "/img/avatar.jpg";
 const AVATAR_SIZE = 256;
 const MAX_AVATAR_LENGTH = 200 * 1024;
-const USERNAME_REGEX = /^[a-zA-Z0-9_]{3,30}$/;
 
 const fileToAvatarDataUrl = (file: File): Promise<string> =>
     new Promise((resolve, reject) => {
@@ -55,7 +55,7 @@ const EditProfileModal = ({ onClose }: EditProfileModalProps) => {
     const updateProfile = async () => {
         if (!token) return toast.error("Your session has expired. Please log in again.");
         if (usernameChanged && !USERNAME_REGEX.test(trimmedUsername))
-            return toast.error("Username must be 3-30 characters: letters, numbers and underscores only.");
+            return toast.error(USERNAME_RULE);
         try {
             setIsLoading(true);
             await userService.edit(token, {
