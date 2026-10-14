@@ -123,18 +123,37 @@ const userService = {
         }
         return response.json();
     },
-    delete: async (token: string) => {
+    exportData: async (token: string): Promise<{ blob: Blob, filename: string }> => {
+        if (!token.trim())
+            throw new Error("Token is required")
+        const response = await fetch(URL + "/profile/export", {
+            method: "GET",
+            headers: {
+                Authorization: `Bearer ${token}`
+            },
+        })
+        if (!response.ok) {
+            const message = await response.text();
+            throw new Error(message || "Failed to export your data")
+        }
+        const filename = response.headers.get("Content-Disposition")?.match(/filename="(.+)"/)?.[1] ?? "ft_transcendence-data.json";
+        return { blob: await response.blob(), filename };
+    },
+    delete: async (token: string, username: string) => {
         if (!token.trim())
             throw new Error("Token is required")
         const response = await fetch(URL + "/profile/delete", {
             method: "DELETE",
             headers: {
+                "Content-Type": "application/json",
                 Authorization: `Bearer ${token}`
             },
+            body: JSON.stringify({ username })
         })
+        const message = await response.text();
         if (!response.ok)
-            throw new Error("Failed to delete user")
-        return response.text();
+            throw new Error(message || "Failed to delete account")
+        return message;
     }
 }
 

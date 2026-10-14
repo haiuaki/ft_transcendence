@@ -8,13 +8,14 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"net/mail"
+	netmail "net/mail"
 	"os"
 	"strings"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/resend/resend-go/v4"
 	"golang.org/x/crypto/bcrypt"
+
+	"github.com/haiuaki/ft_transcendence/src/services/mail"
 )
 
 func Signup(dbPool *pgxpool.Pool) http.HandlerFunc {
@@ -52,7 +53,7 @@ func Signup(dbPool *pgxpool.Pool) http.HandlerFunc {
 			return
 		}
 
-		_, err = mail.ParseAddress(creds.Email)
+		_, err = netmail.ParseAddress(creds.Email)
 		if err != nil {
 			http.Error(w, "Invalid email format.", http.StatusBadRequest)
 			return
@@ -87,35 +88,17 @@ func Signup(dbPool *pgxpool.Pool) http.HandlerFunc {
 			return
 		}
 
-		resendAPIKey := os.Getenv("RESEND_API_KEY")
-		if resendAPIKey != "" {
-			client := resend.NewClient(resendAPIKey)
-
-			// Construct the link pointing to the frontend (fallback if not set)
-			frontendURL := os.Getenv("FRONTEND_URL")
-			if frontendURL == "" {
-				frontendURL = "https://localhost:8443"
-			}
-			verifyLink := fmt.Sprintf("%s/verify?token=%s", frontendURL, verificationToken)
-
-			params := &resend.SendEmailRequest{
-				From:    "onboarding@resend.dev",
-				To:      []string{creds.Email},
-				Subject: "Welcome to ft_transcendence. Please verify your email.",
-				Html: fmt.Sprintf(`<p>Thanks for signing up, %s.</p>
-				                   <p>Click <a href='%s'>here</a> to verify your account.</p>`,
-					creds.Username, verifyLink),
-			}
-
-			_, err = client.Emails.Send(params)
-			if err != nil {
-				log.Println("Resend Error: Failed to send verification email:", err)
-			} else {
-				log.Printf("Verification email successfully sent to %s", creds.Email)
-			}
-		} else {
-			log.Println("Warning: RESEND_API_KEY not set in `.env`. Email skipped.")
+		// Construct the link pointing to the frontend (fallback if not set)
+		frontendURL := os.Getenv("FRONTEND_URL")
+		if frontendURL == "" {
+			frontendURL = "https://localhost:8443"
 		}
+		verifyLink := fmt.Sprintf("%s/verify?token=%s", frontendURL, verificationToken)
+
+		mail.Send(creds.Email, "Welcome to ft_cluster. Please verify your email.",
+			fmt.Sprintf(`<p>Thanks for signing up, %s.</p>
+			             <p>Click <a href='%s'>here</a> to verify your account.</p>`,
+				mail.Escape(creds.Username), verifyLink))
 
 		fmt.Fprintf(w, "User %s successfully created. Please check your email to verify your account.", creds.Email)
 	}

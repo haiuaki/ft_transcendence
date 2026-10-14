@@ -27,7 +27,7 @@ interface AuthContextProps {
     login: (email: string, password: string) => Promise<LoginResult>,
     completeTwoFactor: (tempToken: string, code: string) => Promise<void>,
     logout: () => void,
-    deleteProfile: (token: string) => Promise<void>,
+    deleteProfile: (token: string, username: string) => Promise<void>,
     setupTwoFactor: () => Promise<TwoFactorSetupResponse>,
     enableTwoFactor: (code: string) => Promise<void>,
     disableTwoFactor: (code: string) => Promise<void>,
@@ -74,8 +74,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         setUser(data);
     }
 
-    const deleteProfile = async (token: string) => {
-        await userService.delete(token);
+    const deleteProfile = async (token: string, username: string) => {
+        await userService.delete(token, username);
         logout()
     }
 

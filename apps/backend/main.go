@@ -90,7 +90,10 @@ func main() {
 	// PUT: Edit user informations
 	http.HandleFunc("/profile/edit", auth.RequireAuth(users.UpdateProfile(dbPool, hub)))
 
-	// DELETE: Delete account
+	// GET: Download all of the user's personal data as JSON (GDPR)
+	http.HandleFunc("/profile/export", auth.RequireAuth(users.ExportData(dbPool)))
+
+	// DELETE: Erase the account and its personal data (body: {"username": ...} to confirm)
 	http.HandleFunc("/profile/delete", auth.RequireAuth(users.DeleteProfile(dbPool)))
 
 	// --- FRIENDS --------------------------------------------------------- //

@@ -189,39 +189,3 @@ func UpdateProfile(dbPool *pgxpool.Pool, notifier friends.Notifier) http.Handler
 		w.Write([]byte("Profile updated successfully."))
 	}
 }
-
-func DeleteProfile(dbPool *pgxpool.Pool) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		email := r.Context().Value(auth.UserEmailKey).(string)
-
-		// Cleanup Zombie Rooms: Since user deletion is a "soft delete",
-		// PostgreSQL's ON DELETE CASCADE won't fire for the rooms they own.
-		// We must manually delete them.
-		deleteRoomsSQL := `
-			DELETE FROM channels 
-			WHERE owner_id = (SELECT id FROM users WHERE email = $1)
-		`
-		_, err := dbPool.Exec(context.Background(), deleteRoomsSQL, email)
-		if err != nil {
-			log.Println("Database error cleaning up user rooms:", err)
-			http.Error(w, "Failed to clean up account data.", http.StatusInternalServerError)
-			return
-		}
-
-		softDeleteSQL := `
-			UPDATE users
-			SET deleted_at = CURRENT_TIMESTAMP
-			WHERE email = $1
-		`
-
-		_, err = dbPool.Exec(context.Background(), softDeleteSQL, email)
-		if err != nil {
-			log.Println("Database error during profile deletion:", err)
-			http.Error(w, "Failed to delete account.", http.StatusInternalServerError)
-			return
-		}
-
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("Account successfully deleted."))
-	}
-}
