@@ -4,6 +4,7 @@ import { createContext, useContext, useState, ReactNode, useEffect } from "react
 import userService from "../services/userService";
 import twoFactorService, { TwoFactorSetupResponse } from "../services/twoFactorService";
 import { FriendshipStatus } from "../services/friendService";
+import { clearAiHistory } from "../lib/aiHistory";
 
 interface AuthProviderProps {
     children: ReactNode
@@ -117,6 +118,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
     const logout = async () => {
         localStorage.removeItem("token");
+        clearAiHistory();
         setToken(null)
         setUser(null)
     }

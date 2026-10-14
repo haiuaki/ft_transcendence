@@ -41,7 +41,7 @@ export default function PrivacyPolicy() {
         </Section>
 
         <Section title="Stored in your browser">
-          <p>We keep your session token and your day/night preference in your browser&apos;s local storage. We do not use tracking or advertising cookies.</p>
+          <p>We keep your session token, your day/night preference and your conversation with the AI assistant in your browser&apos;s storage. The assistant conversation is cleared when you sign out or delete your account. We do not use tracking or advertising cookies.</p>
         </Section>
 
         <Section title="Your rights">

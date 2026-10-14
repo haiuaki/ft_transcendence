@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { ArrowUp, Loader2, Pin, PinOff, Trash2 } from 'lucide-react';
 import { motion, useDragControls } from 'motion/react';
+import { useAuth } from '@/src/context/AuthContext';
+import { AI_DRAFT_KEY, AI_HISTORY_KEY } from '@/src/lib/aiHistory';
 
 type KewanProps = {
     isOpen?: boolean;
@@ -14,8 +16,8 @@ type ChatMessage = {
     content: string;
 };
 
-const STORAGE_KEY = 'kewan_ai_history';
-const DRAFT_KEY = 'kewan_ai_draft';
+const STORAGE_KEY = AI_HISTORY_KEY;
+const DRAFT_KEY = AI_DRAFT_KEY;
 
 const GREETINGS = [
     "How can I help you ?",
@@ -86,6 +88,18 @@ export default function KewanWindow({ isOpen = true, onClose }: KewanProps) {
     const [greeting] = useState(() => {
         return GREETINGS[Math.floor(Math.random() * GREETINGS.length)];
     });
+
+    // On logout, drop the conversation still held in memory too
+    // (logout already cleared it from storage)
+    const { token } = useAuth();
+    const [previousToken, setPreviousToken] = useState(token);
+    if (token !== previousToken) {
+        setPreviousToken(token);
+        if (previousToken && !token) {
+            setMessages([]);
+            setMessage('');
+        }
+    }
 
     const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         const val = e.target.value;
