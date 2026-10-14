@@ -1,8 +1,10 @@
 import os
 import asyncpg
 
-async def init_db_pool():
-    """Creates a persistent connection pool to PostgreSQL."""
+import asyncio
+
+async def init_db_pool(max_retries: int = 15, delay: float = 1.0):
+    """Creates a persistent connection pool to PostgreSQL with retry logic."""
     database_url = os.getenv("DATABASE_URL")
     postgres_host = os.getenv("POSTGRES_HOST")
 
@@ -16,4 +18,11 @@ async def init_db_pool():
         db = os.getenv("POSTGRES_DB", "transcendence")
         database_url = f"postgresql://{user}:{password}@{host}:{port}/{db}"
 
-    return await asyncpg.create_pool(dsn=database_url)
+    for attempt in range(1, max_retries + 1):
+        try:
+            return await asyncpg.create_pool(dsn=database_url)
+        except Exception as e:
+            if attempt == max_retries:
+                raise e
+            print(f"Waiting for database connection ({attempt}/{max_retries}): {e}")
+            await asyncio.sleep(delay)
