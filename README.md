@@ -61,6 +61,12 @@ _This project has been created as part of the 42 curriculum by juljin, ksilvest,
   - *Implementation:* Designed custom Blender `.glb` assets, rendered via native Three.js inside React with interactive raycasting.
   - *Team:* dinza-cr
 
+### Data and Analytics
+- **[Minor - 1pt] GDPR Compliance**
+  - *Justification:* Users share personal data with us (email, avatar, messages, friends, activity), so they should be able to see all of it and erase it, as the GDPR requires.
+  - *Implementation:* A "Your data" section on the profile. **Export** (`GET /profile/export`) downloads all of the user's data as a readable JSON file (profile, friends, rooms, memberships, messages, daily activity), leaving out secrets like the password hash and 2FA secret. **Delete** (`DELETE /profile/delete`) asks the user to type their username, checked on the backend too, then erases the account in one transaction: messages, friendships, owned rooms, memberships and analytics are deleted, and the email, password, avatar and 2FA data are wiped, leaving only an anonymous `deleted_…` placeholder. Both operations send a confirmation email through Resend. Logging out or deleting the account also clears the AI assistant conversation stored in the browser, and the privacy policy page explains what is collected and how to use these rights.
+  - *Team:* juljin
+
 ### Modules of Choice
 - **[Minor - 1pt] Day / Night Environment**
   - *Why we chose it:* People study at every hour of the day, so the workspace should be comfortable to use late at night. Instead of only darkening the interface, we change the lighting of the whole 3D room.
@@ -86,10 +92,11 @@ _This project has been created as part of the 42 curriculum by juljin, ksilvest,
 | LLM Interface | Artificial Intelligence | Major | 2 |
 | Retrieval-Augmented Generation (RAG) | Artificial Intelligence | Major | 2 |
 | Advanced 3D Graphics | Gaming & User Experience | Major | 2 |
+| GDPR Compliance | Data and Analytics | Minor | 1 |
 | Day / Night Environment | Modules of Choice | Minor | 1 |
-| **Total** | | **7 Majors + 5 Minors** | **19** |
+| **Total** | | **7 Majors + 6 Minors** | **20** |
 
-**19 points** claimed, out of the **14** required (Major = 2 pts, Minor = 1 pt).
+**20 points** claimed (Major = 2 pts, Minor = 1 pt): 14 mandatory + 5 bonus, which is the bonus maximum, plus 1 point of margin in case a module is not validated.
 
 ## Features List
 * **Authentication:** Secure JWT-based session management, Resend Email Verification, and robust Multi-Provider OAuth 2.0 (Google, GitHub, 42 Intra) featuring a smart auto-incrementing username resolver for collision prevention. *(By juljin, nlienard)*
@@ -98,6 +105,7 @@ _This project has been created as part of the 42 curriculum by juljin, ksilvest,
 * **Direct Messaging:** Private, omnipresent 1-on-1 chats elegantly architected on top of the existing spatial channel infrastructure. *(By juljin, nlienard)*
 * **User Management:** Full CRUD operations for user profiles, settings, and avatars. *(By juljin, nlienard)*
 * **Activity Dashboard:** Lifetime totals plus daily bar charts of messages sent and time spent in rooms, over the last 7 or 30 days. *(By juljin, dinza-cr, nlienard)*
+* **Privacy & GDPR:** Download all your data as JSON, or permanently erase your account and its personal data after typing your username, with a confirmation email for each. *(By juljin)*
 * **Social Network:** Bidirectional friend request system (Add, Accept, Deny, Remove). *(By juljin, nlienard)*
 * **AI Assistant (Kewan AI):** Integration of a real-time, streaming conversational agent powered by the Google Gemini SDK, pgvector-backed semantic RAG search, and an interactive window UI (`KewanWindow`) featuring smooth entrance animations, window dragging, and markdown rendering. *(By ksilvest)*
 * **3D Workspace:** An interactive 3D virtual environment built with native Three.js, featuring custom `.glb` models, interactive raycasting, smooth mouse-follow camera mechanics, and dynamic React window UI overlays for 3D object click interactions. *(By dinza-cr)*
