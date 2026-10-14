@@ -53,20 +53,36 @@ class PromptRequest(BaseModel):
     prompt: str
     channel_id: int | None = None
 
+DEFAULT_MODELS = [
+    "gemini-3.5-flash-lite",
+    "gemini-3.1-flash-lite",
+    "gemini-3.6-flash",
+    "gemini-3.8-flash",
+]
+
 async def stream_generator(prompt: str) -> AsyncGenerator[str, None]:
-    try:
-        chat = client.chats.create(model="gemini-3.6-flash")
+    last_error = None
+    for model_name in DEFAULT_MODELS:
+        try:
+            chat = client.chats.create(model=model_name)
+            response = chat.send_message_stream(prompt)
 
-        response = chat.send_message_stream(prompt)
+            streamed_any = False
+            for chunk in response:
+                if chunk.text:
+                    streamed_any = True
+                    yield f"data: {chunk.text}\n\n"
 
-        for chunk in response:
-            if chunk.text:
-                yield f"data: {chunk.text}\n\n"
-        yield "data: Done\n\n"
+            if streamed_any:
+                yield "data: Done\n\n"
+                return
+        except Exception as e:
+            last_error = e
+            # Try next fallback model if 503 UNAVAILABLE or 429 RESOURCE_EXHAUSTED
+            continue
 
-    except Exception as e:
-        clean_error = str(e).replace("\n", " ")
-        yield f"data: [ERROR: {clean_error}]\n\n"
+    clean_error = str(last_error).replace("\n", " ") if last_error else "Service unavailable"
+    yield f"data: [ERROR: {clean_error}]\n\n"
 
 @app.get("/health")
 async def health_check():
