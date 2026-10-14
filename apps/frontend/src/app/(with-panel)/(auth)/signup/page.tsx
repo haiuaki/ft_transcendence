@@ -53,7 +53,6 @@ export default function SignUp() {
         icon: <MailCheck size={20} />,
         duration: 7000,
       });
-      <p className={`text-sm text-center ${colors.textSecondary}`}>By continuing, you agree to our <Link className="font-medium text-black cursor-pointer" href={"/terms-of-service"} target="_blank">terms of service</Link> and <Link className="font-medium text-black cursor-pointer" href={"/privacy-policy"} target="_blank">privacy policy</Link></p>
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to create user")
     } finally {
