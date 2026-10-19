@@ -52,7 +52,7 @@ _This project has been created as part of the 42 curriculum by juljin, ksilvest,
   - *Team:* ksilvest
 - **[Major - 2pts] Retrieval-Augmented Generation (RAG)**
   - *Justification:* Ground AI responses in contextual workspace data using pgvector semantic search.
-  - *Implementation:* Built a RAG pipeline utilizing pgvector for vector cosine search and dataset export.
+  - *Implementation:* Built a RAG pipeline utilizing pgvector for vector cosine search and dataset export. Every chat message gets a 768-dimension Gemini embedding, searched by cosine distance through an HNSW index, and messages from users mentioned by name in the question are added to the context. The assistant requires login: the AI service verifies the session token issued by the Go backend (same `JWT_SECRET`), and both searches only cover rooms and DMs the asking user belongs to, so it can never reveal someone else's conversations.
   - *Team:* ksilvest
 
 ### Gaming & User Experience
@@ -106,8 +106,10 @@ _This project has been created as part of the 42 curriculum by juljin, ksilvest,
 * **User Management:** Full CRUD operations for user profiles, settings, and avatars. *(By juljin, nlienard)*
 * **Activity Dashboard:** Lifetime totals plus daily bar charts of messages sent and time spent in rooms, over the last 7 or 30 days. *(By juljin, dinza-cr, nlienard)*
 * **Privacy & GDPR:** Download all your data as JSON, or permanently erase your account and its personal data after typing your username, with a confirmation email for each. *(By juljin)*
+* **Legal Pages:** Privacy Policy and Terms of Service written for this project, linked from the footer of every page and from the signup form. *(By juljin)*
+* **Input Validation:** Every form is checked on the frontend and again with the same rules on the backend (usernames, emails, password strength, room names and passwords, 500-character messages and AI prompts), plus a size limit on WebSocket frames. *(By juljin)*
 * **Social Network:** Bidirectional friend request system (Add, Accept, Deny, Remove). *(By juljin, nlienard)*
-* **AI Assistant (Kewan AI):** Integration of a real-time, streaming conversational agent powered by the Google Gemini SDK, pgvector-backed semantic RAG search, and an interactive window UI (`KewanWindow`) featuring smooth entrance animations, window dragging, and markdown rendering. *(By ksilvest)*
+* **AI Assistant (Kewan AI):** Integration of a real-time, streaming conversational agent powered by the Google Gemini SDK, pgvector-backed semantic RAG search, and an interactive window UI (`KewanWindow`) featuring smooth entrance animations, window dragging, and markdown rendering. Requires login and only draws context from the user's own rooms and DMs. *(By ksilvest, juljin)*
 * **3D Workspace:** An interactive 3D virtual environment built with native Three.js, featuring custom `.glb` models, interactive raycasting, smooth mouse-follow camera mechanics, and dynamic React window UI overlays for 3D object click interactions. *(By dinza-cr)*
 
 ## Instructions
@@ -130,6 +132,8 @@ Before running the project, ensure you have the following software installed:
    ```
 3. Fill in the required credentials inside `.env`:
    * **Database:** Set a secure `POSTGRES_USER` and `POSTGRES_PASSWORD`.
+   * **Sessions:** Set `JWT_SECRET` to a long random string (e.g. `openssl rand -hex 32`). The backend signs session tokens with it and the AI service uses it to check who is asking, so nobody can log in or use the assistant without it.
+   * **Port:** The app is served on `HTTPS_PORT` (`8443` by default) because rootless Podman, which `docker` may be an alias for, cannot use ports below 1024. Keep `FRONTEND_URL` on the same port (`https://localhost:8443`), since email links and OAuth redirects are built from it.
    * **AI Chatbot:** Provide a `GOOGLE_API_KEY` for the Gemini SDK.
    * **Email Verification:** Provide a `RESEND_API_KEY`.
    * **OAuth Providers (If testing remote login):** Provide Client IDs and Secrets for Google, GitHub, and 42 Intra.
@@ -143,6 +147,11 @@ Before running the project, ensure you have the following software installed:
    *(Alternatively, run `docker compose up --build -d`)*
 2. Open your browser and navigate to **`https://localhost:8443`**.
    > *Note: Because we use self-signed SSL certificates, your browser will warn you that the connection is not private. Click "Advanced" -> "Proceed to localhost".*
+3. Only NGINX is reachable from outside Docker. To inspect the database or run the dataset scripts, go through the containers:
+   ```bash
+   docker compose exec database psql -U <POSTGRES_USER> -d <POSTGRES_DB>
+   docker compose exec ai-service python import_dataset.py
+   ```
 
 ## Technical Stack
 * **Frontend:** Next.js (React), TypeScript, Tailwind CSS
@@ -157,8 +166,8 @@ Before running the project, ensure you have the following software installed:
   * *Justification:* PostgreSQL was chosen for its unmatched ACID compliance and advanced relational indexing. Because our app relies on a complex Bidirectional Friendship system and strict spatial anti-cheat validations, we required a rigid, schema-enforced relational database rather than a NoSQL document store.
   * *Why pgvector:* The RAG assistant needs to find chat messages by meaning, not just by keywords. pgvector stores each message's Gemini embedding (a 768-dimension vector) in a column right next to the message and searches it by cosine distance through an HNSW index. Keeping vectors in PostgreSQL instead of a separate vector database (Pinecone, Qdrant...) means one less service to deploy, and semantic search can be joined directly with users, channels and memberships in plain SQL.
 * **Third-Party APIs:** Resend Go SDK, Google Gemini API
-* **Security Libraries:** golang-jwt (session tokens), bcrypt (password hashing), pquerna/otp (TOTP generation, validation and QR codes)
-* **Infrastructure:** Docker, Docker Compose, NGINX (HTTPS Reverse Proxy)
+* **Security Libraries:** golang-jwt (session tokens), PyJWT (session token checks in the AI service), bcrypt (password hashing), pquerna/otp (TOTP generation, validation and QR codes)
+* **Infrastructure:** Docker, Docker Compose (also runs on rootless Podman), NGINX (HTTPS Reverse Proxy, the only service exposed outside Docker)
 * **Testing:** Pytest & HTTPX (Unit testing for AI service)
 * **CI/CD:** GitHub Actions (Automated Go formatting and builds)
 
