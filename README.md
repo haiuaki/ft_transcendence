@@ -277,7 +277,7 @@ erDiagram
 
 ### nlienard (Frontend Architecture & UI/UX)
 * **Contributions:** Bootstrapped the Next.js application utilizing Tailwind CSS and strict TypeScript. Engineered the global React Auth Context, the API Gateway proxy layer, and the responsive authentication UI modals.
-* **Challenges Overcome:** [TBD - Detail any UI/UX or API integration challenges faced during development]
+* **Challenges Overcome:** Keeping the global auth state (JWT, 2FA, OAuth) in sync with the Next.js API proxy, keeping the UI consistent with live WebSocket updates (friends, DMs, chat), and making the interface responsive on mobile.
 
 ### dinza-cr (3D Modeling & Three.js Integration)
 * **Contributions:** Designed the custom `.glb` 3D Coworking and Study Space environments in Blender. Implemented `ThreeScene.tsx` using native Three.js, engineering smooth mouse-follow camera mechanics, and dynamic React window UI overlays for 3D object click interactions.
