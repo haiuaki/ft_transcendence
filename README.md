@@ -3,7 +3,7 @@ _This project has been created as part of the 42 curriculum by juljin, ksilvest,
 # ft_transcendence
 
 ## Description
-**ft_cluster** is a web-based **3D Coworking and Study Space**. We built this project to provide a collaborative virtual environment where users can work together in real-time. The core features include an interactive 3D room, a live chat system, user profiles with friend management, third-party OAuth logins, and an integrated AI chatbot to help answer questions while you study.
+**ft_cluster** is a web-based **3D Coworking and Study Space** where people sit together in shared virtual rooms and study alongside each other in real time. Users take a seat in an interactive 3D room, chat live with the room or in direct messages, manage a profile and friends, and track their study time and activity on a personal dashboard. Accounts support email signup, 2FA and OAuth logins (42, Google, GitHub), with full data export and deletion. An integrated AI assistant, Kewan AI, answers questions and can draw on the user's own rooms and DMs to recall what was discussed.
 
 ## Modules
 
