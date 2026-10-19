@@ -57,8 +57,8 @@ _This project has been created as part of the 42 curriculum by juljin, ksilvest,
 
 ### Gaming & User Experience
 - **[Major - 2pts] Advanced 3D Graphics**
-  - *Justification:* Chosen to foster collaboration over competition. Demonstrates severe technical complexity via WebGL lifecycle management.
-  - *Implementation:* Designed custom Blender `.glb` assets, rendered via native Three.js inside React with interactive raycasting.
+  - *Justification:*Essential for creating an immersive and interactive virtual coworking environment that enhances user engagement and real-time collaboration.
+  - *Implementation:* Designed custom Blender `.glb` assets, rendered via Three.js with custom texture transitions, and optimized real-time rendering for smooth navigation and user interaction with life raycaster.
   - *Team:* dinza-cr
 
 ### Data and Analytics
@@ -110,7 +110,7 @@ _This project has been created as part of the 42 curriculum by juljin, ksilvest,
 * **Input Validation:** Every form is checked on the frontend and again with the same rules on the backend (usernames, emails, password strength, room names and passwords, 500-character messages and AI prompts), plus a size limit on WebSocket frames. *(By juljin)*
 * **Social Network:** Bidirectional friend request system (Add, Accept, Deny, Remove). *(By juljin, nlienard)*
 * **AI Assistant (Kewan AI):** Integration of a real-time, streaming conversational agent powered by the Google Gemini SDK, pgvector-backed semantic RAG search, and an interactive window UI (`KewanWindow`) featuring smooth entrance animations, window dragging, and markdown rendering. Requires login and only draws context from the user's own rooms and DMs. *(By ksilvest, juljin)*
-* **3D Workspace:** An interactive 3D virtual environment built with native Three.js, featuring custom `.glb` models, interactive raycasting, smooth mouse-follow camera mechanics, and dynamic React window UI overlays for 3D object click interactions. *(By dinza-cr)*
+* **3D Workspace:** An interactive 3D virtual environment built with Three.js, featuring custom `.glb` models, interactive raycasting, and dynamic React window UI overlays for 3D object click interactions. *(By dinza-cr)*
 
 ## Instructions
 
@@ -156,7 +156,8 @@ Before running the project, ensure you have the following software installed:
 ## Technical Stack
 * **Frontend:** Next.js (React), TypeScript, Tailwind CSS
   * *Justification:* Next.js was chosen for its App Router architecture and built-in API proxying, allowing us to safely route authenticated requests into our internal Docker network without exposing ports.
-* **Frontend (3D):** Native Three.js
+* **Frontend (3D):** Three.js
+  * *Justification:* Chosen to provide direct control over the 3D scene, rendering pipeline, and custom shader integration, allowing greater flexibility for our interactive virtual coworking environment.
   * *Justification:* Native Three.js was strictly chosen over abstraction wrappers (like React Three Fiber) to maintain absolute, low-level control over the WebGL rendering lifecycle, memory management, and garbage collection during React unmounts.
 * **Backend:** Go (1.27.1), net/http standard library, Gorilla WebSockets
   * *Justification:* Go was strictly chosen for its concurrency model (Goroutines), which allows us to efficiently manage hundreds of simultaneous real-time WebSocket connections and ping/pong heartbeats with virtually zero latency.
@@ -259,7 +260,7 @@ erDiagram
 * **nlienard (Project Manager & Frontend Developer)**
   * *Responsibilities:* Facilitated team communication and sprint goals. Architected the Next.js frontend, global state management, and user interface.
 * **dinza-cr (Developer & 3D Artist)**
-  * *Responsibilities:* Designed the interactive 3D Coworking assets in Blender and integrated the WebGL rendering pipeline using native Three.js inside React.
+  * *Responsibilities:* Designed the interactive 3D Coworking assets in Blender and integrated the WebGL rendering pipeline using Three.js.
 
 ## Project Management
 * **Task Distribution & Organization:** The project was divided into autonomous modules (Frontend, Backend, AI, 3D). We held weekly sync meetings to align on API contracts and Docker infrastructure changes before merging feature branches into `main`.
@@ -289,8 +290,8 @@ erDiagram
 * **Challenges Overcome:** Keeping the global auth state (JWT, 2FA, OAuth) in sync with the Next.js API proxy, keeping the UI consistent with live WebSocket updates (friends, DMs, chat), and making the interface responsive on mobile.
 
 ### dinza-cr (3D Modeling & Three.js Integration)
-* **Contributions:** Designed the custom `.glb` 3D Coworking and Study Space environments in Blender. Implemented `ThreeScene.tsx` using native Three.js, engineering smooth mouse-follow camera mechanics, and dynamic React window UI overlays for 3D object click interactions.
-* **Challenges Overcome:** [TBD - Detail any rendering, performance, or asset management challenges faced during development]
+* **Contributions:** Designed and modeled custom .glb coworking and study environments using Blender. Developed ThreeScene.tsx with Three.js, integrating interactive 3D objects, texture transitions, and dynamic React UI overlays triggered by object interactions.
+* **Challenges Overcome:** Optimized 3D assets to ensure smooth performance and a responsive user experience. This involved creating custom textures and simplifying 3D model geometry to reduce rendering costs while preserving visual quality.
 
 ## Resources
 ### AI Usage Disclosure
