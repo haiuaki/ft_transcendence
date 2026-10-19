@@ -98,7 +98,7 @@ const PanelShellInner = ({ children }: { children: React.ReactNode }) => {
     <>
       <div
         onClick={() => setPanelOpen(false)}
-        className={`fixed inset-0 z-40 bg-black/20 transition-opacity ${inRoom ? "" : "md:hidden"} ${open ? "opacity-100" : "pointer-events-none opacity-0"}`}
+        className={`fixed inset-0 z-40 transition-opacity ${inRoom ? "" : "bg-black/20 md:hidden"} ${open ? "opacity-100" : "pointer-events-none opacity-0"}`}
       />
       <div
         onClick={(e) => { if ((e.target as HTMLElement).closest("a")) setPanelOpen(false); }}
