@@ -111,6 +111,11 @@ async def stream_ai(request: Request, body: PromptRequest, user_id: str = Depend
         return StreamingResponse(
             missing_key_stream(),
             media_type="text/event-stream",
+            headers={
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+                "X-Accel-Buffering": "no",
+            },
         )
 
     context = await get_relevant_context(
@@ -123,6 +128,11 @@ async def stream_ai(request: Request, body: PromptRequest, user_id: str = Depend
 
     augmented_prompt = format_rag_prompt(context=context, user_prompt=body.prompt)
     return StreamingResponse(
-            stream_generator(augmented_prompt),
-            media_type="text/event-stream",
+        stream_generator(augmented_prompt),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
     )

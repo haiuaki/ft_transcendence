@@ -105,14 +105,14 @@ def generate_large_dataset(
     with open(container_output, "w", encoding="utf-8") as f:
         json.dump(dataset, f, indent=2, ensure_ascii=False)
 
-    print(f"[SUCCESS] Dataset généré avec succès !")
-    print(f" -> Fichier : {OUTPUT_FILE}")
+    print(f"Dataset generated successfully!")
+    print(f" -> File : {OUTPUT_FILE}")
     print(f" -> Users : {len(users)}")
     print(f" -> Channels : {len(channels)}")
     print(f" -> Channel Members : {len(channel_members)}")
     print(f" -> Friendships : {len(friendships)}")
     print(f" -> Messages : {len(messages)} (format 'message test X')")
-    print("\nPour importer dans la base de données :")
+    print("\nTo import into database :")
     print(" docker compose exec ai-service python import_dataset.py")
 
 
