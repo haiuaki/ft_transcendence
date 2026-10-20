@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ArrowUp, Loader2, Pin, PinOff, Trash2 } from 'lucide-react';
 import { motion, useDragControls } from 'motion/react';
 import { useAuth } from '@/src/context/AuthContext';
-import { AI_DRAFT_KEY, AI_HISTORY_KEY } from '@/src/lib/aiHistory';
+import { AI_DRAFT_KEY, AI_HISTORY_KEY, getAiDraftKey, getAiHistoryKey } from '@/src/lib/aiHistory';
 
 type KewanProps = {
     isOpen?: boolean;
@@ -60,28 +60,12 @@ export default function KewanWindow({ isOpen = true, onClose }: KewanProps) {
     const windowRef = useRef<HTMLDivElement>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
-    const [message, setMessage] = useState(() => {
-        if (typeof window !== 'undefined') {
-            return sessionStorage.getItem(DRAFT_KEY) || '';
-        }
-        return '';
-    });
-    const [messages, setMessages] = useState<ChatMessage[]>(() => {
-        if (typeof window !== 'undefined') {
-            try {
-                const saved = localStorage.getItem(STORAGE_KEY);
-                if (saved) {
-                    const parsed = JSON.parse(saved);
-                    if (Array.isArray(parsed)) {
-                        return parsed;
-                    }
-                }
-            } catch {
-                // Ignore storage parse error
-            }
-        }
-        return [];
-    });
+    const { token, user } = useAuth();
+    const storageKey = getAiHistoryKey(user?.id);
+    const draftKey = getAiDraftKey(user?.id);
+
+    const [message, setMessage] = useState('');
+    const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [isPinned, setIsPinned] = useState(false);
@@ -89,42 +73,58 @@ export default function KewanWindow({ isOpen = true, onClose }: KewanProps) {
         return GREETINGS[Math.floor(Math.random() * GREETINGS.length)];
     });
 
-    // On logout, drop the conversation still held in memory too
-    // (logout already cleared it from storage)
-    const { token } = useAuth();
-    const [previousToken, setPreviousToken] = useState(token);
-    if (token !== previousToken) {
-        setPreviousToken(token);
-        if (previousToken && !token) {
+    // Reload conversation history whenever active user changes
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+
+        if (!token || !user?.id) {
             setMessages([]);
             setMessage('');
+            return;
         }
-    }
+
+        const draft = sessionStorage.getItem(draftKey) || '';
+        setMessage(draft);
+
+        try {
+            const saved = localStorage.getItem(storageKey);
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                if (Array.isArray(parsed)) {
+                    setMessages(parsed);
+                    return;
+                }
+            }
+        } catch {
+            // Ignore storage parse error
+        }
+        setMessages([]);
+    }, [user?.id, token, storageKey, draftKey]);
 
     const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         const val = e.target.value;
         setMessage(val);
-        sessionStorage.setItem(DRAFT_KEY, val);
+        sessionStorage.setItem(draftKey, val);
     };
 
     const handleClearHistory = () => {
         setMessages([]);
         if (typeof window !== 'undefined') {
-            localStorage.removeItem(STORAGE_KEY);
+            localStorage.removeItem(storageKey);
         }
     };
 
     useEffect(() => {
-        if (typeof window !== 'undefined' && !isLoading) {
+        if (typeof window !== 'undefined' && !isLoading && user?.id) {
             // Filter out empty placeholder assistant messages before saving
             const validMessages = messages.filter((m) => m.content.trim().length > 0);
             if (validMessages.length > 0) {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(validMessages));
+                localStorage.setItem(storageKey, JSON.stringify(validMessages));
             } else {
-                localStorage.removeItem(STORAGE_KEY);
+                localStorage.removeItem(storageKey);
             }
         }
-    }, [messages, isLoading]);
+    }, [messages, isLoading, storageKey, user?.id]);
 
     useEffect(() => {
         if (isOpen) {
