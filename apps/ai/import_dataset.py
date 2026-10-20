@@ -133,7 +133,7 @@ async def import_from_json(json_path: str = "dataset.json"):
             """
         )
 
-        print("\n[SUCCESS] Dataset successfully imported into PostgreSQL!")
+        print("\nDataset successfully imported into PostgreSQL!")
     finally:
         await conn.close()
 
