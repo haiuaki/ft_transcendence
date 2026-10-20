@@ -57,7 +57,7 @@ _This project has been created as part of the 42 curriculum by juljin, ksilvest,
 
 ### Gaming & User Experience
 - **[Major - 2pts] Advanced 3D Graphics**
-  - *Justification:*Essential for creating an immersive and interactive virtual coworking environment that enhances user engagement and real-time collaboration.
+  - *Justification:* Essential for creating an immersive and interactive virtual coworking environment that enhances user engagement and real-time collaboration.
   - *Implementation:* Designed custom Blender `.glb` assets, rendered via Three.js with custom texture transitions, and optimized real-time rendering for smooth navigation and user interaction with life raycaster.
   - *Team:* dinza-cr
 
@@ -72,8 +72,7 @@ _This project has been created as part of the 42 curriculum by juljin, ksilvest,
   - *Why we chose it:* People study at every hour of the day, so the workspace should be comfortable to use late at night. Instead of only darkening the interface, we change the lighting of the whole 3D room.
   - *Technical challenges:*
     - **Two sets of baked lighting:** the room's lighting is baked in Blender twice, once for day and once for night, and exported as two texture sets compressed to WebP (≈4.2 MB day, ≈2.8 MB night).
-    - **Smooth transition:** a custom shader is added to Three.js's built-in materials (`onBeforeCompile`) so they draw both texture sets and fade between them, with eased timing over 1 s while the background colour changes with them. Users who ask for reduced motion get an instant switch.
-    - **Loading and memory:** both sets are downloaded once when the room loads, sent to the GPU in advance (`renderer.initTexture`) and cached, so switching never stutters. A failed download shows an error message instead of breaking the scene, and every texture is freed when the scene closes.
+    - **Smooth transition:** a custom shader is added to Three.js's built-in materials (`onBeforeCompile`) so they draw both texture sets and fade between them, with eased timing over 1 s while the background colour changes with them.
   - *Value to the project:* The 3D room and the interface (colour theme, panels, room controls) switch together from one toggle, so the whole app changes, not just the page colours.
   - *Why it is a Minor:* It builds on the existing 3D scene rather than adding a new system, but it needed its own work in Blender, a custom shader and careful texture handling, which is well beyond a CSS theme toggle.
   - *Team:* dinza-cr
@@ -158,7 +157,6 @@ Before running the project, ensure you have the following software installed:
   * *Justification:* Next.js was chosen for its App Router architecture and built-in API proxying, allowing us to safely route authenticated requests into our internal Docker network without exposing ports.
 * **Frontend (3D):** Three.js
   * *Justification:* Chosen to provide direct control over the 3D scene, rendering pipeline, and custom shader integration, allowing greater flexibility for our interactive virtual coworking environment.
-  * *Justification:* Native Three.js was strictly chosen over abstraction wrappers (like React Three Fiber) to maintain absolute, low-level control over the WebGL rendering lifecycle, memory management, and garbage collection during React unmounts.
 * **Backend:** Go (1.27.1), net/http standard library, Gorilla WebSockets
   * *Justification:* Go was strictly chosen for its concurrency model (Goroutines), which allows us to efficiently manage hundreds of simultaneous real-time WebSocket connections and ping/pong heartbeats with virtually zero latency.
 * **Backend (AI Service):** Python 3.12, FastAPI, Google GenAI SDK
@@ -295,7 +293,7 @@ erDiagram
 
 ## Resources
 ### AI Usage Disclosure
-AI tools were strictly used as learning aids. Specifically:
+AI was used to create the 3D model of Kewan and the mannequins. Apart from that , AI tools were strictly used as learning aids. Specifically:
 * **Research & Brainstorming:** AI was used to understand complex documentation (e.g., deciphering OAuth 2.0 handshake flows and Three.js memory management).
 * **Code Review:** Used to spot-check for potential race conditions in Go Goroutines.
 No core logic was blindly copy-pasted; all AI-assisted code was thoroughly peer-reviewed, heavily modified, and is fully understood by the team.
