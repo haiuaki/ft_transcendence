@@ -118,7 +118,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
     const logout = async () => {
         localStorage.removeItem("token");
-        clearAiHistory();
+        clearAiHistory(user?.id);
         setToken(null)
         setUser(null)
     }
