@@ -183,7 +183,10 @@ def format_rag_prompt(context: str, user_prompt: str) -> str:
     return (
         f"System context:\n{context}\n\n"
         f"User query: {user_prompt}\n\n"
-        "Provide an accurate response based on the contextual information above."
+        "Instructions:\n"
+        "- If the user asks about chat archives, users, or platform context, use the system context above.\n"
+        "- If the query is a general knowledge question or unrelated to the context, answer directly and helpfully.\n"
+        "- Answer in the same language as the user query."
     )
 
 
