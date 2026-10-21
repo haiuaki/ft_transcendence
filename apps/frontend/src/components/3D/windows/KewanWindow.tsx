@@ -175,13 +175,24 @@ export default function KewanWindow({ isOpen = true, onClose }: KewanProps) {
                 ? `${process.env.NEXT_PUBLIC_AI_URL}/stream`
                 : '/api/ai/stream';
 
+            const historyPayload = messages
+                .filter((m) => m.content.trim().length > 0)
+                .slice(-10)
+                .map((m) => ({
+                    role: m.role,
+                    content: m.content.slice(0, 500),
+                }));
+
             const response = await fetch(url, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${token}`,
                 },
-                body: JSON.stringify({ prompt: promptToSend }),
+                body: JSON.stringify({
+                    prompt: promptToSend,
+                    history: historyPayload,
+                }),
             });
 
             if (!response.ok) {
