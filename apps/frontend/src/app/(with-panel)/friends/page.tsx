@@ -6,7 +6,7 @@ import { useAuth } from "@/src/context/AuthContext";
 import { useSocket } from "@/src/context/SocketContext";
 import friendService, { Friend } from "@/src/services/friendService"
 import { Loader2, Plus, Search, Trash } from "lucide-react";
-import Image from "next/image";
+import Avatar from "@/src/components/Avatar";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react"
@@ -156,7 +156,7 @@ function FriendsContent() {
       {!isLoading && requests.length > 0 && requests.map((item, idx) => {
         return <div key={idx} className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Image src={item.avatar_url || "/img/avatar.jpg"} alt={item.username} width={40} height={40} unoptimized className="w-10 h-10 rounded-full object-cover shrink-0" />
+            <Avatar src={item.avatar_url} alt={item.username} width={40} height={40} className="w-10 h-10 rounded-full object-cover shrink-0" />
             <Link className="hover:underline" href={`/users/${item.username}?from=friends`}>{item.username}</Link>
           </div>
           <div className="flex items-center gap-2">
@@ -174,7 +174,7 @@ function FriendsContent() {
         return <div key={idx} className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="relative">
-              <Image src={item.avatar_url || "/img/avatar.jpg"} alt={item.username} width={32} height={32} unoptimized className="w-8 h-8 rounded-full object-cover shrink-0" />
+              <Avatar src={item.avatar_url} alt={item.username} width={32} height={32} className="w-8 h-8 rounded-full object-cover shrink-0" />
               <div className={`flex items-center justify-center w-2.5 h-2.5 rounded-full ${item.status === "ONLINE" ? "bg-[#45a367]" : "bg-gray-300"} border border-gray-300 absolute bottom-0 right-0`}>
                 {item.status != "ONLINE" && <div className="w-1 h-1 rounded-full bg-white" />}
               </div>

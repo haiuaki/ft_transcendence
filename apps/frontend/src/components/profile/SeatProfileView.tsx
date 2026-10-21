@@ -6,7 +6,7 @@ import { useSocket } from "@/src/context/SocketContext";
 import friendService, { FriendshipStatus } from "@/src/services/friendService";
 import userService from "@/src/services/userService";
 import { Check, Clock, Loader2, MessageCircle, UserPlus, X, XCircle } from "lucide-react";
-import Image from "next/image";
+import Avatar from "../Avatar";
 import { useCallback, useEffect, useState } from "react"
 import { toast } from "sonner";
 
@@ -104,7 +104,7 @@ const SeatProfileView = ({ username }: SeatProfileViewProps) => {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <div className="relative shrink-0">
-            <Image src={userProfile?.avatar_url || "/img/avatar.jpg"} alt="img profile" width={1000} height={1000} unoptimized className="w-16 h-16 rounded-full object-cover" />
+            <Avatar src={userProfile?.avatar_url} alt="img profile" width={1000} height={1000} className="w-16 h-16 rounded-full object-cover" />
             <div className={`absolute bottom-1.5 right-1.5 w-5 h-5 rounded-full border-3 border-white ${isOnline ? "bg-[#45a367]" : "bg-gray-300"}`} />
           </div>
           <div className="flex flex-col gap-1">

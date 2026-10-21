@@ -5,14 +5,13 @@ import { toast } from "sonner";
 import { useState } from "react";
 import { useAuth } from "@/src/context/AuthContext";
 import CenterModalTemplate from "../TemplateModal/CenterModalTemplate";
-import Image from "next/image";
+import Avatar, { DEFAULT_AVATAR } from "../Avatar";
 import { USERNAME_REGEX, USERNAME_RULE } from "@/src/lib/validation";
 
 interface EditProfileModalProps {
     onClose: () => void,
 }
 
-const DEFAULT_AVATAR = "/img/avatar.jpg";
 const AVATAR_SIZE = 256;
 const MAX_AVATAR_LENGTH = 200 * 1024;
 
@@ -102,13 +101,12 @@ const EditProfileModal = ({ onClose }: EditProfileModalProps) => {
                             htmlFor="avatar-upload"
                             className="group relative block size-full cursor-pointer overflow-hidden rounded-full"
                         >
-                            <Image
+                            <Avatar
                                 fill
                                 alt="Avatar"
                                 src={avatarSrc}
                                 className="object-cover"
                                 sizes="140px"
-                                unoptimized
                             />
                             <div className="pointer-events-none absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/20" />
                         </label>
