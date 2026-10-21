@@ -76,22 +76,24 @@ def test_messages_endpoint_removed():
     assert response.status_code in (404, 405)
 
 def test_rate_limiting(monkeypatch):
-    """Checks limiter blocks after 20 queries (code 429)."""
+    """Checks limiter blocks after 5 queries (200 carrying an error with status 429)."""
     app.state.db_pool = MagicMock()
     monkeypatch.setattr("apps.ai.server.get_relevant_context", AsyncMock(return_value=""))
     async def dummy_stream(*args, **kwargs):
         yield "chunk"
     monkeypatch.setattr("apps.ai.server.stream_generator", dummy_stream)
 
-    status_codes = []
-    
-    # Sending up to 25 queries. The limiter should throw an error after 20
-    for _ in range(25):
+    limited = False
+
+    # Sending up to 10 queries. The limiter should answer with an error after 5
+    for _ in range(10):
         res = client.post("/stream", json={"prompt": "test"})
-        status_codes.append(res.status_code)
-        if res.status_code == 429:
+        assert res.status_code == 200
+        if res.headers["content-type"].startswith("application/json"):
+            assert res.json()["status"] == 429
             assert "Rate limit exceeded" in res.json()["error"]
+            limited = True
             break
-            
-    assert 429 in status_codes
+
+    assert limited
 

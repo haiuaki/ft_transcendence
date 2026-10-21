@@ -211,6 +211,12 @@ export default function KewanWindow({ isOpen = true, onClose }: KewanProps) {
                 throw new Error(errorDetail);
             }
 
+            // Expected failures (rate limit) come back as 200 {error} instead of a stream
+            if (response.headers.get('Content-Type')?.includes('application/json')) {
+                const data = await response.json().catch(() => null);
+                throw new Error(data?.error || 'Une erreur est survenue');
+            }
+
             if (!response.body) {
                 throw new Error('Réponse vide du serveur');
             }
