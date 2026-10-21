@@ -156,6 +156,11 @@ const emptyMembers: RoomMember[] = [];
 
 export default function ThreeScene({ roomId = null }: { roomId?: string | null }) {
 	const { token } = useAuth();
+	const { nightMode } = useRoomControls();
+	const nightModeRef = useRef(nightMode);
+	useEffect(() => {
+		nightModeRef.current = nightMode;
+	}, [nightMode]);
 	const sceneRef = useRef<ReturnType<typeof createScene> | null>(null);
 	const [occupancy, setOccupancy] = useState<{ roomId: string; members: RoomMember[]; error: string } | null>(null);
 	const containerRef = useRef<HTMLDivElement>(null);
@@ -181,6 +186,7 @@ export default function ThreeScene({ roomId = null }: { roomId?: string | null }
 		}
 
 		const scene = createScene(container, {
+			getInitialTextureMode: () => nightModeRef.current ? "night" : "day",
 			setTextureMode,
 			setTexturesLoading,
 			setTexturesReady,
@@ -238,7 +244,6 @@ export default function ThreeScene({ roomId = null }: { roomId?: string | null }
 		setSelectedGroup(null);
 	}
 
-	const { nightMode } = useRoomControls();
 	const textureModeRef = useRef(textureMode);
 
 	useEffect(() => {

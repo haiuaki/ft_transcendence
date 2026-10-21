@@ -125,7 +125,7 @@ export function createDayNightTextures(
 		targetMap.value = texture;
 	}
 
-	async function switchMode(mode: TextureMode): Promise<void>
+	async function switchMode(mode: TextureMode, animate = true): Promise<void>
 	{
 		if (switching || disposed)
 		{
@@ -145,6 +145,16 @@ export function createDayNightTextures(
 			const replacements = await Promise.all(pendingReplacements);
 			if (disposed)
 			{
+				return;
+			}
+			if (!animate)
+			{
+				for (const replacement of replacements)
+				{
+					replacement.material.map = replacement.texture;
+				}
+				(scene.background as THREE.Color).set(backgroundColors[mode]);
+				setTextureMode(mode);
 				return;
 			}
 			for (const replacement of replacements)
@@ -216,8 +226,11 @@ export function createDayNightTextures(
 				return;
 			}
 
-			setTexturesReady(true);
-			await switchMode("day");
+			await switchMode(callbacks.getInitialTextureMode(), false);
+			if (!disposed)
+			{
+				setTexturesReady(true);
+			}
 		} catch
 		{
 			if (disposed)
