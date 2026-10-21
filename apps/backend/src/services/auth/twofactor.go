@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"github.com/haiuaki/ft_transcendence/src/respond"
 	"image/png"
 	"net/http"
 	"os"
@@ -236,7 +237,7 @@ func TwoFactorEnable(dbPool *pgxpool.Pool) http.HandlerFunc {
 			return
 		}
 		if !validCode(req.Code, secret) {
-			http.Error(w, "Invalid 2FA code.", http.StatusUnauthorized)
+			respond.UserError(w, "Invalid 2FA code.", http.StatusUnauthorized)
 			return
 		}
 
@@ -277,7 +278,7 @@ func TwoFactorDisable(dbPool *pgxpool.Pool) http.HandlerFunc {
 			return
 		}
 		if !validCode(req.Code, secret) {
-			http.Error(w, "Invalid 2FA code.", http.StatusUnauthorized)
+			respond.UserError(w, "Invalid 2FA code.", http.StatusUnauthorized)
 			return
 		}
 
@@ -311,18 +312,18 @@ func TwoFactorVerify(dbPool *pgxpool.Pool) http.HandlerFunc {
 
 		email, jti, err := parsePendingTwoFactorToken(req.TempToken)
 		if err != nil {
-			http.Error(w, "Login expired, please sign in again.", http.StatusUnauthorized)
+			respond.UserError(w, "Login expired, please sign in again.", http.StatusUnauthorized)
 			return
 		}
 
 		if !pendingAttempts.allow(jti) {
-			http.Error(w, "Too many attempts, please sign in again.", http.StatusTooManyRequests)
+			respond.UserError(w, "Too many attempts, please sign in again.", http.StatusTooManyRequests)
 			return
 		}
 
 		enabled, secret, err := loadTwoFactor(r, dbPool, email)
 		if err != nil || !enabled || !validCode(req.Code, secret) {
-			http.Error(w, "Invalid 2FA code.", http.StatusUnauthorized)
+			respond.UserError(w, "Invalid 2FA code.", http.StatusUnauthorized)
 			return
 		}
 

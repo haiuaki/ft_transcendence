@@ -1,3 +1,4 @@
+import { checkResponse } from "@/src/lib/api";
 const URL = "/api"
 
 export interface DailyActivity {
@@ -23,10 +24,7 @@ const userService = {
                 password,
             })
         })
-        if (!response.ok) {
-            const message = await response.text();
-            throw new Error(message || "Failed to login user")
-        }
+        await checkResponse(response, "Failed to login user");
         return response.json();
     },
     signup: async (email: string, password: string, username: string) => {
@@ -41,9 +39,8 @@ const userService = {
                 password,
             })
         })
+        await checkResponse(response, "Unable to create account.");
         const message = await response.text();
-        if (!response.ok)
-            throw new Error(message || "Unable to create account.")
         return message;
     },
     verify: async (token: string) => {
@@ -55,8 +52,7 @@ const userService = {
                 "Content-Type": "application/json"
             },
         })
-        if (!response.ok)
-            throw new Error("Failed to verify user")
+        await checkResponse(response, "Failed to verify user");
         return response.text();
     },
     profile: async (token: string) => {
@@ -68,8 +64,7 @@ const userService = {
                 Authorization: `Bearer ${token}`
             },
         })
-        if (!response.ok)
-            throw new Error("Failed to get user")
+        await checkResponse(response, "Failed to get user");
         return response.json();
     },
     getUser: async (token: string, username: string) => {
@@ -83,10 +78,7 @@ const userService = {
                 Authorization: `Bearer ${token}`
             },
         })
-        if (!response.ok) {
-            const message = await response.text();
-            throw new Error(message || "Failed to get user")
-        }
+        await checkResponse(response, "Failed to get user");
         return response.json();
     },
     edit: async (token: string, updates: UpdateProfilePayload) => {
@@ -102,9 +94,8 @@ const userService = {
             body: JSON.stringify(updates)
         })
 
+        await checkResponse(response, "Failed to update profile");
         const message = await response.text();
-        if (!response.ok)
-            throw new Error(message || "Failed to update profile")
 
         return message;
     },
@@ -117,10 +108,7 @@ const userService = {
                 Authorization: `Bearer ${token}`
             },
         })
-        if (!response.ok) {
-            const message = await response.text();
-            throw new Error(message || "Failed to get analytics")
-        }
+        await checkResponse(response, "Failed to get analytics");
         return response.json();
     },
     exportData: async (token: string): Promise<{ blob: Blob, filename: string }> => {
@@ -132,10 +120,7 @@ const userService = {
                 Authorization: `Bearer ${token}`
             },
         })
-        if (!response.ok) {
-            const message = await response.text();
-            throw new Error(message || "Failed to export your data")
-        }
+        await checkResponse(response, "Failed to export your data");
         const filename = response.headers.get("Content-Disposition")?.match(/filename="(.+)"/)?.[1] ?? "ft_cluster-data.json";
         return { blob: await response.blob(), filename };
     },
@@ -150,9 +135,8 @@ const userService = {
             },
             body: JSON.stringify({ username })
         })
+        await checkResponse(response, "Failed to delete account");
         const message = await response.text();
-        if (!response.ok)
-            throw new Error(message || "Failed to delete account")
         return message;
     }
 }

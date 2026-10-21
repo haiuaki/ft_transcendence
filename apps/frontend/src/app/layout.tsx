@@ -9,9 +9,11 @@ const manrope = Manrope({
   subsets: ["latin"],
 });
 
+// Only used in AI code snippets and the 2FA secret, so don't preload it on every page
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  preload: false,
 });
 
 export const metadata: Metadata = {

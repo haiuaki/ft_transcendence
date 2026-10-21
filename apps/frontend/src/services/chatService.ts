@@ -1,3 +1,4 @@
+import { checkResponse } from "@/src/lib/api";
 const URL = "/api"
 
 export interface Message {
@@ -28,8 +29,7 @@ const chatService = {
                 target_username:targetUsername.trim()
             })
         })
-        if (!response.ok)
-            throw new Error(await response.text() || `Failed to open chat with ${targetUsername}`)
+        await checkResponse(response, `Failed to open chat with ${targetUsername}`);
         return (await response.json());
     },
     messages: async (token:string, channelId:number, beforeId?:number) => {
@@ -46,8 +46,7 @@ const chatService = {
                 Authorization: `Bearer ${token}`
             }
         })
-        if (!response.ok) 
-            throw new Error(await response.text() || "Failed to fetch messages")
+        await checkResponse(response, "Failed to fetch messages");
         return (await response.json());
     }
 }

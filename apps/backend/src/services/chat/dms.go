@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/haiuaki/ft_transcendence/src/respond"
 	"net/http"
 
 	"github.com/jackc/pgx/v5"
@@ -36,12 +37,12 @@ func StartDM(dbPool *pgxpool.Pool) http.HandlerFunc {
 
 		err = dbPool.QueryRow(r.Context(), "SELECT id FROM users WHERE username = $1", req.TargetUsername).Scan(&targetID)
 		if err != nil {
-			http.Error(w, "Target user not found.", http.StatusNotFound)
+			respond.UserError(w, "Target user not found.", http.StatusNotFound)
 			return
 		}
 
 		if myID == targetID {
-			http.Error(w, "You cannot DM yourself.", http.StatusBadRequest)
+			respond.UserError(w, "You cannot DM yourself.", http.StatusBadRequest)
 			return
 		}
 

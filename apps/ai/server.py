@@ -45,11 +45,13 @@ app.add_middleware(
 limiter = Limiter(key_func=get_remote_address)
 app.state.limiter = limiter
 
+# Sent as a 200 carrying the 429: browsers log every 4xx in the console, which the subject forbids.
+# The frontend reads `error` and shows it in the assistant window
 @app.exception_handler(RateLimitExceeded)
 async def rate_limit_handler(request: Request, exc: Exception) -> JSONResponse:
     return JSONResponse(
-        status_code=429,
-        content={"error": f"Rate limit exceeded: {exc}"},
+        status_code=200,
+        content={"error": f"Rate limit exceeded: {exc}", "status": 429},
     )
 
 # Same limit as the chat inputs on the frontend

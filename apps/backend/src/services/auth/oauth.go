@@ -232,6 +232,9 @@ func OAuthCallback(dbPool *pgxpool.Pool) http.HandlerFunc {
 				baseUsername = "user_" + randomHex(4)
 			}
 
+			// Store the picture itself, not the provider's URL (NULL falls back to the default avatar)
+			avatar := fetchProviderAvatar(r.Context(), avatarURL)
+
 			// USERNAME RESOLVER: try johndoe, johndoe1, johndoe2.. until the insert succeeds.
 			// Inserting directly (instead of checking first) stays correct when two sign-ups race for a name
 			insertQuery := `
@@ -242,7 +245,7 @@ func OAuthCallback(dbPool *pgxpool.Pool) http.HandlerFunc {
 			inserted := false
 			for attempt := 0; attempt < maxUsernameAttempts; attempt++ {
 				candidate := usernameCandidate(baseUsername, attempt)
-				err = dbPool.QueryRow(r.Context(), insertQuery, email, candidate, avatarURL).Scan(&userID)
+				err = dbPool.QueryRow(r.Context(), insertQuery, email, candidate, avatar).Scan(&userID)
 				if err == nil {
 					inserted = true
 					break
