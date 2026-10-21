@@ -4,6 +4,6 @@ export const metadata: Metadata = {
   title: "Profile",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/friends">) {
+export default function RootLayout({ children }: LayoutProps<"/profile">) {
   return children;
 }
