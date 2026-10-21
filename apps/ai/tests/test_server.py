@@ -50,6 +50,26 @@ def test_stream_searches_as_the_logged_in_user(monkeypatch):
     assert response.status_code == 200
     assert get_context.call_args.kwargs["user_id"] == "00000000-0000-0000-0000-000000000001"
 
+def test_stream_with_history(monkeypatch):
+    """Checks the assistant accepts conversation history in the request body."""
+    app.state.db_pool = MagicMock()
+    monkeypatch.setattr("apps.ai.server.get_relevant_context", AsyncMock(return_value=""))
+    async def dummy_stream(*args, **kwargs):
+        yield "chunk"
+    monkeypatch.setattr("apps.ai.server.stream_generator", dummy_stream)
+
+    response = client.post(
+        "/stream",
+        json={
+            "prompt": "What did I ask before?",
+            "history": [
+                {"role": "user", "content": "My name is John"},
+                {"role": "assistant", "content": "Hello John!"},
+            ],
+        },
+    )
+    assert response.status_code == 200
+
 def test_messages_endpoint_removed():
     """Checks the unauthenticated endpoint that stored messages for any sender is gone."""
     response = client.post("/messages", json={"sender_id": "x", "channel_id": 1, "content": "hi"})
