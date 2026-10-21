@@ -173,13 +173,24 @@ export default function KewanWindow({ isOpen = true, onClose }: KewanProps) {
                 ? `${process.env.NEXT_PUBLIC_AI_URL}/stream`
                 : '/api/ai/stream';
 
+            const historyPayload = messages
+                .filter((m) => m.content.trim().length > 0)
+                .slice(-10)
+                .map((m) => ({
+                    role: m.role,
+                    content: m.content.slice(0, 500),
+                }));
+
             const response = await fetch(url, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${token}`,
                 },
-                body: JSON.stringify({ prompt: promptToSend }),
+                body: JSON.stringify({
+                    prompt: promptToSend,
+                    history: historyPayload,
+                }),
             });
 
             if (!response.ok) {
@@ -219,20 +230,26 @@ export default function KewanWindow({ isOpen = true, onClose }: KewanProps) {
 
                 for (const part of parts) {
                     if (!part) continue;
-                    let data = part;
-                    if (data.startsWith('data: ')) {
-                        data = data.slice(6);
-                    } else if (data.startsWith('data:')) {
-                        data = data.slice(5);
+                    const lines = part.split('\n');
+                    for (const line of lines) {
+                        let data = line;
+                        if (data.startsWith('data: ')) {
+                            data = data.slice(6);
+                        } else if (data.startsWith('data:')) {
+                            data = data.slice(5);
+                        } else {
+                            continue;
+                        }
+
+                        if (data === 'Done') continue;
+                        if (data.startsWith('[ERROR:')) {
+                            const cleanErr = data.replace(/^\[ERROR:\s*/, '').replace(/\]$/, '');
+                            throw new Error(cleanErr);
+                        }
+
+                        assistantText += data;
                     }
 
-                    if (data === 'Done') continue;
-                    if (data.startsWith('[ERROR:')) {
-                        const cleanErr = data.replace(/^\[ERROR:\s*/, '').replace(/\]$/, '');
-                        throw new Error(cleanErr);
-                    }
-
-                    assistantText += data;
                     setMessages((prev) => {
                         const next = [...prev];
                         const lastIdx = next.length - 1;
@@ -245,23 +262,28 @@ export default function KewanWindow({ isOpen = true, onClose }: KewanProps) {
             }
 
             if (buffer.trim()) {
-                let data = buffer.trim();
-                if (data.startsWith('data: ')) {
-                    data = data.slice(6);
-                } else if (data.startsWith('data:')) {
-                    data = data.slice(5);
+                const lines = buffer.trim().split('\n');
+                for (const line of lines) {
+                    let data = line;
+                    if (data.startsWith('data: ')) {
+                        data = data.slice(6);
+                    } else if (data.startsWith('data:')) {
+                        data = data.slice(5);
+                    } else {
+                        continue;
+                    }
+                    if (data !== 'Done' && !data.startsWith('[ERROR:')) {
+                        assistantText += data;
+                    }
                 }
-                if (data !== 'Done' && !data.startsWith('[ERROR:')) {
-                    assistantText += data;
-                    setMessages((prev) => {
-                        const next = [...prev];
-                        const lastIdx = next.length - 1;
-                        if (lastIdx >= 0 && next[lastIdx].role === 'assistant') {
-                            next[lastIdx] = { ...next[lastIdx], content: assistantText };
-                        }
-                        return next;
-                    });
-                }
+                setMessages((prev) => {
+                    const next = [...prev];
+                    const lastIdx = next.length - 1;
+                    if (lastIdx >= 0 && next[lastIdx].role === 'assistant') {
+                        next[lastIdx] = { ...next[lastIdx], content: assistantText };
+                    }
+                    return next;
+                });
             }
         } catch (err: unknown) {
             const errMsg = err instanceof Error ? err.message : 'Une erreur est survenue';

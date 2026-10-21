@@ -13,6 +13,22 @@ def test_format_rag_prompt():
     assert context in result
     assert f"User query: {user_prompt}" in result
 
+def test_format_rag_prompt_with_history():
+    """Checks that conversation history is formatted into the prompt."""
+    context = "System context dummy"
+    user_prompt = "And who won?"
+    history = [
+        {"role": "user", "content": "Did Alice play Bob?"},
+        {"role": "assistant", "content": "Yes, they played yesterday."},
+    ]
+
+    result = format_rag_prompt(context=context, user_prompt=user_prompt, history=history)
+
+    assert "Recent conversation history:" in result
+    assert "User: Did Alice play Bob?" in result
+    assert "Assistant: Yes, they played yesterday." in result
+    assert f"User query: {user_prompt}" in result
+
 def test_generate_embedding():
     """Checks embedding generation using mocked Google GenAI client."""
     mock_client = MagicMock()
