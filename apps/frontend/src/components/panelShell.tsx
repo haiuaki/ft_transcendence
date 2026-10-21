@@ -66,7 +66,7 @@ export const HomePanel = ({className = ""}) => {
       <RoomControls />
       {(isAuthenticated && user) ?
           <Link className="cursor-pointer p-2 flex items-center gap-2 text-black rounded-md hover:bg-ui-hover" href={"/profile"}>
-            <Avatar className="rounded-full" width={28} height={28} src={user.avatar_url} alt={`${user.username}'s avatar`} />
+            <Avatar className="size-7 shrink-0 rounded-full object-cover" width={28} height={28} src={user.avatar_url} alt={`${user.username}'s avatar`} />
             <p className="font-semibold">{user?.username}</p>
           </Link>
         : <div className="flex items-center gap-2">
