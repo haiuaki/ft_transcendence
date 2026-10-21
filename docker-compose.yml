@@ -45,6 +45,8 @@ services:
     build:
       context: ./apps/frontend
       dockerfile: Dockerfile
+      args:
+        - BACKEND_PORT=${PORT:-8080}
     container_name: nextjs
     restart: unless-stopped
     environment:
@@ -53,10 +55,6 @@ services:
     depends_on:
       - backend
       - ai-service
-    volumes:
-      - ./apps/frontend:/app
-      - /app/node_modules
-      - /app/.next
     networks:
       - app_network
 
