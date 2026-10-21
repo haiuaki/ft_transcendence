@@ -9,7 +9,7 @@ import { useSocket } from "@/src/context/SocketContext";
 import friendService, { FriendshipStatus } from "@/src/services/friendService";
 import userService from "@/src/services/userService";
 import { ArrowLeft, Check, Clock, Loader2, MessageCircle, Pen, UserPlus, X, XCircle } from "lucide-react";
-import Image from "next/image";
+import Avatar from "../Avatar";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react"
@@ -146,7 +146,7 @@ const ProfileView = ({ username, backHref, compact = false }: ProfileViewProps) 
       <div className={compact ? "flex flex-wrap items-center justify-between gap-4" : "flex items-center justify-between"}>
         <div className="flex items-center gap-4">
           <div className="relative shrink-0">
-            <Image src={userProfile?.avatar_url || "/img/avatar.jpg"} alt="img profile" width={1000} height={1000} unoptimized className={compact ? "w-16 h-16 rounded-full object-cover" : "w-30 h-30 rounded-full"} />
+            <Avatar src={userProfile?.avatar_url} alt="img profile" width={1000} height={1000} className={compact ? "w-16 h-16 rounded-full object-cover" : "w-30 h-30 rounded-full"} />
             <div className={`absolute bottom-1.5 right-1.5 w-5 h-5 rounded-full border-3 border-white ${isOnline ? "bg-[#45a367]" : "bg-gray-300"}`} />
           </div>
           <div className="flex flex-col gap-1">
