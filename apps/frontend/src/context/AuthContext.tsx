@@ -5,6 +5,7 @@ import userService from "../services/userService";
 import twoFactorService, { TwoFactorSetupResponse } from "../services/twoFactorService";
 import { FriendshipStatus } from "../services/friendService";
 import { clearAiHistory } from "../lib/aiHistory";
+import { isTokenExpired } from "../lib/api";
 
 interface AuthProviderProps {
     children: ReactNode
@@ -53,7 +54,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     useEffect(() => {
         const restoreSession = async () => {
             const token = localStorage.getItem("token");
-            if (!token) {
+            if (!token || isTokenExpired(token)) {
+                if (token) localStorage.removeItem("token");
                 setIsLoading(false);
                 return;
             }

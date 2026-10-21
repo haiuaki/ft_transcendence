@@ -3,6 +3,7 @@ package chat
 import (
 	"context"
 	"encoding/json"
+	"github.com/haiuaki/ft_transcendence/src/respond"
 	"log"
 	"net/http"
 	"strconv"
@@ -59,7 +60,7 @@ func JoinRoom(dbPool *pgxpool.Pool) http.HandlerFunc {
 
 		err := dbPool.QueryRow(context.Background(), roomQuery, req.ChannelID).Scan(&roomType, &passwordHash, &maxCapacity)
 		if err != nil {
-			http.Error(w, "Room not found.", http.StatusNotFound)
+			respond.UserError(w, "Room not found.", http.StatusNotFound)
 			return
 		}
 
@@ -70,7 +71,7 @@ func JoinRoom(dbPool *pgxpool.Pool) http.HandlerFunc {
 			dbPool.QueryRow(context.Background(), countSQL, req.ChannelID).Scan(&currentCount)
 
 			if currentCount >= *maxCapacity {
-				http.Error(w, "This room is currently full.", http.StatusForbidden)
+				respond.UserError(w, "This room is currently full.", http.StatusForbidden)
 				return
 			}
 		}
@@ -85,7 +86,7 @@ func JoinRoom(dbPool *pgxpool.Pool) http.HandlerFunc {
 		if err == nil {
 			// SCENARIO A: The user is already in the database for this room
 			if existingRole == "BANNED" {
-				http.Error(w, "You are banned from this room.", http.StatusForbidden)
+				respond.UserError(w, "You are banned from this room.", http.StatusForbidden)
 				return
 			}
 
@@ -105,12 +106,12 @@ func JoinRoom(dbPool *pgxpool.Pool) http.HandlerFunc {
 		// SCENARIO B: The user is new to the room
 		if roomType == "PRIVATE" {
 			if req.Password == "" || passwordHash == nil {
-				http.Error(w, "Password required for this room.", http.StatusUnauthorized)
+				respond.UserError(w, "Password required for this room.", http.StatusUnauthorized)
 				return
 			}
 
 			if err := bcrypt.CompareHashAndPassword([]byte(*passwordHash), []byte(req.Password)); err != nil {
-				http.Error(w, "Incorrect room password.", http.StatusUnauthorized)
+				respond.UserError(w, "Incorrect room password.", http.StatusUnauthorized)
 				return
 			}
 		}

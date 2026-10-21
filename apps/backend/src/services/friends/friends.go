@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/haiuaki/ft_transcendence/src/respond"
 	"log"
 	"net/http"
 	"strings"
@@ -97,12 +98,12 @@ func AddFriend(dbPool *pgxpool.Pool, notifier Notifier) http.HandlerFunc {
 		)
 		if err != nil {
 			if strings.Contains(err.Error(), "duplicate key value") {
-				http.Error(w, "You are already friends, or a request is already pending.", http.StatusConflict)
+				respond.UserError(w, "You are already friends, or a request is already pending.", http.StatusConflict)
 				return
 			}
 
 			if strings.Contains(err.Error(), "null value in column") {
-				http.Error(w, "User not found.", http.StatusNotFound)
+				respond.UserError(w, "User not found.", http.StatusNotFound)
 				return
 			}
 

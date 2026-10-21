@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/haiuaki/ft_transcendence/src/respond"
 	"log"
 	"net/http"
 	"net/url"
@@ -55,7 +56,7 @@ func GetProfile(dbPool *pgxpool.Pool) http.HandlerFunc {
 		)
 
 		if err != nil {
-			http.Error(w, "User not found.", http.StatusNotFound)
+			respond.UserError(w, "User not found.", http.StatusNotFound)
 			return
 		}
 
@@ -103,7 +104,7 @@ func GetPublicProfile(dbPool *pgxpool.Pool) http.HandlerFunc {
 		)
 
 		if err != nil {
-			http.Error(w, "User not found.", http.StatusNotFound)
+			respond.UserError(w, "User not found.", http.StatusNotFound)
 			return
 		}
 
@@ -170,7 +171,7 @@ func UpdateProfile(dbPool *pgxpool.Pool, notifier friends.Notifier) http.Handler
 		if err != nil {
 			// Taken username check
 			if strings.Contains(err.Error(), "duplicate key value") {
-				http.Error(w, "This username is already taken.", http.StatusConflict)
+				respond.UserError(w, "This username is already taken.", http.StatusConflict)
 				return
 			}
 			// Internal random error

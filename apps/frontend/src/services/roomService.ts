@@ -1,3 +1,6 @@
+import { ApiError, checkResponse } from "@/src/lib/api";
+
+export { ApiError };
 
 const URL = "/api"
 
@@ -27,12 +30,6 @@ export interface RoomModel {
 }
 
 
-export class ApiError extends Error {
-    constructor(message: string, public status: number) {
-        super(message);
-    }
-}
-
 
 const roomService = {
     members: async (token: string, roomId: string, signal?: AbortSignal): Promise<RoomMember[]> => {
@@ -41,8 +38,7 @@ const roomService = {
             signal,
             cache: "no-store",
         });
-        if (!response.ok)
-            throw new ApiError(await response.text() || "Failed to fetch room members", response.status);
+        await checkResponse(response, "Failed to fetch room members");
         return response.json();
     },
     rooms: async (token: string): Promise<Room[]> => {
@@ -54,8 +50,7 @@ const roomService = {
                 Authorization: `Bearer ${token}`
             }
         });
-        if (!response.ok)
-            throw new Error(await response.text() || "Failed to fetch rooms")
+        await checkResponse(response, "Failed to fetch rooms");
         const data: Room[] = await response.json();
         return (data);
     },
@@ -63,8 +58,7 @@ const roomService = {
         const response = await fetch(URL + "/rooms/models", {
             headers: { Authorization: `Bearer ${token}` }
         });
-        if (!response.ok)
-            throw new ApiError(await response.text() || "Failed to fetch models", response.status)
+        await checkResponse(response, "Failed to fetch models");
         return response.json();
     },
 
@@ -86,8 +80,7 @@ const roomService = {
                 model: model,
             })
         });
-        if (!response.ok)
-            throw new ApiError(await response.text() || `Failed to create ${name}`, response.status)
+        await checkResponse(response, `Failed to create ${name}`);
         const data: { room_id: number } = await response.json();
         return (data.room_id);
     },
@@ -107,9 +100,8 @@ const roomService = {
                 password: password || undefined,
             })
         });
+        await checkResponse(response, `Failed to join room : ${channelId}`);
         const message = await response.text();
-        if (!response.ok)
-            throw new ApiError(message || `Failed to join room : ${channelId}`, response.status)
         return (message);
     },
     leave: async (token: string, channelId: string) => {
@@ -129,9 +121,8 @@ const roomService = {
                 channel_id: Number(channelId.trim()),
             })
         });
+        await checkResponse(response, `Failed to leave room : ${channelId}`);
         const message = await response.text();
-        if (!response.ok)
-            throw new ApiError(message || `Failed to leave room : ${channelId}`, response.status)
         return (message);
     },
     delete: async (token: string, channelId: string) => {
@@ -149,9 +140,8 @@ const roomService = {
                 channel_id: Number(channelId.trim()),
             })
         });
+        await checkResponse(response, `Failed to delete room : ${channelId}`);
         const message = await response.text();
-        if (!response.ok)
-            throw new Error(message || `Failed to delete room : ${channelId}`)
         return (message);
     },
 }

@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/haiuaki/ft_transcendence/src/respond"
 	"log"
 	"net/http"
 	netmail "net/mail"
@@ -80,7 +81,7 @@ func Signup(dbPool *pgxpool.Pool) http.HandlerFunc {
 		_, err = dbPool.Exec(context.Background(), insertSQL, creds.Username, creds.Email, hashedPasswordString, verificationToken)
 		if err != nil {
 			if strings.Contains(err.Error(), "duplicate key value") {
-				http.Error(w, "Username or Email already exists.", http.StatusConflict)
+				respond.UserError(w, "Username or Email already exists.", http.StatusConflict)
 				return
 			}
 			log.Println("Database error:", err)
@@ -124,7 +125,7 @@ func Verify(dbPool *pgxpool.Pool) http.HandlerFunc {
 		err := dbPool.QueryRow(context.Background(), updateSQL, token).Scan(&verifiedEmail)
 		if err != nil {
 			// If now row is returned, token is fake or already used
-			http.Error(w, "Invalid or expired verification token.", http.StatusUnauthorized)
+			respond.UserError(w, "Invalid or expired verification token.", http.StatusUnauthorized)
 			return
 		}
 
@@ -181,12 +182,12 @@ func Login(dbPool *pgxpool.Pool) http.HandlerFunc {
 		if err != nil {
 			// .Scan() fails if the email doesn't exist in the database
 			// Don't say "Email not found" for more protection against hackers
-			http.Error(w, "Invalid credentials", http.StatusUnauthorized)
+			respond.UserError(w, "Invalid credentials", http.StatusUnauthorized)
 			return
 		}
 
 		if !isVerified {
-			http.Error(w, "Please check your email to verify your account before logging in.", http.StatusForbidden)
+			respond.UserError(w, "Please check your email to verify your account before logging in.", http.StatusForbidden)
 			return
 		}
 
@@ -194,7 +195,7 @@ func Login(dbPool *pgxpool.Pool) http.HandlerFunc {
 		err = bcrypt.CompareHashAndPassword([]byte(savedHash), []byte(creds.Password))
 		if err != nil {
 			// Fails if wrong password
-			http.Error(w, "Invalid credentials", http.StatusUnauthorized)
+			respond.UserError(w, "Invalid credentials", http.StatusUnauthorized)
 			return
 		}
 

@@ -1,3 +1,4 @@
+import { checkResponse } from "@/src/lib/api";
 const URL = "/api"
 
 export interface TwoFactorSetupResponse {
@@ -17,8 +18,7 @@ const twoFactorService = {
                 Authorization: `Bearer ${token}`
             }
         })
-        if (!response.ok)
-            throw new Error(await response.text() || "Failed to start 2FA setup")
+        await checkResponse(response, "Failed to start 2FA setup");
         return (await response.json());
     },
     enable: async (token: string, code: string) => {
@@ -34,8 +34,7 @@ const twoFactorService = {
             },
             body: JSON.stringify({ code: code.trim() })
         })
-        if (!response.ok)
-            throw new Error(await response.text() || "Failed to enable 2FA")
+        await checkResponse(response, "Failed to enable 2FA");
         return (await response.json());
     },
     disable: async (token: string, code: string) => {
@@ -51,8 +50,7 @@ const twoFactorService = {
             },
             body: JSON.stringify({ code: code.trim() })
         })
-        if (!response.ok)
-            throw new Error(await response.text() || "Failed to disable 2FA")
+        await checkResponse(response, "Failed to disable 2FA");
         return (await response.json());
     },
     verify: async (tempToken: string, code: string): Promise<{ token: string }> => {
@@ -68,8 +66,7 @@ const twoFactorService = {
                 code: code.trim()
             })
         })
-        if (!response.ok)
-            throw new Error(await response.text() || "Invalid 2FA code")
+        await checkResponse(response, "Invalid 2FA code");
         return (await response.json());
     }
 }

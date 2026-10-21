@@ -1,3 +1,4 @@
+import { checkResponse } from "@/src/lib/api";
 const URL = "/api"
 
 export type FriendshipStatus = "friends" | "pending_sent" | "pending_received" | "none"
@@ -19,8 +20,7 @@ const friendService = {
                 Authorization: `Bearer ${token}`
             }
         });
-        if (!response.ok)
-            throw new Error(await response.text() || "Failed to fetch friends")
+        await checkResponse(response, "Failed to fetch friends");
         const data = await response.json();
         return (data);
     },
@@ -39,9 +39,8 @@ const friendService = {
                 friend_username: friendUsername.trim()
             })
         });
+        await checkResponse(response, `Failed to add ${friendUsername}`);
         const message = await response.text();
-        if (!response.ok)
-            throw new Error(message || `Failed to add ${friendUsername}`)
         return (message);
     },
     remove: async (token: string, friendUsername: string) => {
@@ -59,9 +58,8 @@ const friendService = {
                 friend_username: friendUsername.trim()
             })
         });
+        await checkResponse(response, `Failed to remove ${friendUsername}`);
         const message = await response.text();
-        if (!response.ok)
-            throw new Error(message || `Failed to remove ${friendUsername}`)
         return (message);
     },
     requests: async (token: string) => {
@@ -73,8 +71,7 @@ const friendService = {
                 Authorization: `Bearer ${token}`
             }
         });
-        if (!response.ok)
-            throw new Error("Failed to fetch friends requests")
+        await checkResponse(response, "Failed to fetch friends requests");
         const data = await response.json();
         return (data);
     },
@@ -93,9 +90,8 @@ const friendService = {
                 friend_username: friendUsername.trim()
             })
         });
+        await checkResponse(response, `Failed to accept ${friendUsername}`);
         const message = await response.text();
-        if (!response.ok)
-            throw new Error(message || `Failed to accept ${friendUsername}`)
         return (message);
  
     },
@@ -114,9 +110,8 @@ const friendService = {
                 friend_username: friendUsername.trim()
             })
         });
+        await checkResponse(response, `Failed to deny ${friendUsername}`);
         const message = await response.text();
-        if (!response.ok)
-            throw new Error(message || `Failed to deny ${friendUsername}`)
         return (message);
     }
 }
