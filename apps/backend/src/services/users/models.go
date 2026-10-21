@@ -3,6 +3,7 @@ package users
 import "time"
 
 type UserProfile struct {
+	ID                    string    `json:"id,omitempty"` // Only set on the user's own profile
 	Username              string    `json:"username"`
 	Email                 string    `json:"email,omitempty"`
 	AvatarURL             *string   `json:"avatar_url"`

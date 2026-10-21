@@ -11,6 +11,7 @@ interface AuthProviderProps {
 }
 
 export interface User {
+    id?: string; // Only set on the logged-in user's own profile
     username: string;
     email: string;
     avatar_url: string | null;

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ArrowUp, Loader2, Pin, PinOff, Trash2 } from 'lucide-react';
 import { motion, useDragControls } from 'motion/react';
 import { useAuth } from '@/src/context/AuthContext';
-import { AI_DRAFT_KEY, AI_HISTORY_KEY, getAiDraftKey, getAiHistoryKey } from '@/src/lib/aiHistory';
+import { getAiDraftKey, getAiHistoryKey } from '@/src/lib/aiHistory';
 
 type KewanProps = {
     isOpen?: boolean;
@@ -16,8 +16,23 @@ type ChatMessage = {
     content: string;
 };
 
-const STORAGE_KEY = AI_HISTORY_KEY;
-const DRAFT_KEY = AI_DRAFT_KEY;
+const readHistory = (key: string): ChatMessage[] => {
+    try {
+        const parsed = JSON.parse(localStorage.getItem(key) || '[]');
+        return Array.isArray(parsed) ? parsed : [];
+    } catch {
+        // Ignore storage parse error
+        return [];
+    }
+};
+
+const readDraft = (key: string) => {
+    try {
+        return sessionStorage.getItem(key) || '';
+    } catch {
+        return '';
+    }
+};
 
 const GREETINGS = [
     "How can I help you ?",
@@ -73,33 +88,16 @@ export default function KewanWindow({ isOpen = true, onClose }: KewanProps) {
         return GREETINGS[Math.floor(Math.random() * GREETINGS.length)];
     });
 
-    // Reload conversation history whenever active user changes
-    useEffect(() => {
-        if (typeof window === 'undefined') return;
-
-        if (!token || !user?.id) {
-            setMessages([]);
-            setMessage('');
-            return;
-        }
-
-        const draft = sessionStorage.getItem(draftKey) || '';
-        setMessage(draft);
-
-        try {
-            const saved = localStorage.getItem(storageKey);
-            if (saved) {
-                const parsed = JSON.parse(saved);
-                if (Array.isArray(parsed)) {
-                    setMessages(parsed);
-                    return;
-                }
-            }
-        } catch {
-            // Ignore storage parse error
-        }
-        setMessages([]);
-    }, [user?.id, token, storageKey, draftKey]);
+    // Reload the conversation whenever the logged-in user changes. Done during render
+    // (not in an effect) so `messages` never holds another account's or an empty
+    // placeholder history while the save effect below runs
+    const activeKey = token && user?.id ? storageKey : null;
+    const [loadedKey, setLoadedKey] = useState<string | null>(null);
+    if (activeKey !== loadedKey) {
+        setLoadedKey(activeKey);
+        setMessages(activeKey ? readHistory(activeKey) : []);
+        setMessage(activeKey ? readDraft(draftKey) : '');
+    }
 
     const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         const val = e.target.value;
@@ -115,7 +113,7 @@ export default function KewanWindow({ isOpen = true, onClose }: KewanProps) {
     };
 
     useEffect(() => {
-        if (typeof window !== 'undefined' && !isLoading && user?.id) {
+        if (!isLoading && activeKey) {
             // Filter out empty placeholder assistant messages before saving
             const validMessages = messages.filter((m) => m.content.trim().length > 0);
             if (validMessages.length > 0) {
@@ -124,7 +122,7 @@ export default function KewanWindow({ isOpen = true, onClose }: KewanProps) {
                 localStorage.removeItem(storageKey);
             }
         }
-    }, [messages, isLoading, storageKey, user?.id]);
+    }, [messages, isLoading, storageKey, activeKey]);
 
     useEffect(() => {
         if (isOpen) {
@@ -160,7 +158,7 @@ export default function KewanWindow({ isOpen = true, onClose }: KewanProps) {
         }
 
         setMessage('');
-        sessionStorage.removeItem(DRAFT_KEY);
+        sessionStorage.removeItem(draftKey);
         setError(null);
 
         setMessages((prev) => [
