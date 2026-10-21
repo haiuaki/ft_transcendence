@@ -2,6 +2,7 @@ export type TextureMode = "day" | "night";
 export type SwitchMode = (mode: TextureMode) => Promise<void>;
 
 export type SceneCallbacks = {
+	getInitialTextureMode: () => TextureMode;
 	setTextureMode: (mode: TextureMode) => void;
 	setTexturesLoading: (loading: boolean) => void;
 	setTexturesReady: (ready: boolean) => void;
