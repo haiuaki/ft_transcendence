@@ -178,13 +178,30 @@ async def get_relevant_context(
     return "Relevant context extracted from archives:\n" + "\n".join(lines)
 
 
-def format_rag_prompt(context: str, user_prompt: str) -> str:
-    """Merges semantic context with the user query."""
+def format_rag_prompt(
+    context: str,
+    user_prompt: str,
+    history: list[dict[str, str]] | None = None,
+) -> str:
+    """Merges semantic context and conversation history with the user query."""
+    history_str = ""
+    if history:
+        formatted_messages = []
+        for msg in history:
+            role = "User" if msg.get("role") == "user" else "Assistant"
+            content = msg.get("content", "").strip()
+            if content:
+                formatted_messages.append(f"{role}: {content}")
+        if formatted_messages:
+            history_str = "Recent conversation history:\n" + "\n".join(formatted_messages) + "\n\n"
+
     return (
         f"System context:\n{context}\n\n"
+        f"{history_str}"
         f"User query: {user_prompt}\n\n"
         "Instructions:\n"
         "- If the user asks about chat archives, users, or platform context, use the system context above.\n"
+        "- If the user refers to previous messages in the conversation, use the conversation history above.\n"
         "- If the query is a general knowledge question or unrelated to the context, answer directly and helpfully.\n"
         "- Answer in the same language as the user query."
     )

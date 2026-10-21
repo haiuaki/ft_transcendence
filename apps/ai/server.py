@@ -55,9 +55,14 @@ async def rate_limit_handler(request: Request, exc: Exception) -> JSONResponse:
 # Same limit as the chat inputs on the frontend
 MAX_TEXT_LENGTH = 500
 
+class HistoryMessage(BaseModel):
+    role: str
+    content: str = Field(max_length=MAX_TEXT_LENGTH)
+
 class PromptRequest(BaseModel):
     prompt: str = Field(max_length=MAX_TEXT_LENGTH)
     channel_id: int | None = None
+    history: list[HistoryMessage] = Field(default_factory=list)
 
 DEFAULT_MODELS = [
     "gemini-3.5-flash-lite",
@@ -126,7 +131,11 @@ async def stream_ai(request: Request, body: PromptRequest, user_id: str = Depend
             channel_id=body.channel_id,
     )
 
-    augmented_prompt = format_rag_prompt(context=context, user_prompt=body.prompt)
+    augmented_prompt = format_rag_prompt(
+        context=context,
+        user_prompt=body.prompt,
+        history=[msg.model_dump() for msg in body.history],
+    )
     return StreamingResponse(
         stream_generator(augmented_prompt),
         media_type="text/event-stream",
